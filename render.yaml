@@ -1,0 +1,16 @@
+# Despliegue en Render (plan gratuito) con el Dockerfile del proyecto.
+# En Render: New > Blueprint > este repositorio, o el enlace "Deploy to Render" del README.
+services:
+  - type: web
+    name: marea
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Contacto para los servicios de notificaciones push (Google, Apple, Mozilla).
+      - key: VAPID_SUBJECT
+        value: https://github.com/olopezr/marea

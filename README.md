@@ -35,6 +35,16 @@ Sin claves VAPID, el servidor genera unas y las guarda en `DATA_DIR/vapid.json` 
 
 ## Despliegue
 
+### Gratis en Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/olopezr/marea)
+
+El archivo `render.yaml` crea un servicio web gratuito en Frankfurt con el Dockerfile. Limitaciones del plan gratuito:
+- Se duerme tras 15 minutos sin visitas; la primera visita después tarda 30–60 s.
+- No conserva archivos: las suscripciones a avisos se pierden en cada reinicio o despliegue y los avisos no se revisan mientras duerme. Para avisos fiables hace falta un plan con disco persistente o una base de datos externa.
+
+### Con disco persistente
+
 La app es un único proceso Node con una carpeta de datos. Funciona en cualquier servicio que ejecute contenedores con un volumen persistente: Fly.io, Railway, Render, un VPS con Docker, etc.
 
 ```bash
