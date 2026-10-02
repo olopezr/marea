@@ -302,7 +302,7 @@ function buoyPanel(b, s) {
     <div class="buoy-grid">
       ${b ? `<div><span class="eyebrow">Ola</span><strong>${fmt(b.h)} m</strong></div>
       <div><span class="eyebrow">Periodo pico</span><strong>${fmt(b.Tp, 0)} s</strong></div>
-      <div><span class="eyebrow">Dirección</span>${b.dir != null ? `<strong>${arrow(b.dir)} ${cardinal(b.dir)}</strong>` : `<span class="muted small">Esta boya no mide dirección</span>`}</div>` : ""}
+      <div><span class="eyebrow">Dirección</span>${b.dir != null ? `<strong>${arrow(b.dir)} ${cardinal(b.dir)}</strong>` : `<strong title="Esta boya no mide dirección">-</strong>`}</div>` : ""}
       ${b?.water != null ? `<div><span class="eyebrow">Agua</span><strong>${fmt(b.water)} °C</strong></div>` : ""}
       ${m?.wind ? `<div><span class="eyebrow">Viento</span><strong>${fmt(m.wind.wind, 0)} kn ${arrow(m.wind.windDir)}</strong>${m.wind.gust != null ? `<span class="muted small">Rachas ${fmt(m.wind.gust, 0)} kn</span>` : ""}</div>` : ""}
       ${m?.air ? `<div><span class="eyebrow">Aire</span><strong>${fmt(m.air.air)} °C</strong></div>` : ""}
