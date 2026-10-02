@@ -1,0 +1,19 @@
+{
+  "name": "marea",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Oleaje, viento y mareas en tiempo real para los spots de surf de España.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "test": "node --test test/*.test.js",
+    "vapid": "web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

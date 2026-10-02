@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fuentes de datos · Marea</title>
+  <meta name="theme-color" content="#071a20">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<main class="doc">
+  <a class="brand" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" class="logo-bg"/><path d="M4 19c3-4 6-4 8 0s5 4 8 0 6-4 8 0" fill="none" class="logo-wave" stroke-width="2.6" stroke-linecap="round"/></svg><span>Marea</span></a>
+  <h1>Fuentes de datos</h1>
+  <p class="muted">Marea reúne en un solo sitio datos públicos de tres organismos. Así es como los usamos.</p>
+
+  <h2>Previsión de oleaje y viento</h2>
+  <p>Altura, periodo y dirección del oleaje y del mar de fondo, viento, rachas, temperatura del agua y del aire, y horas de luz: <a href="https://open-meteo.com/">Open-Meteo</a>, que combina modelos de servicios meteorológicos nacionales y de Copernicus. Datos bajo licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>.</p>
+  <p>Es una previsión: la altura es la significativa del modelo en mar abierto frente a cada playa, con una cuadrícula de varios kilómetros. En spots abrigados la ola real puede ser bastante menor. Se actualiza cada 30 minutos.</p>
+
+  <h2>Mareas</h2>
+  <p>Horas y alturas de pleamar y bajamar: predicción oficial del <a href="https://armada.defensa.gob.es/ihm/">Instituto Hidrográfico de la Marina</a> (© IHM) para el puerto de referencia más cercano a cada spot. Las alturas son sobre el cero hidrográfico de ese puerto. La curva entre pleamar y bajamar se calcula por interpolación.</p>
+  <p>El efecto de la meteorología (cuánto suben o bajan el mar el viento y la presión) viene de la previsión de nivel del mar de <a href="https://portus.puertos.es/">Puertos del Estado</a> para la playa más cercana. Cuando hay un mareógrafo de Puertos del Estado a menos de 30 km del puerto de referencia, la curva muestra también el nivel medido en las últimas horas, colocado respecto al nivel medio del mar del puerto.</p>
+  <p>El coeficiente de marea es una estimación de Marea: compara la carrera de cada marea con la carrera media del puerto (70 = marea media, 100 = mareas vivas medias). Puede diferir unas unidades de los coeficientes oficiales, que se calculan respecto al puerto de Brest.</p>
+  <p>Si el servicio del IHM no responde, la app muestra la estimación del modelo de Open-Meteo y lo indica.</p>
+
+  <h2>Medidas en tiempo real</h2>
+  <p>Altura, periodo y dirección del oleaje y temperatura del agua de las boyas de la red de Puertos del Estado; viento, temperatura del aire y presión de sus estaciones costeras. Solo se muestran lecturas de las últimas 3 horas, de boyas a menos de 100 km y estaciones a menos de 40 km del spot, y se descartan las marcadas como avería.</p>
+  <p>Las boyas de aguas profundas miden el oleaje antes de llegar a la costa; en la orilla suele ser menor. Las estaciones de los puertos pueden medir menos viento que en una playa abierta.</p>
+
+  <h2>Valoración de las condiciones</h2>
+  <p>La valoración de «Plato» a «Muy bueno» la calcula Marea a partir de la altura y el periodo de la ola, la exposición de cada playa a la dirección del swell, el viento respecto a la orientación de la playa (terral, cruzado o de mar) y la marea en la que mejor funciona cada spot. Es orientativa.</p>
+
+  <h2>Uso responsable</h2>
+  <p><strong>Marea no es un servicio de seguridad marítima ni debe usarse para la navegación.</strong> Consulta siempre los avisos oficiales de AEMET y Salvamento Marítimo, y valora el estado del mar en la playa antes de entrar al agua.</p>
+  <a class="back" href="/">Volver a Marea</a>
+</main>
+</body>
+</html>
