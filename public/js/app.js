@@ -318,7 +318,7 @@ function buoyPanel(b, s) {
 function alertButton(id) {
   if (!alerts.supported()) return "";
   const on = alerts.getState().spots.includes(id);
-  return `<button class="alert-btn ${on ? "on" : ""}" data-alert="${id}" aria-pressed="${on}">${icon.bell(on)}<span>${on ? "Avisos activados" : "Avisarme cuando esté bueno"}</span></button>`;
+  return `<button class="alert-btn ${on ? "on" : ""}" data-alert="${id}" aria-pressed="${on}">${icon.bell(on)}<span>${on ? "Avisos activados" : "Avisarme cuando esté disponible"}</span></button>`;
 }
 
 async function renderSpot(id, force = false) {
