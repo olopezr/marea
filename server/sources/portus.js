@@ -211,7 +211,8 @@ function stations(variable) {
 
 const METEO = {
   WIND: v => (v.vv_md == null ? null : { wind: v.vv_md * KN, windDir: v.dv_md ?? null, gust: v.vv_mx != null ? v.vv_mx * KN : null }),
-  AIR_TEMP: v => (v.ta == null ? null : { air: v.ta }),
+  // Un 0 exacto suele ser un sensor averiado que la API no marca (estación del puerto exterior de Ferrol).
+  AIR_TEMP: v => (v.ta == null || v.ta === 0 || v.ta < -10 || v.ta > 45 ? null : { air: v.ta }),
   AIR_PRESURE: v => (v.ps == null || v.ps < 900 || v.ps > 1080 ? null : { pressure: v.ps }),
 };
 

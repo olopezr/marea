@@ -51,7 +51,7 @@ const wetsuit = c => c == null ? "" : c < 15 ? "Neopreno 5/4 y escarpines" : c <
 
 const footer = () => `
   <footer class="foot muted">
-    <p>Previsión: Open-Meteo. Mareas: Instituto Hidrográfico de la Marina. Boyas: Puertos del Estado. No usar para navegación.</p>
+    <p>Previsión: Open-Meteo, Puertos del Estado y MET Norway. Mareas: Instituto Hidrográfico de la Marina. Boyas y mareógrafos: Puertos del Estado. No usar para navegación.</p>
     <nav class="legal"><a href="/legal/fuentes.html">Fuentes de datos</a><a href="/legal/privacidad.html">Privacidad</a><a href="/legal/aviso-legal.html">Aviso legal</a></nav>
   </footer>`;
 
@@ -302,7 +302,7 @@ function buoyPanel(b, s) {
     <div class="buoy-grid">
       ${b ? `<div><span class="eyebrow">Ola</span><strong>${fmt(b.h)} m</strong></div>
       <div><span class="eyebrow">Periodo pico</span><strong>${fmt(b.Tp, 0)} s</strong></div>
-      <div><span class="eyebrow">Dirección</span><strong>${arrow(b.dir)} ${cardinal(b.dir)}</strong></div>` : ""}
+      <div><span class="eyebrow">Dirección</span>${b.dir != null ? `<strong>${arrow(b.dir)} ${cardinal(b.dir)}</strong>` : `<span class="muted small">Esta boya no mide dirección</span>`}</div>` : ""}
       ${b?.water != null ? `<div><span class="eyebrow">Agua</span><strong>${fmt(b.water)} °C</strong></div>` : ""}
       ${m?.wind ? `<div><span class="eyebrow">Viento</span><strong>${fmt(m.wind.wind, 0)} kn ${arrow(m.wind.windDir)}</strong>${m.wind.gust != null ? `<span class="muted small">Rachas ${fmt(m.wind.gust, 0)} kn</span>` : ""}</div>` : ""}
       ${m?.air ? `<div><span class="eyebrow">Aire</span><strong>${fmt(m.air.air)} °C</strong></div>` : ""}
@@ -359,7 +359,7 @@ async function renderSpot(id, force = false) {
       ${tile("Marea", t.h != null ? `${fmt(t.h)} m ${t.rising ? "↗" : "↘"}` : "–", `${t.next ? `${tideWord(t.next)} ${hhmm(t.next.t, tz)}` : ""}${t.coef != null ? ` · Coef. ${t.coef}` : ""}`)}
       ${tile("Agua", `${fmt(water)} °C`, wetsuit(water))}
       ${tile("Primera luz", s.sun ? hhmm(s.sun.rise, tz) : "–", s.sun ? `Puesta ${hhmm(s.sun.set, tz)}` : "")}
-      ${tile("Aire", `${fmt(n.air, 0)} °C`, `Mejor con marea ${({ low: "baja", mid: "media", high: "alta", all: "cualquiera" })[s.tidePref]}`)}
+      ${tile("Aire", `${fmt(s.meteo?.air?.air ?? n.air, 0)} °C`, `Mejor con marea ${({ low: "baja", mid: "media", high: "alta", all: "cualquiera" })[s.tidePref]}`)}
     </section>
 
     <section class="panel tide-panel">

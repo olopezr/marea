@@ -7,6 +7,7 @@ import {
 import { forecastAll } from "./forecast.js";
 import * as ihm from "./sources/ihm.js";
 import * as portus from "./sources/portus.js";
+import { airTemperature } from "./sources/metno.js";
 
 const H = 3600e3;
 
@@ -155,6 +156,8 @@ export async function detail(spot) {
   const [summary, f] = await Promise.all([summaryOf(spot, fc, now, { coef: true }), forecastFor(spot, fc, now, { coef: true })]);
   const todayEnd = f.dayStart + 24 * H;
   const sunToday = fc.sun.find(s => s.rise >= f.dayStart && s.rise < todayEnd) ?? null;
+  // Temperatura del aire: si la previsión no la trae, la de MET Norway.
+  if (summary.now.air == null) summary.now.air = await airTemperature(spot).catch(() => null);
   const [buoy, surgeDay, obs, meteo] = await Promise.all([
     portus.nearestReading(spot).catch(() => null),
     surge(spot, f.dayStart, todayEnd),

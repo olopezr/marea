@@ -23,6 +23,7 @@ test("el detalle con previsión de respaldo trae horas de luz calculadas y menos
   assert.equal(d.forecastSource, "portus");
   assert.ok(d.sun && d.sun.set - d.sun.rise > 10 * 3600e3, "hay más de 10 h de luz");
   assert.ok(d.days.length >= 2 && d.days.length <= 4);
+  assert.equal(d.now.air, 19, "sin temperatura del aire en la previsión, se usa la de MET Norway");
 });
 
 test("tras un 429 no se vuelve a llamar a Open-Meteo en cada petición", async () => {

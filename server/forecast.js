@@ -16,7 +16,9 @@ function portusAll(spots) {
       const rows = await spotForecast(s).catch(() => null);
       if (!rows?.length) return [s.id, null];
       const hours = rows.map(r => ({
-        t: r.t, h: r.h, T: r.Tz ?? r.Tp, dir: r.dir, sh: r.sh, sT: r.sT, sDir: r.sDir,
+        // Algunas mallas (p. ej. Rías Baixas) dan la altura del mar de fondo pero no su periodo ni
+        // dirección: se usan los del oleaje total, casi iguales cuando domina el mar de fondo.
+        t: r.t, h: r.h, T: r.Tz ?? r.Tp, dir: r.dir, sh: r.sh, sT: r.sT ?? r.Tz ?? r.Tp, sDir: r.sDir ?? r.dir,
         seaLevel: null, water: null, wind: r.wind, windDir: r.windDir, gust: null, air: null,
       }));
       const current = hours.reduce((a, b) => (Math.abs(b.t - now) < Math.abs(a.t - now) ? b : a));

@@ -45,6 +45,12 @@ export function installFetch(opts = {}) {
       return json(lats.length > 1 ? lats.map(one) : one());
     }
 
+    if (url.host === "api.met.no") {
+      const now = Math.floor(Date.now() / 3600e3) * 3600e3;
+      return json({ properties: { timeseries: Array.from({ length: 24 }, (_, i) => ({
+        time: new Date(now + i * 3600e3).toISOString(), data: { instant: { details: { air_temperature: 19 } } } })) } });
+    }
+
     if (url.host === "ideihm.covam.es") {
       if (ihmFail) return new Response("caído", { status: 503 });
       if (url.searchParams.get("request") === "getlist") {
@@ -124,7 +130,14 @@ export function installFetch(opts = {}) {
         }));
       }
       if (/\/estaciones\/rt\/(WIND|AIR_TEMP|AIR_PRESURE)$/.test(url.pathname)) {
-        return json([{ id: 4136, nombre: "Estacion Meteorologica de Prueba (APB-2)", latitud: 43.5, longitud: -3.7, disponible: true }]);
+        return json([
+          { id: 4136, nombre: "Estacion Meteorologica de Prueba (APB-2)", latitud: 43.5, longitud: -3.7, disponible: true },
+          // Más cercana a Somo pero con el sensor de temperatura averiado (marca 0 sin avisar).
+          ...(url.pathname.endsWith("AIR_TEMP") ? [{ id: 4137, nombre: "Estacion Meteorologica Averiada", latitud: 43.46, longitud: -3.735, disponible: true }] : []),
+        ]);
+      }
+      if (url.pathname.endsWith("/lastData/station/4137")) {
+        return json({ fecha: new Date(Date.now() - 10 * 60e3).toISOString().replace("T", " ").slice(0, 19) + ".0", datos: [{ nombreColumna: "ta", valor: "0", factor: 100 }] });
       }
       if (url.pathname.endsWith("/estaciones/rt/WAVE")) {
         return json([

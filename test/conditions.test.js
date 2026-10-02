@@ -77,7 +77,7 @@ test("detail añade coeficientes, efecto meteorológico, nivel medido y meteo de
   assert.ok(d.tideDay.observed.points.length > 100, "serie del mareógrafo cada 5 min");
   assert.ok(Math.abs(d.meteo.wind.wind - 9.7) < 0.1, "5 m/s son 9,7 nudos");
   assert.ok(Math.abs(d.meteo.wind.gust - 15.6) < 0.1);
-  assert.equal(d.meteo.air.air, 18.5);
+  assert.equal(d.meteo.air.air, 18.5, "se salta la estación más cercana que marca 0 °C");
   assert.equal(d.meteo.pressure, null, "un valor marcado como avería no se muestra");
   assert.equal(d.meteo.wind.station.name, "Prueba");
 });

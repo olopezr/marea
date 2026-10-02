@@ -19,6 +19,9 @@
   <p>Altura, periodo y dirección del oleaje y del mar de fondo, viento, rachas, temperatura del agua y del aire, y horas de luz: <a href="https://open-meteo.com/">Open-Meteo</a>, que combina modelos de servicios meteorológicos nacionales y de Copernicus. Datos bajo licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>.</p>
   <p>Es una previsión: la altura es la significativa del modelo en mar abierto frente a cada playa, con una cuadrícula de varios kilómetros. En spots abrigados la ola real puede ser bastante menor. Se actualiza cada 30 minutos.</p>
 
+  <h2>Previsión de respaldo</h2>
+  <p>Si Open-Meteo no está disponible, la previsión de oleaje y viento (3 días) viene del modelo de <a href="https://portus.puertos.es/">Puertos del Estado</a> en el punto de mar abierto más cercano a cada spot, y la temperatura del aire de <a href="https://api.met.no/">MET Norway</a> (Instituto Meteorológico de Noruega, licencia <a href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a>). La salida y la puesta de sol se calculan en la app.</p>
+
   <h2>Mareas</h2>
   <p>Horas y alturas de pleamar y bajamar: predicción oficial del <a href="https://armada.defensa.gob.es/ihm/">Instituto Hidrográfico de la Marina</a> (© IHM) para el puerto de referencia más cercano a cada spot. Las alturas son sobre el cero hidrográfico de ese puerto. La curva entre pleamar y bajamar se calcula por interpolación.</p>
   <p>El efecto de la meteorología (cuánto suben o bajan el mar el viento y la presión) viene de la previsión de nivel del mar de <a href="https://portus.puertos.es/">Puertos del Estado</a> para la playa más cercana. Cuando hay un mareógrafo de Puertos del Estado a menos de 30 km del puerto de referencia, la curva muestra también el nivel medido en las últimas horas, colocado respecto al nivel medio del mar del puerto.</p>
