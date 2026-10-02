@@ -25,9 +25,11 @@ test("la boya se carga al abrir el detalle", async () => {
   assert.equal(somo.buoy.Tp, 14);
   assert.equal(somo.buoy.water, 19.5);
   assert.equal(somo.buoy.buoy.far, false);
+  assert.equal(somo.buoy.buoy.fallback, false, "es la boya más cercana");
   // Tapia está a ~260 km: no hay boya cercana, se usa la de aguas profundas marcada como lejana.
   const tapia = (await detail(spotById.tapia)).buoy;
   assert.equal(tapia.buoy.far, true);
+  assert.equal(tapia.buoy.fallback, true, "sin boya cercana también se marca");
   assert.ok(tapia.buoy.distKm > 100 && tapia.buoy.distKm <= 300);
   // Canarias queda a más de 300 km de cualquier boya de la prueba.
   assert.equal((await detail(spotById.famara)).buoy, null);

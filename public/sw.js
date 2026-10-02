@@ -1,6 +1,6 @@
 // Service worker: la interfaz abre sin conexión y recibe los avisos push.
 // Cambia VERSION en cada despliegue para que los clientes descarten la caché anterior.
-const VERSION = "2026-10-02.14";
+const VERSION = "2026-10-02.15";
 const CACHE = `marea-shell-${VERSION}`;
 const SHELL = [
   "/", "/index.html", "/css/app.css", "/css/fonts.css", "/fonts/archivo-latin.woff2", "/fonts/figtree-latin.woff2", "/fonts/jetbrainsmono-latin.woff2", "/js/app.js", "/js/api.js", "/js/alerts.js", "/js/tidechart.js", "/js/surf.js", "/js/spots.js",

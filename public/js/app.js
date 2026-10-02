@@ -73,7 +73,8 @@ function toast(msg) {
 // y como mucho 3 a la vez, para no lanzar todas las peticiones de golpe.
 function buoyLineHTML(b, tz) {
   if (!b) return `<span class="muted">Sin boya operativa cerca</span>`;
-  return `<span class="dot-live" aria-hidden="true"></span>Boya ${esc(b.buoy.name)}${b.buoy.far ? ` (a ${b.buoy.distKm} km)` : ""}: <b>${fmt(b.h)} m</b>${b.Tp != null ? ` · ${fmt(b.Tp, 0)} s` : ""}${b.dir != null ? ` ${cardinal(b.dir)}` : ""}${b.predicted ? ` <span class="muted">· prev. ${fmt(b.predicted.h)} m</span>` : ""} <span class="muted">· ${hhmm(b.t, tz)}</span>`;
+  const off = b.buoy.fallback;
+  return `<span class="dot-live${off ? " off" : ""}" aria-hidden="true"></span>${off ? `<span class="sr-only">Aviso: no es la boya más cercana. </span>` : ""}Boya ${esc(b.buoy.name)}${off ? ` (a ${b.buoy.distKm} km)` : ""}: <b>${fmt(b.h)} m</b>${b.Tp != null ? ` · ${fmt(b.Tp, 0)} s` : ""}${b.dir != null ? ` ${cardinal(b.dir)}` : ""}${b.predicted ? ` <span class="muted">· prev. ${fmt(b.predicted.h)} m</span>` : ""} <span class="muted">· ${hhmm(b.t, tz)}</span>`;
 }
 
 let buoyObserver = null;
@@ -283,7 +284,7 @@ function buoyPanel(b, s) {
     !m?.wind && (m?.air || m?.pressure) && `estación ${esc((m.air ?? m.pressure).station.name)} (${(m.air ?? m.pressure).station.distKm} km)`,
   ].filter(Boolean);
   return `<section class="panel buoy">
-    <div class="panel-head"><h3>Medido en el mar</h3><span class="live"><span class="dot-live" aria-hidden="true"></span>${hhmm(latest, s.tz)}</span></div>
+    <div class="panel-head"><h3>Medido en el mar</h3><span class="live"><span class="dot-live${b?.buoy.fallback ? " off" : ""}" aria-hidden="true"></span>${hhmm(latest, s.tz)}</span></div>
     <div class="buoy-grid">
       ${b ? `<div><span class="eyebrow">Ola</span><strong>${fmt(b.h)} m</strong></div>
       <div><span class="eyebrow">Periodo pico</span><strong>${fmt(b.Tp, 0)} s</strong></div>
@@ -293,7 +294,8 @@ function buoyPanel(b, s) {
       ${m?.air ? `<div><span class="eyebrow">Aire</span><strong>${fmt(m.air.air)} °C</strong></div>` : ""}
       ${m?.pressure ? `<div><span class="eyebrow">Presión</span><strong>${fmt(m.pressure.pressure, 0)} hPa</strong></div>` : ""}
     </div>
-    ${b?.buoy.far ? `<p class="small far-note">No hay ninguna boya a menos de 100 km. Esta es la de aguas profundas más cercana, a ${b.buoy.distKm} km: indica el mar de fondo que llega a la zona, no el oleaje en la playa.</p>` : ""}
+    ${b?.buoy.far ? `<p class="small far-note"><span class="dot-live off" aria-hidden="true"></span>No hay ninguna boya a menos de 100 km. Esta es la de aguas profundas más cercana, a ${b.buoy.distKm} km: indica el mar de fondo que llega a la zona, no el oleaje en la playa.</p>`
+      : b?.buoy.fallback ? `<p class="small far-note"><span class="dot-live off" aria-hidden="true"></span>${b.buoy.closest ? `La boya más cercana a esta playa, ${esc(b.buoy.closest.name)} (a ${b.buoy.closest.distKm} km), no envía datos ahora.` : "La boya más cercana a esta playa no envía datos ahora."} Se muestra la siguiente, ${esc(b.buoy.name)} (a ${b.buoy.distKm} km): puede no reflejar bien las condiciones de esta playa.</p>` : ""}
     <p class="muted small">Datos de Puertos del Estado: ${sources.join(", ")}.${b?.buoy.deep && !b.buoy.far ? " La boya está en aguas profundas: en la orilla las olas suelen llegar más pequeñas." : ""}</p>
     ${b ? buoyForecastBlock(b, diff) : ""}
   </section>`;

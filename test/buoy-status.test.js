@@ -13,7 +13,9 @@ test("se usa una boya que transmite aunque PORTUS la marque como no disponible",
   assert.equal(somo.buoy.h, 2.5);
 });
 
-test("una boya más cercana pero sin datos se salta", async () => {
+test("una boya más cercana pero sin datos se salta y se marca como alternativa", async () => {
   const somo = await detail(spotById.somo);
   assert.notEqual(somo.buoy.buoy.name, "Rota");
+  assert.equal(somo.buoy.buoy.fallback, true);
+  assert.deepEqual(somo.buoy.buoy.closest, { name: "Rota", distKm: 1 });
 });

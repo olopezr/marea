@@ -11,6 +11,7 @@
   --q-flat: #b9c7ca;
   --q-poor: #6f9aa5;
   --green: #2c8a5a;   /* estado positivo: terral, en directo, interruptores */
+  --red: #c62828;     /* dato poco representativo: boya que no es la más cercana */
   --q-fair: #d1a22a;  /* aceptable: amarillo */
   --q-good: #7c9a26;  /* bueno: entre amarillo y verde */
   --q-epic: #2c8a5a;  /* muy bueno: verde */
@@ -22,7 +23,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #071a20; --surface: #0d252d; --surface-2: #133039; --ink: #dce9eb; --muted: #8fa9af; --line: #1d3a43;
-    --accent: #ff7a4d; --sea: #5bb6c6; --q-flat: #2a464f; --q-poor: #4f7f8a; --green: #5cc48c; --q-fair: #e2b046; --q-good: #a6c64c; --q-epic: #5cc48c;
+    --accent: #ff7a4d; --sea: #5bb6c6; --q-flat: #2a464f; --q-poor: #4f7f8a; --green: #5cc48c; --red: #ff6b6b; --q-fair: #e2b046; --q-good: #a6c64c; --q-epic: #5cc48c;
     color-scheme: dark;
   }
 }
@@ -297,3 +298,7 @@ input[role="switch"]:checked::after { transform: translateX(18px); }
 
 /* ---------- Previsión en la boya ---------- */
 .buoy-pred { padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* Boya que no es la más cercana al spot: punto rojo fijo. */
+.dot-live.off { background: var(--red); box-shadow: none; animation: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

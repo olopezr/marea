@@ -19,7 +19,7 @@ export function buoys() {
     const list = await request(`${API}/estaciones/rt/WAVE?locale=es`);
     return list
       .filter(s => s.boya && s.red?.tipoRed !== "PROPAGACION")
-      .map(s => ({ id: s.id, name: s.nombre.replace(/^Boya (Costera )?de /, ""), lat: s.latitud, lon: s.longitud, deep: s.red?.tipoRed === "REDEXT" }));
+      .map(s => ({ id: s.id, name: s.nombre.replace(/^Boya (Costera )?de /, "").replace(/\s*-\s*/g, "-"), lat: s.latitud, lon: s.longitud, deep: s.red?.tipoRed === "REDEXT" }));
   });
 }
 
@@ -109,8 +109,18 @@ export async function nearestReading(spot) {
     }
     return null;
   };
-  return (await tryList(all.filter(b => b.distKm <= MAX_KM).slice(0, 3), false))
-    ?? tryList(all.filter(b => b.deep && b.distKm > MAX_KM && b.distKm <= FAR_KM).slice(0, 2), true);
+  const result = (await tryList(all.filter(b => b.distKm <= MAX_KM).slice(0, 3), false))
+    ?? await tryList(all.filter(b => b.deep && b.distKm > MAX_KM && b.distKm <= FAR_KM).slice(0, 2), true);
+  // `fallback`: la boya mostrada no es la más cercana al spot (la más cercana no envía datos) o no hay
+  // ninguna a menos de 100 km. En ambos casos el dato puede no representar bien la playa.
+  if (result) {
+    const closest = all[0];
+    const fallback = result.buoy.far || (closest && closest.id !== result.buoy.id);
+    result.buoy.fallback = Boolean(fallback);
+    result.buoy.closest = fallback && closest && closest.id !== result.buoy.id && closest.distKm <= MAX_KM
+      ? { name: closest.name, distKm: Math.round(closest.distKm) } : null;
+  }
+  return result;
 }
 
 // ---------- Previsión del nivel del mar por playa (modelo NIVMAR de Puertos del Estado) ----------
