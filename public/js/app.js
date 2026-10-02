@@ -492,7 +492,7 @@ app.addEventListener("click", async e => {
     try {
       const st = await alerts.toggleSpot(al.dataset.alert);
       const on = st.spots.includes(al.dataset.alert);
-      toast(on ? "Te avisaremos cuando se ponga bueno" : "Avisos desactivados para este spot");
+      toast(on ? "Te avisaremos cuando esté disponible" : "Avisos desactivados para este spot");
     } catch (err) { toast(err.message); }
     al.outerHTML = alertButton(al.dataset.alert);
   }
