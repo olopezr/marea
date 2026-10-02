@@ -9,6 +9,7 @@ import { cached, limiter } from "../cache.js";
 import { km } from "../../public/js/surf.js";
 
 const API = "https://portus.puertos.es/portussvr/api";
+const KN = 1.943844; // m/s → nudos
 const MAX_KM = 100;
 const FAR_KM = 300;
 const MAX_DRIFT_KM = 15;
@@ -59,33 +60,51 @@ function reading(buoy) {
 // predicción horaria. El modelo da la dirección hacia la que va el oleaje: se le suman 180° para
 // expresarla, como las boyas, de dónde viene (comprobado con Pasaia II: medido 319°, previsto 135°+180°).
 
-function predPoints() {
-  return cached("portus:predpoints", 7 * 24 * 3600e3, async () => {
+// Todos los puntos del modelo de oleaje de PORTUS (Atlántico y Mediterráneo).
+function wanaPoints() {
+  return cached("portus:wana", 7 * 24 * 3600e3, async () => {
     const lists = await Promise.all(["atl", "med"].map(r => request(`${API}/puntosMalla/portus/pred/Wana/${r}`).catch(() => [])));
-    const map = {};
-    for (const p of lists.flat()) if (p.codigoEstacion > 0) map[p.codigoEstacion] ??= p.id;
-    return map;
+    return lists.flat().map(p => ({ id: p.id, lat: p.latitud, lon: p.longitud, station: p.codigoEstacion, grid: p.malla }));
   });
 }
 
-export function buoyForecast(buoyId) {
-  return cached(`portus:buoypred:${buoyId}`, 60 * 60e3, async () => {
-    const point = (await predPoints())[buoyId];
-    if (!point) return null;
-    const rows = await request(`${API}/predData/portus/WAVE/${point}?locale=es`);
+// Predicción horaria (72 h) de un punto del modelo: oleaje total, mar de fondo y viento.
+// Las direcciones del modelo indican hacia dónde va; se convierten a de dónde viene.
+function pointForecast(pointId) {
+  return cached(`portus:point:${pointId}`, 60 * 60e3, async () => {
+    const rows = await request(`${API}/predData/portus/WAVE/${pointId}?locale=es`);
     return rows.map(r => {
       const g = (variable, name) => {
         const x = r.datos.find(d => d.variableParametro === variable && d.nombreParametro === name);
         return x?.valor == null ? null : +x.valor;
       };
       const from = d => (d == null ? null : (d + 180) % 360);
+      const wind = g("VIENTO", "Vv(m/s)");
       return {
         t: parseDate(r.fecha),
-        h: g("Mar total", "Hs(m)"), Tp: g("Mar total", "Tp(s)"), dir: from(g("Mar total", "Dir")),
-        sh: g("Mar de fondo", "Hs(m)"), sDir: from(g("Mar de fondo", "Dir")),
+        h: g("Mar total", "Hs(m)"), Tp: g("Mar total", "Tp(s)"), Tz: g("Mar total", "Tz(s)"), dir: from(g("Mar total", "Dir")),
+        sh: g("Mar de fondo", "Hs(m)"), sT: g("Mar de fondo", "Tz(s)"), sDir: from(g("Mar de fondo", "Dir")),
+        wind: wind == null ? null : wind * KN, windDir: from(g("VIENTO", "Dir")),
       };
     }).filter(r => r.h != null);
   }, { staleMs: 6 * 3600e3 });
+}
+
+export async function buoyForecast(buoyId) {
+  const point = (await wanaPoints()).find(p => p.station === buoyId);
+  return point ? pointForecast(point.id) : null;
+}
+
+// Previsión de PORTUS en el punto de mar abierto más cercano a un spot (a menos de 30 km).
+// Se excluyen las mallas de detalle de los puertos ("A" + número: agitación en el interior;
+// "S" + número: aproximación a puerto), cuyo oleaje no representa una playa abierta.
+export async function spotForecast(spot) {
+  const point = (await wanaPoints())
+    .filter(p => !/^[AS]\d/.test(p.grid ?? ""))
+    .map(p => ({ ...p, distKm: km(spot, p) }))
+    .sort((a, b) => a.distKm - b.distKm)[0];
+  if (!point || point.distKm > 30) return null;
+  return pointForecast(point.id);
 }
 
 // Valor previsto más cercano a un instante (las predicciones son horarias).
@@ -190,7 +209,6 @@ function stations(variable) {
       .map(s => ({ id: s.id, name: cleanName(s.nombre), lat: s.latitud, lon: s.longitud })));
 }
 
-const KN = 1.943844;
 const METEO = {
   WIND: v => (v.vv_md == null ? null : { wind: v.vv_md * KN, windDir: v.dv_md ?? null, gust: v.vv_mx != null ? v.vv_mx * KN : null }),
   AIR_TEMP: v => (v.ta == null ? null : { air: v.ta }),

@@ -18,6 +18,9 @@ export function installFetch(opts = {}) {
     calls.push(url.href);
     const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
+    if (url.host.includes("open-meteo.com") && opts.openMeteo429) {
+      return new Response(JSON.stringify({ error: true, reason: "Daily API request limit exceeded" }), { status: 429 });
+    }
     if (url.host.includes("open-meteo.com")) {
       const lats = url.searchParams.get("latitude").split(",");
       const start = Math.floor(Date.now() / H) * H - 24 * H;
@@ -78,7 +81,14 @@ export function installFetch(opts = {}) {
           { nombreParametro: "Residuo (m)", valor: String(opts.surge ?? 0.12) }, { nombreParametro: "Presión (mb)", valor: "1004" }] })));
       }
       // Punto del modelo de oleaje asociado a la boya de prueba (900) y su predicción horaria.
-      if (url.pathname.endsWith("/puntosMalla/portus/pred/Wana/atl")) return json([{ id: 555, codigoEstacion: 900 }, { id: 556, codigoEstacion: -1 }]);
+      // 555: punto de mar abierto asociado a la boya de prueba; 557: punto dentro de un puerto junto a Somo.
+      if (url.pathname.endsWith("/puntosMalla/portus/pred/Wana/atl")) return json([
+        { id: 555, codigoEstacion: 900, latitud: 43.6, longitud: -3.7, malla: "AIB" },
+        { id: 557, codigoEstacion: -1, latitud: 43.459, longitud: -3.735, malla: "A20" },
+      ]);
+      if (url.pathname.includes("/predData/portus/WAVE/557")) {
+        return json([{ fecha: pDate(Date.now()), datos: [{ nombreParametro: "Hs(m)", variableParametro: "Mar total", valor: "0.1" }] }]);
+      }
       if (url.pathname.endsWith("/puntosMalla/portus/pred/Wana/med")) return json([]);
       if (url.pathname.includes("/predData/portus/WAVE/555")) {
         const start = Math.floor(Date.now() / 3600e3) * 3600e3 - 24 * H;
@@ -87,7 +97,11 @@ export function installFetch(opts = {}) {
           { nombreParametro: "Dir", variableParametro: "Mar total", valor: "135" },
           { nombreParametro: "Tp(s)", variableParametro: "Mar total", valor: "14" },
           { nombreParametro: "Hs(m)", variableParametro: "Mar de fondo", valor: "1.9" },
-          { nombreParametro: "Dir", variableParametro: "Mar de fondo", valor: "130" }] })));
+          { nombreParametro: "Dir", variableParametro: "Mar de fondo", valor: "130" },
+          { nombreParametro: "Tz(s)", variableParametro: "Mar total", valor: "11" },
+          { nombreParametro: "Tz(s)", variableParametro: "Mar de fondo", valor: "12" },
+          { nombreParametro: "Vv(m/s)", variableParametro: "VIENTO", valor: "3" },
+          { nombreParametro: "Dir", variableParametro: "VIENTO", valor: "345" }] })));
       }
       if (url.pathname.endsWith("/estaciones/rt/SEA_LEVEL")) {
         return json([{ id: 3109, nombre: "Mareografo de Santander 2", latitud: 43.4613, longitud: -3.7908, disponible: true }]);

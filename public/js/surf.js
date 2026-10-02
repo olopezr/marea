@@ -179,3 +179,22 @@ export function startOfLocalDay(ms, tz) {
 }
 
 export const fmt = (n, d = 1) => n == null || Number.isNaN(n) ? "–" : n.toFixed(d).replace(".", ",");
+
+// Salida y puesta de sol (ecuación del amanecer, precisión de ~1 min) para el día UTC que contiene `ms`.
+export function sunTimes(ms, lat, lon) {
+  const rad = Math.PI / 180;
+  const jd = Math.floor(ms / 86400e3) + 2440588; // día juliano a mediodía UTC
+  const n = jd - 2451545 + 0.0008;
+  const jStar = n - lon / 360;
+  const M = (357.5291 + 0.98560028 * jStar) % 360;
+  const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const lambda = (M + C + 180 + 102.9372) % 360;
+  const jTransit = 2451545 + jStar + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lambda * rad);
+  const sinDecl = Math.sin(lambda * rad) * Math.sin(23.4397 * rad);
+  const cosDecl = Math.cos(Math.asin(sinDecl));
+  const cosW = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * sinDecl) / (Math.cos(lat * rad) * cosDecl);
+  if (cosW < -1 || cosW > 1) return null;
+  const w = Math.acos(cosW) / rad;
+  const toMs = j => Math.round((j - 2440587.5) * 86400e3);
+  return { rise: toMs(jTransit - w / 360), set: toMs(jTransit + w / 360) };
+}

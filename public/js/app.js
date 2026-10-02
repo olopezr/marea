@@ -55,6 +55,20 @@ const footer = () => `
     <nav class="legal"><a href="/legal/fuentes.html">Fuentes de datos</a><a href="/legal/privacidad.html">Privacidad</a><a href="/legal/aviso-legal.html">Aviso legal</a></nav>
   </footer>`;
 
+// Avisos sobre el estado de los datos: guardados (sin conexión o servidor sin datos) y fuente de respaldo.
+function dataBanners(res) {
+  const out = [];
+  if (res.stale) {
+    out.push(navigator.onLine === false
+      ? `<p class="banner">Sin conexión. Mostrando los datos guardados ${ago(res.ts)}.</p>`
+      : `<p class="banner">No se han podido actualizar los datos ahora mismo. Mostrando los guardados ${ago(res.ts)}.</p>`);
+  }
+  if (res.data.forecastSource === "portus") {
+    out.push(`<p class="banner">Open-Meteo no responde ahora mismo: la previsión es la del modelo de Puertos del Estado, que llega a 3 días.</p>`);
+  }
+  return out.join("");
+}
+
 const skeletonCards = (n = 4) => Array.from({ length: n }, () => `<div class="card skeleton" aria-hidden="true"></div>`).join("");
 const errorBox = msg => `<div class="empty"><p>No se pudieron cargar los datos.</p><p class="muted small">${esc(msg)}. Comprueba la conexión y toca actualizar.</p></div>`;
 
@@ -176,7 +190,7 @@ function drawList() {
 
   const best = rows.reduce((a, b) => (b.s.score > a.s.score ? b : a)).s;
   app.querySelector(".list").innerHTML =
-    (res.stale ? `<p class="banner">Sin conexión. Mostrando los datos guardados ${ago(res.ts)}.</p>` : "") +
+    dataBanners(res) +
     (filter === "all" && !q ? `<p class="lede">Ahora mismo lo mejor está en <a href="#/spot/${best.id}">${esc(best.name)}</a>: ${fmt(best.now.h)} m a ${fmt(best.now.T, 0)} s, ${windPhrase(best.now.windType, best.now.wind)}.</p>` : "") +
     (q && shown.length ? `<p class="lede">${shown.length} ${shown.length === 1 ? "spot" : "spots"} para «${esc(q)}»</p>` : "") +
     (filter === "near" && !position ? `<p class="banner">Permite el acceso a tu ubicación para ordenar los spots por cercanía.</p>` : "") +
@@ -326,7 +340,7 @@ async function renderSpot(id, force = false) {
   const water = s.buoy?.water ?? n.water;
 
   app.querySelector("#detail").innerHTML = `
-    ${res.stale ? `<p class="banner">Sin conexión. Datos guardados ${ago(res.ts)}.</p>` : ""}
+    ${dataBanners(res)}
     <section class="hero r-${r.key}">
       <p class="eyebrow">Previsión ahora · ${hhmm(now, tz)}</p>
       <div class="hero-row">
@@ -341,7 +355,7 @@ async function renderSpot(id, force = false) {
 
     <section class="tiles">
       ${tile("Mar de fondo", `${fmt(n.sh)} m · ${fmt(n.sT, 0)} s`, `${arrow(n.sDir)} ${cardinal(n.sDir)}`)}
-      ${tile("Viento", `${fmt(n.wind, 0)} kn ${arrow(n.windDir)}`, `Rachas ${fmt(n.gust, 0)} kn · ${cardinal(n.windDir)}`)}
+      ${tile("Viento", `${fmt(n.wind, 0)} kn ${arrow(n.windDir)}`, `${n.gust != null ? `Rachas ${fmt(n.gust, 0)} kn · ` : ""}${cardinal(n.windDir)}`)}
       ${tile("Marea", t.h != null ? `${fmt(t.h)} m ${t.rising ? "↗" : "↘"}` : "–", `${t.next ? `${tideWord(t.next)} ${hhmm(t.next.t, tz)}` : ""}${t.coef != null ? ` · Coef. ${t.coef}` : ""}`)}
       ${tile("Agua", `${fmt(water)} °C`, wetsuit(water))}
       ${tile("Primera luz", s.sun ? hhmm(s.sun.rise, tz) : "–", s.sun ? `Puesta ${hhmm(s.sun.set, tz)}` : "")}
@@ -368,7 +382,7 @@ async function renderSpot(id, force = false) {
     </section>
 
     <section class="panel">
-      <h3>7 días</h3>
+      <h3>${s.days.length} días</h3>
       <p class="muted small">Cada celda es una hora de luz, coloreada según la calidad. A la derecha, la ola máxima y la mejor hora.</p>
       <div class="week">${weekRows(s.days, tz, s.tideDay.from)}</div>
       <div class="legend small">${RATINGS.map(x => `<span><i class="q q-${x.key}"></i>${x.label}</span>`).join("")}</div>

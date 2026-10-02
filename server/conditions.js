@@ -4,7 +4,7 @@ import {
   rate, rating, windType, waveParts, tideExtremes, curveFromExtremes, tideAt, tideNorm,
   withCoefficients, coefficientAt, startOfLocalDay, dayKey, dayLabel, km,
 } from "../public/js/surf.js";
-import { forecastAll } from "./sources/openmeteo.js";
+import { forecastAll } from "./forecast.js";
 import * as ihm from "./sources/ihm.js";
 import * as portus from "./sources/portus.js";
 
@@ -59,9 +59,9 @@ async function summaryOf(spot, fc, now, opts) {
 
 export async function overview() {
   const now = Date.now();
-  const fc = await forecastAll(SPOTS);
-  const spots = await Promise.all(SPOTS.map(s => summaryOf(s, fc[s.id], now)));
-  return { updatedAt: now, spots };
+  const { source, spots: fc } = await forecastAll(SPOTS);
+  const spots = await Promise.all(SPOTS.filter(s => fc[s.id]).map(s => summaryOf(s, fc[s.id], now)));
+  return { updatedAt: now, forecastSource: source, spots };
 }
 
 // Agrupa las horas de luz por día local y busca la mejor ventana de cada día.
@@ -149,7 +149,9 @@ async function observed(spot, tide, from, to) {
 
 export async function detail(spot) {
   const now = Date.now();
-  const fc = (await forecastAll(SPOTS))[spot.id];
+  const { source, spots: all } = await forecastAll(SPOTS);
+  const fc = all[spot.id];
+  if (!fc) throw Object.assign(new Error("No hay previsión disponible para este spot ahora mismo"), { status: 503 });
   const [summary, f] = await Promise.all([summaryOf(spot, fc, now, { coef: true }), forecastFor(spot, fc, now, { coef: true })]);
   const todayEnd = f.dayStart + 24 * H;
   const sunToday = fc.sun.find(s => s.rise >= f.dayStart && s.rise < todayEnd) ?? null;
@@ -161,7 +163,7 @@ export async function detail(spot) {
   ]);
   return {
     ...summary,
-    facing: spot.facing, tidePref: spot.tide, updatedAt: now,
+    facing: spot.facing, tidePref: spot.tide, updatedAt: now, forecastSource: source,
     sun: sunToday,
     buoy,
     meteo,

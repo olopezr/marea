@@ -6,7 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import webpush from "web-push";
 import { SPOTS, spotById } from "../public/js/spots.js";
 import { rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
-import { forecastAll } from "./sources/openmeteo.js";
+import { forecastAll } from "./forecast.js";
 import { forecastFor } from "./conditions.js";
 
 import { DATA_DIR } from "./config.js";
@@ -140,12 +140,13 @@ function message(spot, day, isToday) {
 export async function checkAlerts(now = Date.now()) {
   const ids = q.activeSpots.all().map(r => r.spot_id).filter(id => spotById[id]);
   if (!ids.length) return { checked: 0, sent: 0 };
-  const fc = await forecastAll(SPOTS);
+  const fc = (await forecastAll(SPOTS)).spots;
   let sentCount = 0;
   for (const id of ids) {
     const spot = spotById[id];
     const local = hourOf(now, spot.tz);
     if (local < 7 || local >= 22) continue; // nada de avisos de madrugada
+    if (!fc[id]) continue;
     const { days } = await forecastFor(spot, fc[id], now);
     // Hoy (si la mejor hora aún no ha pasado) y mañana.
     const candidates = days.slice(0, 2).map((d, i) => ({ d, isToday: i === 0 })).filter(({ d }) => d.best.t > now);
