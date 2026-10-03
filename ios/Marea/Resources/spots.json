@@ -1,0 +1,832 @@
+[
+ {
+  "id": "patos",
+  "name": "Patos",
+  "region": "Pontevedra",
+  "lat": 42.155,
+  "lon": -8.823,
+  "facing": 270,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "lanzada",
+  "name": "A Lanzada",
+  "region": "Pontevedra",
+  "lat": 42.452,
+  "lon": -8.875,
+  "facing": 260,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "montalvo",
+  "name": "Montalvo",
+  "region": "Pontevedra",
+  "lat": 42.389,
+  "lon": -8.876,
+  "facing": 200,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "barra",
+  "name": "Barra",
+  "region": "Pontevedra",
+  "lat": 42.271,
+  "lon": -8.868,
+  "facing": 260,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "razo",
+  "name": "Razo",
+  "region": "A Coruña",
+  "lat": 43.293,
+  "lon": -8.7,
+  "facing": 315,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "doninos",
+  "name": "Doniños",
+  "region": "A Coruña",
+  "lat": 43.495,
+  "lon": -8.317,
+  "facing": 280,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "pantin",
+  "name": "Pantín",
+  "region": "A Coruña",
+  "lat": 43.637,
+  "lon": -8.112,
+  "facing": 315,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "frouxeira",
+  "name": "A Frouxeira",
+  "region": "A Coruña",
+  "lat": 43.61,
+  "lon": -8.155,
+  "facing": 315,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "orzan",
+  "name": "Orzán",
+  "region": "A Coruña",
+  "lat": 43.372,
+  "lon": -8.405,
+  "facing": 300,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "bastiagueiro",
+  "name": "Bastiagueiro",
+  "region": "A Coruña",
+  "lat": 43.343,
+  "lon": -8.354,
+  "facing": 330,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "caion",
+  "name": "Caión",
+  "region": "A Coruña",
+  "lat": 43.316,
+  "lon": -8.608,
+  "facing": 340,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "nemina",
+  "name": "Nemiña",
+  "region": "A Coruña",
+  "lat": 43.026,
+  "lon": -9.281,
+  "facing": 270,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "carnota",
+  "name": "Carnota",
+  "region": "A Coruña",
+  "lat": 42.825,
+  "lon": -9.1,
+  "facing": 260,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "sanxurxo",
+  "name": "San Xurxo",
+  "region": "A Coruña",
+  "lat": 43.534,
+  "lon": -8.293,
+  "facing": 290,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "ponzos",
+  "name": "Ponzos",
+  "region": "A Coruña",
+  "lat": 43.558,
+  "lon": -8.257,
+  "facing": 300,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "tapia",
+  "name": "Tapia",
+  "region": "Asturias",
+  "lat": 43.571,
+  "lon": -6.947,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "xago",
+  "name": "Xagó",
+  "region": "Asturias",
+  "lat": 43.607,
+  "lon": -5.912,
+  "facing": 320,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "salinas",
+  "name": "Salinas",
+  "region": "Asturias",
+  "lat": 43.578,
+  "lon": -5.958,
+  "facing": 340,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "rodiles",
+  "name": "Rodiles",
+  "region": "Asturias",
+  "lat": 43.53,
+  "lon": -5.374,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "penarronda",
+  "name": "Peñarronda",
+  "region": "Asturias",
+  "lat": 43.556,
+  "lon": -7.002,
+  "facing": 350,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "frejulfe",
+  "name": "Frejulfe",
+  "region": "Asturias",
+  "lat": 43.56,
+  "lon": -6.76,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "otur",
+  "name": "Otur",
+  "region": "Asturias",
+  "lat": 43.556,
+  "lon": -6.548,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "quebrantos",
+  "name": "Los Quebrantos",
+  "region": "Asturias",
+  "lat": 43.565,
+  "lon": -6.075,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "verdicio",
+  "name": "Verdicio",
+  "region": "Asturias",
+  "lat": 43.627,
+  "lon": -5.871,
+  "facing": 330,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "sanlorenzo",
+  "name": "San Lorenzo",
+  "region": "Asturias",
+  "lat": 43.543,
+  "lon": -5.655,
+  "facing": 20,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "espana",
+  "name": "Playa de España",
+  "region": "Asturias",
+  "lat": 43.551,
+  "lon": -5.423,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "vega",
+  "name": "Vega",
+  "region": "Asturias",
+  "lat": 43.481,
+  "lon": -5.137,
+  "facing": 10,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "santamarina",
+  "name": "Santa Marina",
+  "region": "Asturias",
+  "lat": 43.465,
+  "lon": -5.072,
+  "facing": 30,
+  "tide": "low",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "sanantolin",
+  "name": "San Antolín",
+  "region": "Asturias",
+  "lat": 43.433,
+  "lon": -4.871,
+  "facing": 20,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "locos",
+  "name": "Los Locos",
+  "region": "Cantabria",
+  "lat": 43.434,
+  "lon": -4.042,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "liencres",
+  "name": "Liencres",
+  "region": "Cantabria",
+  "lat": 43.459,
+  "lon": -3.96,
+  "facing": 330,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "somo",
+  "name": "Somo",
+  "region": "Cantabria",
+  "lat": 43.459,
+  "lon": -3.735,
+  "facing": 345,
+  "tide": "low",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "berria",
+  "name": "Berria",
+  "region": "Cantabria",
+  "lat": 43.468,
+  "lon": -3.473,
+  "facing": 350,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "meron",
+  "name": "Merón",
+  "region": "Cantabria",
+  "lat": 43.393,
+  "lon": -4.39,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "oyambre",
+  "name": "Oyambre",
+  "region": "Cantabria",
+  "lat": 43.396,
+  "lon": -4.338,
+  "facing": 30,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "sardinero",
+  "name": "El Sardinero",
+  "region": "Cantabria",
+  "lat": 43.476,
+  "lon": -3.786,
+  "facing": 60,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "langre",
+  "name": "Langre",
+  "region": "Cantabria",
+  "lat": 43.478,
+  "lon": -3.692,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "trengandin",
+  "name": "Trengandín",
+  "region": "Cantabria",
+  "lat": 43.489,
+  "lon": -3.519,
+  "facing": 20,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "orinon",
+  "name": "Oriñón",
+  "region": "Cantabria",
+  "lat": 43.402,
+  "lon": -3.315,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "sopelana",
+  "name": "Sopelana",
+  "region": "Bizkaia",
+  "lat": 43.388,
+  "lon": -2.996,
+  "facing": 315,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "bakio",
+  "name": "Bakio",
+  "region": "Bizkaia",
+  "lat": 43.43,
+  "lon": -2.81,
+  "facing": 340,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "mundaka",
+  "name": "Mundaka",
+  "region": "Bizkaia",
+  "lat": 43.408,
+  "lon": -2.698,
+  "facing": 330,
+  "tide": "low",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "laarena",
+  "name": "La Arena",
+  "region": "Bizkaia",
+  "lat": 43.355,
+  "lon": -3.115,
+  "facing": 320,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "azkorri",
+  "name": "Azkorri",
+  "region": "Bizkaia",
+  "lat": 43.381,
+  "lon": -3.009,
+  "facing": 315,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "menakoz",
+  "name": "Meñakoz",
+  "region": "Bizkaia",
+  "lat": 43.405,
+  "lon": -2.972,
+  "facing": 330,
+  "tide": "low",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "laga",
+  "name": "Laga",
+  "region": "Bizkaia",
+  "lat": 43.413,
+  "lon": -2.651,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "lekeitio",
+  "name": "Karraspio (Lekeitio)",
+  "region": "Bizkaia",
+  "lat": 43.364,
+  "lon": -2.495,
+  "facing": 25,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "zarautz",
+  "name": "Zarautz",
+  "region": "Gipuzkoa",
+  "lat": 43.286,
+  "lon": -2.17,
+  "facing": 0,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "zurriola",
+  "name": "La Zurriola",
+  "region": "Gipuzkoa",
+  "lat": 43.326,
+  "lon": -1.973,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "deba",
+  "name": "Deba",
+  "region": "Gipuzkoa",
+  "lat": 43.297,
+  "lon": -2.355,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "zumaia",
+  "name": "Itzurun (Zumaia)",
+  "region": "Gipuzkoa",
+  "lat": 43.3,
+  "lon": -2.262,
+  "facing": 340,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "orio",
+  "name": "Antilla (Orio)",
+  "region": "Gipuzkoa",
+  "lat": 43.283,
+  "lon": -2.13,
+  "facing": 35,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "matalascanas",
+  "name": "Matalascañas",
+  "region": "Huelva",
+  "lat": 37.003,
+  "lon": -6.555,
+  "facing": 220,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "conil",
+  "name": "Fuente del Gallo",
+  "region": "Cádiz",
+  "lat": 36.282,
+  "lon": -6.105,
+  "facing": 250,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "palmar",
+  "name": "El Palmar",
+  "region": "Cádiz",
+  "lat": 36.24,
+  "lon": -6.072,
+  "facing": 225,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "canos",
+  "name": "Los Caños de Meca",
+  "region": "Cádiz",
+  "lat": 36.187,
+  "lon": -6.019,
+  "facing": 220,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "costaballena",
+  "name": "Costa Ballena",
+  "region": "Cádiz",
+  "lat": 36.703,
+  "lon": -6.427,
+  "facing": 260,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "santamariamar",
+  "name": "Santa María del Mar",
+  "region": "Cádiz",
+  "lat": 36.521,
+  "lon": -6.285,
+  "facing": 250,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "barrosa",
+  "name": "La Barrosa",
+  "region": "Cádiz",
+  "lat": 36.373,
+  "lon": -6.183,
+  "facing": 250,
+  "tide": "mid",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "lances",
+  "name": "Los Lances (Tarifa)",
+  "region": "Cádiz",
+  "lat": 36.03,
+  "lon": -5.63,
+  "facing": 225,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "saler",
+  "name": "El Saler",
+  "region": "Valencia",
+  "lat": 39.36,
+  "lon": -0.312,
+  "facing": 90,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "cullera",
+  "name": "Cullera",
+  "region": "Valencia",
+  "lat": 39.183,
+  "lon": -0.227,
+  "facing": 100,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "barceloneta",
+  "name": "Barceloneta",
+  "region": "Barcelona",
+  "lat": 41.379,
+  "lon": 2.193,
+  "facing": 130,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "castelldefels",
+  "name": "Castelldefels",
+  "region": "Barcelona",
+  "lat": 41.264,
+  "lon": 1.975,
+  "facing": 170,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "pals",
+  "name": "Pals",
+  "region": "Girona",
+  "lat": 41.98,
+  "lon": 3.203,
+  "facing": 90,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "mesquida",
+  "name": "Cala Mesquida",
+  "region": "Mallorca",
+  "lat": 39.749,
+  "lon": 3.432,
+  "facing": 30,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "sonbou",
+  "name": "Son Bou",
+  "region": "Menorca",
+  "lat": 39.897,
+  "lon": 4.073,
+  "facing": 190,
+  "tide": "all",
+  "tz": "Europe/Madrid"
+ },
+ {
+  "id": "famara",
+  "name": "Famara",
+  "region": "Lanzarote",
+  "lat": 29.118,
+  "lon": -13.56,
+  "facing": 315,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "quemao",
+  "name": "El Quemao",
+  "region": "Lanzarote",
+  "lat": 29.115,
+  "lon": -13.651,
+  "facing": 350,
+  "tide": "high",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "caballo",
+  "name": "Caleta de Caballo",
+  "region": "Lanzarote",
+  "lat": 29.113,
+  "lon": -13.632,
+  "facing": 340,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "majanicho",
+  "name": "Majanicho",
+  "region": "Fuerteventura",
+  "lat": 28.743,
+  "lon": -13.938,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "rockypoint",
+  "name": "Rocky Point (Corralejo)",
+  "region": "Fuerteventura",
+  "lat": 28.75,
+  "lon": -13.88,
+  "facing": 20,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "cotillo",
+  "name": "El Cotillo",
+  "region": "Fuerteventura",
+  "lat": 28.684,
+  "lon": -14.012,
+  "facing": 280,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "lapared",
+  "name": "La Pared",
+  "region": "Fuerteventura",
+  "lat": 28.214,
+  "lon": -14.226,
+  "facing": 300,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "confital",
+  "name": "El Confital",
+  "region": "Gran Canaria",
+  "lat": 28.158,
+  "lon": -15.44,
+  "facing": 330,
+  "tide": "high",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "cicer",
+  "name": "La Cícer",
+  "region": "Gran Canaria",
+  "lat": 28.128,
+  "lon": -15.448,
+  "facing": 290,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "bocabarranco",
+  "name": "Bocabarranco",
+  "region": "Gran Canaria",
+  "lat": 28.155,
+  "lon": -15.66,
+  "facing": 340,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "sanfelipe",
+  "name": "San Felipe",
+  "region": "Gran Canaria",
+  "lat": 28.144,
+  "lon": -15.574,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "americas",
+  "name": "Las Américas",
+  "region": "Tenerife",
+  "lat": 28.06,
+  "lon": -16.735,
+  "facing": 225,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "socorro",
+  "name": "El Socorro",
+  "region": "Tenerife",
+  "lat": 28.403,
+  "lon": -16.594,
+  "facing": 330,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "martianez",
+  "name": "Martiánez",
+  "region": "Tenerife",
+  "lat": 28.418,
+  "lon": -16.545,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "almaciga",
+  "name": "Almáciga",
+  "region": "Tenerife",
+  "lat": 28.571,
+  "lon": -16.208,
+  "facing": 0,
+  "tide": "mid",
+  "tz": "Atlantic/Canary"
+ },
+ {
+  "id": "medano",
+  "name": "El Médano",
+  "region": "Tenerife",
+  "lat": 28.044,
+  "lon": -16.536,
+  "facing": 130,
+  "tide": "all",
+  "tz": "Atlantic/Canary"
+ }
+]

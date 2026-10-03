@@ -1,7 +1,7 @@
 import { SPOTS, spotById } from "./spots.js";
 import { getOverview, getSpot, getBuoy } from "./api.js";
 import * as alerts from "./alerts.js";
-import { rating, RATINGS, cardinal, hhmm, km, fmt } from "./surf.js";
+import { rating, RATINGS, cardinal, hhmm, hourOf, km, fmt } from "./surf.js";
 import { tideChartHTML, bindTideChart } from "./tidechart.js";
 
 const app = document.getElementById("app");
@@ -47,6 +47,21 @@ const ago = ts => {
 
 const windPhrase = (wt, kn) => wt.key === "calm" ? "sin apenas viento" : `viento ${wt.label.toLowerCase()} de ${fmt(kn, 0)} kn`;
 const tideWord = t => (t.type === "high" ? "Pleamar" : "Bajamar");
+// Cuándo llega la próxima marea favorable para el spot. Lo que cae después de hoy se indica como "mañana".
+function idealTideText(pref, ext, now, dayEnd, tz) {
+  if (pref === "all") return "Funciona con cualquier marea";
+  const tomorrow = t => (t >= dayEnd ? "mañana " : "");
+  if (pref === "mid") {
+    const t = ext.slice(1).map((e, i) => (ext[i].t + e.t) / 2).find(x => x > now);
+    return t ? `Próxima media marea ${tomorrow(t)}hacia las ${hhmm(t, tz)}` : "Sin datos de marea suficientes";
+  }
+  const e = ext.find(x => x.type === pref && x.t > now);
+  return e ? `Próxima ${pref === "low" ? "bajamar" : "pleamar"} ${tomorrow(e.t)}a las ${hhmm(e.t, tz)}` : "Sin datos de marea suficientes";
+}
+
+// Índice UV en la escala de la OMS.
+const uvLabel = uv => { const i = Math.round(uv); return i < 3 ? "Bajo" : i < 6 ? "Moderado" : i < 8 ? "Alto" : i < 11 ? "Muy alto" : "Extremo"; };
+const uvAdvice = uv => { const i = Math.round(uv); return i < 3 ? "sin protección especial" : i < 8 ? "crema solar y gorra" : "evita el sol de mediodía"; };
 const wetsuit = c => c == null ? "" : c < 15 ? "Neopreno 5/4 y escarpines" : c < 17 ? "Neopreno 4/3" : c < 20 ? "Neopreno 3/2" : "Neopreno corto";
 
 const footer = () => `
@@ -269,13 +284,40 @@ function hourCell(h, tz) {
   </div>`;
 }
 
+// Todas las filas comparten las mismas columnas horarias (la misma hora queda en la misma columna cada día),
+// con las horas encima y cabeceras para la ola máxima y la mejor hora. Las horas ya pasadas de hoy, atenuadas.
 function weekRows(days, tz, todayFrom) {
-  return days.map((d, i) => `<div class="day">
-      <span class="dname">${i === 0 && d.rise < todayFrom + 86400e3 ? "Hoy" : esc(d.label)}</span>
-      <span class="cells">${d.cells.map(c => `<i class="q q-${rating(c.score).key}" title="${hhmm(c.t, tz)} · ${rating(c.score).label}"></i>`).join("")}</span>
+  const hours = days.flatMap(d => d.cells.map(c => hourOf(c.t, tz)));
+  const cols = hours.length ? Array.from({ length: Math.max(...hours) - Math.min(...hours) + 1 }, (_, i) => Math.min(...hours) + i) : [];
+  const now = Date.now();
+  const head = `<div class="day week-head" aria-hidden="true"><span></span>
+      <span class="cells">${cols.map(h => `<span>${(h - cols[0]) % 2 === 0 ? `${String(h).padStart(2, "0")}h` : ""}</span>`).join("")}</span>
+      <span>Ola máx.</span><span>Mejor</span></div>`;
+  return head + days.map((d, i) => {
+    const today = i === 0 && d.rise < todayFrom + 86400e3;
+    return `<div class="day">
+      <span class="dname">${today ? "Hoy" : esc(d.label)}</span>
+      <span class="cells">${cols.map(h => {
+        const c = d.cells.find(x => hourOf(x.t, tz) === h);
+        return c ? `<i class="q q-${rating(c.score).key}${today && c.t + 3600e3 <= now ? " past" : ""}" title="${hhmm(c.t, tz)} · ${rating(c.score).label}"></i>` : `<i class="q-none"></i>`;
+      }).join("")}</span>
       <span class="small"><b>${fmt(d.maxH)} m</b></span>
       <span class="small muted">${d.best.score >= 1 ? hhmm(d.best.t, tz).slice(0, 2) + "h" : "–"}</span>
-    </div>`).join("");
+    </div>`;
+  }).join("");
+}
+
+// Dónde está la playa: mapa de OpenStreetMap y coordenadas.
+const coords = (lat, lon) => `${fmt(Math.abs(lat), 4)}° ${lat >= 0 ? "N" : "S"} · ${fmt(Math.abs(lon), 4)}° ${lon >= 0 ? "E" : "O"}`;
+function locationPanel(s) {
+  const d = 0.02, bbox = [s.lon - d * 1.4, s.lat - d, s.lon + d * 1.4, s.lat + d].map(x => x.toFixed(4)).join(",");
+  const link = `https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lon}#map=15/${s.lat}/${s.lon}`;
+  return `<section class="panel location">
+    <h3>Ubicación</h3>
+    <iframe class="map" title="Mapa de ${esc(s.name)}" loading="lazy" referrerpolicy="no-referrer"
+      src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik&amp;marker=${s.lat},${s.lon}"></iframe>
+    <div class="location-row"><span class="coords">${coords(s.lat, s.lon)}</span><a href="${link}" target="_blank" rel="noopener">Abrir en el mapa</a></div>
+  </section>`;
 }
 
 // Medido frente a lo previsto por el modelo de Puertos del Estado en la misma posición de la boya.
@@ -318,7 +360,7 @@ function buoyPanel(b, s) {
 function alertButton(id) {
   if (!alerts.supported()) return "";
   const on = alerts.getState().spots.includes(id);
-  return `<button class="alert-btn ${on ? "on" : ""}" data-alert="${id}" aria-pressed="${on}">${icon.bell(on)}<span>${on ? "Avisos activados" : "Avisarme cuando esté disponible"}</span></button>`;
+  return `<button class="alert-btn ${on ? "on" : ""}" data-alert="${id}" aria-pressed="${on}">${icon.bell(on)}<span>${on ? "Avisos activados" : "Activar avisos"}</span></button>`;
 }
 
 async function renderSpot(id, force = false) {
@@ -357,16 +399,19 @@ async function renderSpot(id, force = false) {
       ${tile("Mar de fondo", `${fmt(n.sh)} m · ${fmt(n.sT, 0)} s`, `${arrow(n.sDir)} ${cardinal(n.sDir)}`)}
       ${tile("Viento", `${fmt(n.wind, 0)} kn ${arrow(n.windDir)}`, `${n.gust != null ? `Rachas ${fmt(n.gust, 0)} kn · ` : ""}${cardinal(n.windDir)}`)}
       ${tile("Marea", t.h != null ? `${fmt(t.h)} m ${t.rising ? "↗" : "↘"}` : "–", `${t.next ? `${tideWord(t.next)} ${hhmm(t.next.t, tz)}` : ""}${t.coef != null ? ` · Coef. ${t.coef}` : ""}`)}
+      ${tile("Marea ideal", ({ low: "Baja", mid: "Media", high: "Alta", all: "Cualquiera" })[s.tidePref], idealTideText(s.tidePref, s.tideDay.ext, now, s.tideDay.to, tz))}
       ${tile("Agua", `${fmt(water)} °C`, wetsuit(water))}
+      ${tile("Aire", `${fmt(s.meteo?.air?.air ?? n.air, 0)} °C`, s.meteo?.air ? "Medida en una estación cercana" : "Previsión")}
+      ${tile("Índice UV", s.uv?.now != null ? `${Math.round(s.uv.now)} · ${uvLabel(s.uv.now)}` : "–",
+        s.uv ? `Máx. ${Math.round(s.uv.max)} a las ${hhmm(s.uv.maxT, tz).slice(0, 2)}h · ${uvAdvice(s.uv.max)}` : "Sin previsión ahora mismo")}
       ${tile("Primera luz", s.sun ? hhmm(s.sun.rise, tz) : "–", s.sun ? `Puesta ${hhmm(s.sun.set, tz)}` : "")}
-      ${tile("Aire", `${fmt(s.meteo?.air?.air ?? n.air, 0)} °C`, `Mejor con marea ${({ low: "baja", mid: "media", high: "alta", all: "cualquiera" })[s.tidePref]}`)}
     </section>
 
     <section class="panel tide-panel">
       <div class="panel-head"><h3>Marea de hoy</h3><span class="muted small hint">Desliza sobre la curva</span></div>
       ${tideChartHTML(s.tideDay, s.sun, tz)}
-      <p class="muted small">${t.source === "ihm"
-        ? `Predicción oficial del Instituto Hidrográfico de la Marina para ${esc(t.port.name)} (a ${t.port.distKm} km), alturas sobre el cero hidrográfico del puerto.${s.tideDay.surge ? ` Efecto de la meteorología: previsión de Puertos del Estado para ${esc(s.tideDay.surge.beach)}.` : ""}${s.tideDay.observed ? ` Nivel medido por el mareógrafo de ${esc(s.tideDay.observed.gauge)}${s.tideDay.observed.samePort ? "" : `, en un puerto vecino a ${s.tideDay.observed.distKm} km (la marea es prácticamente la misma)`}.` : ""} El coeficiente es una estimación a partir de la carrera de cada marea.`
+      <p class="muted small">${t.reason === "no-port" ? "El Instituto Hidrográfico de la Marina no publica mareas de esta zona (en el Mediterráneo la marea es de pocos centímetros). Es una estimación del modelo de Open-Meteo." : t.source === "ihm"
+        ? `Predicción oficial del Instituto Hidrográfico de la Marina para ${esc(t.port.name)} (a ${t.port.distKm} km), alturas sobre el cero hidrográfico del puerto.${s.tideDay.surge ? ` Efecto del viento y la presión en el nivel del mar: previsión de Puertos del Estado para ${esc(s.tideDay.surge.beach)}.` : ""}${s.tideDay.observed ? ` Nivel medido por el mareógrafo de ${esc(s.tideDay.observed.gauge)}${s.tideDay.observed.samePort ? "" : `, en un puerto vecino a ${s.tideDay.observed.distKm} km (la marea es prácticamente la misma)`}.` : ""} El coeficiente es una estimación a partir de la carrera de cada marea.`
         : "Estimación del modelo de Open-Meteo: el servicio oficial de mareas no responde ahora mismo y puede desviarse."}</p>
     </section>
 
@@ -383,10 +428,12 @@ async function renderSpot(id, force = false) {
 
     <section class="panel">
       <h3>${s.days.length} días</h3>
-      <p class="muted small">Cada celda es una hora de luz, coloreada según la calidad. A la derecha, la ola máxima y la mejor hora.</p>
+      <p class="muted small">Cada bloque es una hora de luz, coloreado según la calidad. Las horas que ya han pasado hoy aparecen atenuadas. A la derecha, la ola máxima del día y su mejor hora.</p>
       <div class="week">${weekRows(s.days, tz, s.tideDay.from)}</div>
       <div class="legend small">${RATINGS.map(x => `<span><i class="q q-${x.key}"></i>${x.label}</span>`).join("")}</div>
     </section>
+
+    ${locationPanel(s)}
 
     <p class="muted small updated-line">Actualizado ${ago(s.updatedAt)}.</p>
     ${footer()}`;
@@ -451,7 +498,7 @@ async function renderAlerts() {
     <section class="panel">
       <h3>Spots</h3>
       <ul class="switch-list">
-        ${SPOTS.map(sp => `<li><label for="al-${sp.id}"><span>${esc(sp.name)}<span class="muted small"> · ${esc(sp.region)}</span></span>
+        ${SPOTS.map((sp, i) => `${i === 0 || SPOTS[i - 1].region !== sp.region ? `<li class="switch-head eyebrow">${esc(sp.region)}</li>` : ""}<li><label for="al-${sp.id}"><span>${esc(sp.name)}</span>
           <input type="checkbox" role="switch" id="al-${sp.id}" data-spot="${sp.id}" ${st.spots.includes(sp.id) ? "checked" : ""}></label></li>`).join("")}
       </ul>
     </section>
@@ -492,7 +539,7 @@ app.addEventListener("click", async e => {
     try {
       const st = await alerts.toggleSpot(al.dataset.alert);
       const on = st.spots.includes(al.dataset.alert);
-      toast(on ? "Te avisaremos cuando esté disponible" : "Avisos desactivados para este spot");
+      toast(on ? "Te avisaremos cuando tus spots estén en buenas condiciones" : "Avisos desactivados para este spot");
     } catch (err) { toast(err.message); }
     al.outerHTML = alertButton(al.dataset.alert);
   }

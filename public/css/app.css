@@ -118,7 +118,10 @@ main .foot { padding-inline: 0; }
 .hero { background: var(--ink); color: var(--bg); border-radius: 22px; padding: 18px 18px 16px; display: grid; gap: 10px; }
 .hero .eyebrow { color: color-mix(in srgb, var(--bg) 65%, var(--ink)); }
 .hero-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
-.hero-label { font: 800 2rem/1 var(--display); font-stretch: 110%; color: color-mix(in srgb, var(--q) 72%, var(--bg)); margin-bottom: 8px; letter-spacing: -.02em; }
+.hero-row > div { min-width: 0; }
+/* Mismo tamaño para todas las valoraciones: 26 px es lo que cabe con "Muy bueno", la más larga, en un móvil
+   de 375 px. Solo se reduce en pantallas más estrechas. */
+.hero-label { white-space: nowrap; font: 800 min(1.625rem, 7vw)/1 var(--display); font-stretch: 110%; color: color-mix(in srgb, var(--q) 72%, var(--bg)); margin-bottom: 8px; letter-spacing: -.02em; }
 .hero .score i { background: linear-gradient(90deg, var(--q) calc(var(--f) * 100%), color-mix(in srgb, var(--bg) 22%, var(--ink)) 0); }
 .hero-wave { display: flex; align-items: baseline; gap: 4px; }
 .hero-wave b { font: 800 3.6rem/.9 var(--display); font-stretch: 112%; letter-spacing: -.04em; }
@@ -126,7 +129,7 @@ main .foot { padding-inline: 0; }
 .hero-line { font-size: .92rem; color: color-mix(in srgb, var(--bg) 80%, var(--ink)); }
 
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.tile { background: var(--surface); border-radius: 16px; padding: 12px 14px; display: grid; gap: 5px; min-width: 0; }
+.tile { background: var(--surface); border-radius: 16px; padding: 12px 14px; display: grid; gap: 5px; min-width: 0; align-content: start; }
 .tile strong { font: 650 1.12rem var(--mono); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 4px; }
 .tile .small { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
@@ -179,6 +182,11 @@ main .foot { padding-inline: 0; }
 .cells { display: flex; gap: 2px; min-width: 0; }
 .cells .q { flex: 1; height: 20px; border-radius: 3px; }
 .day > .small:last-child { text-align: right; }
+.cells .q-none { flex: 1; }
+.cells .q.past { opacity: .35; }
+.week-head { font-size: .7rem; color: var(--muted); }
+.week-head .cells span { flex: 1; text-align: center; white-space: nowrap; font: 500 .62rem var(--mono); overflow: visible; }
+.week-head > span:last-child { text-align: right; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -206,13 +214,18 @@ main .foot { padding-inline: 0; }
 .alert-btn.on { border-color: var(--accent); color: var(--accent); }
 .alert-btn:disabled { opacity: .6; }
 
-.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend .q { width: 12px; height: 12px; }
+/* En una sola línea repartida a lo ancho. */
+.legend { display: flex; justify-content: space-between; gap: 6px; color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend .q { width: 10px; height: 10px; }
 
 .seg-inline { margin: 0; }
 .switch-list { list-style: none; margin: 0; padding: 0; }
 .switch-list li + li { border-top: 1px solid var(--line); }
+/* Título de cada zona en la lista de avisos. */
+.switch-list .switch-head { padding: 18px 0 6px; }
+.switch-list .switch-head:first-child { padding-top: 4px; }
+.switch-list .switch-head, .switch-list .switch-head + li { border-top: 0; }
 .switch-list label { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 0; cursor: pointer; }
 input[role="switch"] {
   appearance: none; -webkit-appearance: none; flex: none; width: 44px; height: 26px; border-radius: 999px;
@@ -268,7 +281,8 @@ input[role="switch"]:checked::after { transform: translateX(18px); }
 .ro-time { font: 700 1.25rem var(--mono); }
 .ro-time em { font: 600 .65rem var(--mono); font-style: normal; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); vertical-align: 3px; }
 .ro-height b, .ro-coef b { font-family: var(--mono); font-size: 1.05rem; }
-.ro-sub { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: .8rem; }
+/* Una línea por dato: el recuadro no cambia de alto al deslizar. */
+.ro-sub { display: grid; gap: 2px; font-size: .8rem; }
 .tide-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
 .tide-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .tide-legend b { color: var(--ink); font-family: var(--mono); }
@@ -302,3 +316,9 @@ input[role="switch"]:checked::after { transform: translateX(18px); }
 /* Boya que no es la más cercana al spot: punto rojo fijo. */
 .dot-live.off { background: var(--red); box-shadow: none; animation: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Ubicación de la playa ---------- */
+.location .map { width: 100%; height: 200px; border: 0; border-radius: 12px; display: block; background: var(--surface-2); }
+.location-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.location .coords { font: 600 .82rem var(--mono); user-select: all; }
+.location a { color: var(--accent); font-weight: 600; font-size: .88rem; padding: 12px 0; }

@@ -66,7 +66,7 @@ test("detail añade coeficientes, efecto meteorológico, nivel medido y meteo de
   const highs = d.tideDay.ext.filter(e => e.type === "high");
   assert.ok(highs.length && highs.every(e => e.coef >= 20 && e.coef <= 120));
   assert.ok(d.tide.coef >= 20);
-  assert.equal(d.tideDay.surge.beach, "Somo (Ribamontan al Mar");
+  assert.equal(d.tideDay.surge.beach, "Somo (Ribamontán al Mar)", "cierra el paréntesis que falta en PORTUS");
   assert.ok(d.tideDay.surge.points.every(([, r]) => r === 0.12));
   assert.equal(d.tideDay.observed.gauge, "Santander 2");
   assert.equal(d.tideDay.observed.samePort, true);
@@ -74,7 +74,10 @@ test("detail añade coeficientes, efecto meteorológico, nivel medido y meteo de
   const [t, v] = d.tideDay.observed.points.at(-1);
   const pred = d.tideDay.points.reduce((a, b) => (Math.abs(b[0] - t) < Math.abs(a[0] - t) ? b : a))[1];
   assert.ok(Math.abs(v - pred) < 0.15, `medido ${v} frente a previsto ${pred}`);
-  assert.ok(d.tideDay.observed.points.length > 100, "serie del mareógrafo cada 5 min");
+  // Cada 5 min desde una hora antes de empezar el día (no un número fijo: a medianoche hay pocas lecturas).
+  const obs = d.tideDay.observed.points;
+  assert.ok(obs.length >= 12, "al menos una hora de lecturas");
+  assert.ok(obs.slice(1).every(([t], i) => Math.abs(t - obs[i][0] - 5 * 60e3) < 1000), "serie del mareógrafo cada 5 min");
   assert.ok(Math.abs(d.meteo.wind.wind - 9.7) < 0.1, "5 m/s son 9,7 nudos");
   assert.ok(Math.abs(d.meteo.wind.gust - 15.6) < 0.1);
   assert.equal(d.meteo.air.air, 18.5, "se salta la estación más cercana que marca 0 °C");
@@ -92,4 +95,60 @@ test("las mareas del IHM se guardan en disco para no volver a pedirlas", async (
 test("cada boya trae lo previsto por el modelo en su posición", async () => {
   const somo = await detail(spotById.somo);
   assert.deepEqual(somo.buoy.predicted, { h: 2, Tp: 14, dir: 315 }, "la dirección se convierte a 'de dónde viene' (135 + 180)");
+});
+
+test("el detalle incluye el índice UV de hoy (ahora y máximo con su hora)", async () => {
+  const { uvToday } = await import("../server/conditions.js");
+  const H = 3600e3, from = Date.UTC(2026, 9, 3);
+  const hours = Array.from({ length: 24 }, (_, i) => ({ t: from + i * H, uv: Math.max(0, 6 - Math.abs(i - 13)) }));
+  assert.deepEqual(uvToday(hours, from + 10.5 * H, from, from + 24 * H), { now: 3, max: 6, maxT: from + 13 * H });
+  assert.equal(uvToday(hours.map(h => ({ ...h, uv: null })), from, from, from + 24 * H), null, "sin datos (previsión de respaldo)");
+  const d = await detail(spotById.somo);
+  assert.equal(d.uv.max, 6, "llega desde Open-Meteo hasta el detalle");
+});
+
+test("un spot del Mediterráneo no usa un puerto del IHM lejano: marea del modelo con motivo", async () => {
+  const d = await detail(spotById.barceloneta);
+  assert.equal(d.tide.source, "model");
+  assert.equal(d.tide.reason, "no-port");
+  assert.equal(d.tide.port, null);
+});
+
+test("reconcile: quita el efecto viento/presión si empeora el ajuste y realinea un cero distinto", async () => {
+  const { reconcile } = await import("../server/conditions.js");
+  const H = 3600e3, t0 = Date.UTC(2026, 9, 3);
+  const times = Array.from({ length: 25 }, (_, i) => t0 + i * H);
+  const tide = { times, levels: times.map((_, i) => 2 + 1.5 * Math.sin(i / 2)) };
+  const pts = (f) => times.map((t, i) => [t, f(i)]);
+  // Lo medido coincide con la predicción salvo un cero 35 cm más bajo; el modelo de viento dice +20 cm.
+  const obs = { gauge: "Prueba", points: pts(i => tide.levels[i] - 0.35) };
+  const badSurge = { beach: "X", points: pts(i => 0.2 * Math.sin(i)) };
+  const r1 = reconcile(tide, badSurge, obs);
+  assert.equal(r1.surge, null, "el efecto viento/presión que no cuadra con lo medido se descarta");
+  assert.ok(Math.abs(r1.observed.points[5][1] - tide.levels[5]) < 0.01, "lo medido se realinea al cero de la predicción");
+  // Si el efecto viento/presión explica lo medido, se mantiene y no se toca el medido.
+  const surge = { beach: "X", points: pts(i => 0.1 + 0.05 * Math.cos(i)) };
+  const obs2 = { gauge: "Prueba", points: pts(i => tide.levels[i] + 0.1 + 0.05 * Math.cos(i)) };
+  const r2 = reconcile(tide, surge, obs2);
+  assert.equal(r2.surge, surge);
+  assert.equal(r2.observed, obs2);
+});
+
+test("el oleaje se pide mar adentro, en la dirección hacia la que mira la playa", async () => {
+  const { offshorePoint } = await import("../server/sources/openmeteo.js");
+  const north = offshorePoint({ lat: 43.4, lon: -3.7, facing: 0 }, 5);
+  assert.ok(north.lat > 43.44 && north.lat < 43.45 && Math.abs(north.lon + 3.7) < 1e-4, "5 km al norte");
+  const west = offshorePoint({ lat: 28.1, lon: -15.4, facing: 270 }, 5);
+  assert.ok(west.lon < -15.44 && Math.abs(west.lat - 28.1) < 1e-3, "5 km al oeste");
+});
+
+test("solo se usan boyas en la ventana de oleaje de la playa", async () => {
+  const { inSwellWindow } = await import("../server/sources/portus.js");
+  const conil = { lat: 36.282, lon: -6.105, facing: 250 };
+  assert.equal(inSwellWindow(conil, { lat: 36.0, lon: -5.6, distKm: 56 }), false, "Tarifa, dentro del Estrecho");
+  assert.equal(inSwellWindow(conil, { lat: 36.49, lon: -6.96, distKm: 80 }), true, "Golfo de Cádiz, mar abierto delante");
+  const confital = { lat: 28.158, lon: -15.44, facing: 330 };
+  assert.equal(inSwellWindow(confital, { lat: 28.05, lon: -15.39, distKm: 13 }), false, "Las Palmas Este, en la otra costa");
+  const salinas = { lat: 43.578, lon: -5.958, facing: 340 };
+  assert.equal(inSwellWindow(salinas, { lat: 43.75, lon: -6.18, distKm: 26 }), true, "Cabo de Peñas, mar abierto");
 });

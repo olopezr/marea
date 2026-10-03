@@ -5,8 +5,9 @@
 // "En tierra" que transmiten. Por eso no se filtra por ellos: una boya se usa si su dato es reciente,
 // plausible y está en su posición nominal. Así, una boya que vuelve a funcionar se usa en cuanto
 // envía datos, aunque PORTUS aún no haya actualizado su estado.
+import fs from "node:fs";
 import { cached, limiter } from "../cache.js";
-import { km } from "../../public/js/surf.js";
+import { km, bearing, angDiff } from "../../public/js/surf.js";
 
 const API = "https://portus.puertos.es/portussvr/api";
 const KN = 1.943844; // m/s → nudos
@@ -20,7 +21,7 @@ export function buoys() {
     const list = await request(`${API}/estaciones/rt/WAVE?locale=es`);
     return list
       .filter(s => s.boya && s.red?.tipoRed !== "PROPAGACION")
-      .map(s => ({ id: s.id, name: s.nombre.replace(/^Boya (Costera )?de /, "").replace(/\s*-\s*/g, "-"), lat: s.latitud, lon: s.longitud, deep: s.red?.tipoRed === "REDEXT" }));
+      .map(s => ({ id: s.id, name: cleanName(s.nombre).replace(/\s*-\s*/g, "-"), lat: s.latitud, lon: s.longitud, deep: s.red?.tipoRed === "REDEXT" }));
   });
 }
 
@@ -38,7 +39,38 @@ const parseDate = s => Date.parse(s.replace(" ", "T").replace(/\.\d+$/, "") + "Z
 // PORTUS falla si recibe muchas peticiones a la vez: como mucho 4 simultáneas y un reintento.
 const request = limiter(4);
 const post = (path, body) => request(`${API}/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-const cleanName = n => n.replace(/^(Boya (Costera )?de |Mare[oó]grafo (de )?|Estaci[oó]n Meteorol[oó]gica (de )?)/i, "").replace(/\s*\([^)]*\)$/, "");
+
+// ---------- Nombres ----------
+// Los nombres de PORTUS van en frases ("viento en Ferrol 1 (12 km)"), pero llegan con prefijos escritos de
+// muchas formas ("Estacion Meteorologica del…", "Estac. Meteo.", "E. Meteorológica"), siglas de la red,
+// espacios sobrantes, tildes que faltan y algún paréntesis sin cerrar.
+const ACCENTS = { Aviles: "Avilés", Gijon: "Gijón", Marin: "Marín", Villagarcia: "Villagarcía", Almeria: "Almería", Malaga: "Málaga", Mahon: "Mahón", Principe: "Príncipe",
+  Nigran: "Nigrán", Castrillon: "Castrillón", Pielagos: "Piélagos", Ribamontan: "Ribamontán", Americas: "Américas", Ibarraguelua: "Ibarranguelua" };
+// Nombres que no dicen dónde están, según el nombre original.
+const PLACES = {
+  "Estacion Meteorologica del Puerto Exterior": "Puerto Exterior de Ferrol",
+  "Estacion Meteorológica del Pto. Deportivo": "puerto deportivo de Avilés",
+};
+
+/** Arregla espacios, tildes conocidas y paréntesis sin cerrar ("Somo (Ribamontan al Mar"). */
+export function fixName(n) {
+  let out = String(n ?? "").replace(/\s+/g, " ").trim().replace(/\b[A-Z][a-z]+\b/g, w => ACCENTS[w] ?? w);
+  const open = (out.match(/\(/g) ?? []).length - (out.match(/\)/g) ?? []).length;
+  if (open > 0) out += ")".repeat(open);
+  return out;
+}
+
+/** Nombre de estación o mareógrafo sin prefijos ni siglas: "Estacion Meteorologica de Bilbao Espigón 2 (APB-5)" → "Bilbao Espigón 2". */
+export function cleanName(raw) {
+  const n = fixName(raw);
+  if (PLACES[n]) return PLACES[n];
+  return fixName(n
+    .replace(/^(Boya (Costera )?|Mare[oó]grafo |Plataforma )/i, "")
+    .replace(/^(Estaci[oó]n|Estac\.|Est\.|E\.)\s*(Meteo\.|Meteor[oó]l[oó]gica)?\s*/i, "")
+    .replace(/^(de|del) /i, "")
+    .replace(/\s*\([^)]*\)$/, "")
+    .replace(/[- ](CETMAR-INTECMAR-MG|SOCIB|UKMOMF|UKMO|MF|MI|IHP)$/, ""));
+}
 
 function reading(buoy) {
   return cached(`portus:read:${buoy.id}`, 15 * 60e3, async () => {
@@ -111,11 +143,27 @@ export async function spotForecast(spot) {
 export const forecastAt = (series, t) =>
   series?.length ? series.reduce((a, b) => (Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a)) : null;
 
+// Una boya sirve para un spot si está en su ventana de oleaje: delante de la playa o a lo largo de su
+// misma costa (hasta 100° respecto a hacia dónde mira). Las que quedan detrás de un cabo o al otro lado
+// de una isla miden otro mar: Tarifa (dentro del Estrecho) no vale para Conil, ni Las Palmas Este (costa
+// este) para El Confital, que mira al norte. A menos de 10 km se acepta siempre.
+// Además, si la línea entre la playa y la boya cruza tierra (calculado con scripts/buoy-sight.mjs y
+// guardado en server/data/buoy-sight.json), la boya está tapada por un cabo o una isla y no se usa.
+// Con ese cálculo el margen de dirección puede ser algo más amplio.
+const SIGHT = (() => {
+  try { return JSON.parse(fs.readFileSync(new URL("../data/buoy-sight.json", import.meta.url), "utf8")).bloqueadas; } catch { return null; }
+})();
+export const inSwellWindow = (spot, b) => {
+  if (spot.facing == null || b.distKm < 10) return true;
+  if (SIGHT?.[spot.id]?.includes(b.id)) return false;
+  return angDiff(bearing(spot, b), spot.facing) <= (SIGHT ? 110 : 100);
+};
+
 // Lectura de la boya operativa más cercana al spot (prueba hasta 3 candidatas a menos de 100 km).
 // Si no hay ninguna, usa la boya de aguas profundas más cercana (hasta 300 km) marcada como lejana:
 // sirve como referencia del mar de fondo que llega a la zona, no del oleaje en la playa.
 export async function nearestReading(spot) {
-  const all = (await buoys()).map(b => ({ ...b, distKm: km(spot, b) })).sort((a, b) => a.distKm - b.distKm);
+  const all = (await buoys()).map(b => ({ ...b, distKm: km(spot, b) })).filter(b => inSwellWindow(spot, b)).sort((a, b) => a.distKm - b.distKm);
   const tryList = async (list, far) => {
     for (const b of list) {
       const r = await reading(b).catch(() => null);
@@ -147,7 +195,7 @@ export async function nearestReading(spot) {
 
 export function beaches() {
   return cached("portus:beaches", 7 * 24 * 3600e3, async () =>
-    (await request(`${API}/ubicaciones/nivmar/Playa`)).map(b => ({ id: b.id, name: b.nombre, lat: b.latitud, lon: b.longitud })));
+    (await request(`${API}/ubicaciones/nivmar/Playa`)).map(b => ({ id: b.id, name: fixName(b.nombre), lat: b.latitud, lon: b.longitud })));
 }
 
 export async function nearestBeach(spot, maxKm = 8) {

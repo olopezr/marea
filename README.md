@@ -1,6 +1,6 @@
 # Marea
 
-App web instalable (PWA) que reúne en un solo sitio el estado del mar para 27 spots de surf de España:
+App web instalable (PWA) que reúne en un solo sitio el estado del mar para 83 spots de surf de España:
 
 - **Previsión** de oleaje, mar de fondo, viento, temperatura y horas de luz (Open-Meteo), por horas a 7 días.
 - **Mareas oficiales** del Instituto Hidrográfico de la Marina, en el puerto de referencia más cercano.
@@ -9,6 +9,7 @@ App web instalable (PWA) que reúne en un solo sitio el estado del mar para 27 s
 - **Valoración** de 0 a 5 por spot y hora, según ola, periodo, exposición, viento y marea.
 - **Avisos push** cuando un spot elegido supera el umbral de calidad, como máximo uno por spot y día.
 - Favoritos, ordenar por cercanía, modo sin conexión, tema claro y oscuro, e instalable en iOS y Android.
+- **Apps nativas** para iOS (SwiftUI) y Android (Jetpack Compose) con los mismos datos y avisos push nativos (ver [Apps nativas](#apps-nativas)).
 
 ## Puesta en marcha
 
@@ -18,7 +19,7 @@ Requiere Node.js 22.13 o posterior.
 npm install
 cp .env.example .env     # y rellénalo (ver abajo)
 npm start                # http://localhost:8080
-npm test                 # 32 tests, sin red
+npm test                 # tests sin red
 ```
 
 ## Configuración
@@ -30,6 +31,8 @@ npm test                 # 32 tests, sin red
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Sí, en producción | Claves de notificaciones push. Genera unas con `npm run vapid`. Si cambian, todas las suscripciones dejan de funcionar |
 | `VAPID_SUBJECT` | Sí, en producción | `mailto:` de contacto para los servicios push |
 | `OPEN_METEO_API_KEY` | Sí, si el uso es comercial | Clave del plan de pago de Open-Meteo |
+| `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY`, `APNS_BUNDLE_ID` | Para avisos en la app de iOS | Clave `.p8` de Apple Push Notifications (`APNS_KEY` es su contenido). `APNS_SANDBOX=true` para compilaciones de Xcode |
+| `FCM_SERVICE_ACCOUNT` | Para avisos en la app de Android | JSON de una cuenta de servicio del proyecto de Firebase |
 
 Sin claves VAPID, el servidor genera unas y las guarda en `DATA_DIR/vapid.json` (válido para desarrollo).
 
@@ -66,9 +69,10 @@ server/
   index.js           Servidor HTTP: estáticos, API, cabeceras de seguridad, límite de peticiones
   conditions.js      Combina las fuentes y calcula valoraciones, mejores horas y días
   push.js            Suscripciones (SQLite), revisión horaria y envío de avisos
+  native-push.js     Envío a las apps: APNs (HTTP/2 + JWT ES256) y FCM HTTP v1, sin dependencias
   cache.js           Caché en memoria con TTL; si una fuente cae, sirve el último dato bueno
   sources/
-    openmeteo.js     Previsión de todos los spots en una petición por API (caché 30 min)
+    openmeteo.js     Previsión de todos los spots en una petición por API (caché 1 h, por el límite de llamadas)
     ihm.js           Mareas oficiales por mes y puerto (caché 12 h)
     portus.js        Puertos del Estado: boyas, estaciones, mareógrafos y nivel del mar por playa
 public/
@@ -80,6 +84,9 @@ public/
   sw.js              Modo sin conexión y recepción de avisos
   legal/             Fuentes de datos, privacidad y aviso legal
 test/                Tests con fuentes simuladas (node --test)
+ios/                 App de iOS (SwiftUI, iOS 17+), proyecto generado con XcodeGen
+android/             App de Android (Kotlin, Jetpack Compose, Android 8+)
+scripts/             export-spots.mjs copia la lista de spots a las apps
 ```
 
 ### API
@@ -89,8 +96,42 @@ test/                Tests con fuentes simuladas (node --test)
 | `GET /api/spots` | Resumen de todos los spots: valoración, condiciones, marea y boya |
 | `GET /api/spots/:id` | Detalle: curva de marea del día, 24 horas y 7 días |
 | `GET /api/push/key` | Clave pública VAPID |
-| `POST /api/push/subscribe` | `{ subscription, spots, minScore }` |
-| `POST /api/push/status`, `/unsubscribe`, `/test` | `{ endpoint }` |
+| `GET /api/spots/:id/boya` | Solo la boya del spot (la lista la pide por tarjeta) |
+| `POST /api/push/subscribe` | `{ subscription, spots, minScore }` (navegador) o `{ device: { platform: "ios" \| "android", token }, spots, minScore }` (apps) |
+| `POST /api/push/status`, `/unsubscribe`, `/test` | `{ endpoint }`; en las apps, `"apns:<token>"` o `"fcm:<token>"` |
+
+## Apps nativas
+
+Dos apps nativas, una por plataforma, que usan la misma API que la web y repiten sus pantallas (lista, detalle con curva de marea deslizable y avisos), textos, colores y tipografías. La valoración la sigue calculando el servidor. Guardan la última respuesta para abrir sin conexión.
+
+Al cambiar `public/js/spots.js`, ejecuta `node scripts/export-spots.mjs` para copiar la lista a las apps (un test lo comprueba).
+
+### iOS (`ios/`)
+
+Requiere Xcode 16 o posterior y [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+
+```bash
+cd ios && xcodegen          # genera Marea.xcodeproj a partir de project.yml
+open Marea.xcodeproj
+```
+
+- **URL del servidor**: `MAREA_API_BASE` en `project.yml` (Debug: `http://localhost:8080`; Release: tu dominio). Para probar contra otro puerto: `xcodebuild ... MAREA_API_BASE=http://localhost:8099`.
+- **Avisos**: en Apple Developer, crea el App ID `es.marea.app` con *Push Notifications* y una clave APNs (`.p8`); pon tu equipo en `DEVELOPMENT_TEAM` y define en el servidor `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY` y `APNS_BUNDLE_ID`. En el simulador sin equipo se usa un token de prueba para poder probar la pantalla de avisos.
+- **Tests**: `xcodebuild test -project Marea.xcodeproj -scheme Marea -destination 'platform=iOS Simulator,name=iPhone 17'`.
+
+### Android (`android/`)
+
+Requiere JDK 17+ y el SDK de Android (compileSdk 37).
+
+```bash
+cd android
+./gradlew installDebug                                         # emulador o móvil conectado
+./gradlew installDebug -PmareaApiBaseDebug=http://10.0.2.2:8099 # otro puerto del Mac
+./gradlew testDebugUnitTest
+```
+
+- **URL del servidor**: `mareaApiBaseDebug` y `mareaApiBaseRelease` en `gradle.properties` (`10.0.2.2` es el Mac visto desde el emulador).
+- **Avisos**: crea un proyecto de Firebase con la app `es.marea.app`, descarga `google-services.json` a `android/app/` (no se sube al repositorio) y define `FCM_SERVICE_ACCOUNT` en el servidor. Sin ese archivo la app compila igual; en Debug usa un token de prueba y en Release los avisos quedan desactivados.
 
 ## Notas sobre los datos
 
@@ -115,4 +156,4 @@ Cosas que no se pueden resolver desde el código:
 3. **Dominio, alojamiento y claves VAPID** de producción, con `VAPID_SUBJECT` apuntando a un correo real.
 4. **Validación de spots y valoración** con surfers de cada zona.
 5. **Prueba de avisos en móviles reales**: Android con Chrome e iPhone con la app instalada (iOS 16.4 o posterior).
-6. **Tiendas de apps** (opcional): la PWA se puede empaquetar para Google Play con una Trusted Web Activity y para la App Store con Capacitor. Hacen falta cuentas de desarrollador (25 USD una vez en Google; 99 USD al año en Apple).
+6. **Tiendas de apps**: las apps nativas están en `ios/` y `android/`. Hacen falta cuentas de desarrollador (25 USD una vez en Google; 99 USD al año en Apple), la URL de producción en `project.yml` y `gradle.properties`, credenciales de APNs y Firebase, iconos y capturas para las fichas, y probar los avisos en móviles reales.

@@ -1,5 +1,5 @@
 // Gráfico "Marea de hoy" con cursor deslizable: al arrastrar (o con las flechas del teclado)
-// muestra la hora, la altura, si sube o baja, el coeficiente, el efecto de la meteorología y el nivel medido.
+// muestra la hora, la altura, si sube o baja, el coeficiente, el efecto del viento y la presión y el nivel medido.
 import { tideAt, coefficientAt, coefLabel, hhmm, fmt } from "./surf.js";
 
 const W = 340, H = 176, TOP = 26, BOTTOM = 40;
@@ -19,7 +19,12 @@ const duration = ms => {
   const m = Math.round(ms / 60e3), h = Math.floor(m / 60);
   return h ? `${h} h ${String(m % 60).padStart(2, "0")} min` : `${m} min`;
 };
-const signedCm = m => `${m >= 0 ? "+" : "−"}${Math.abs(Math.round(m * 100))} cm`;
+// Cuánto suben o bajan el mar el viento y la presión (residuo meteorológico de Puertos del Estado).
+const surgeText = m => {
+  if (m == null) return "Viento y presión: sin dato a esta hora";
+  const cm = Math.abs(Math.round(m * 100));
+  return cm < 3 ? "Viento y presión: sin efecto apreciable" : `Viento y presión: ${m > 0 ? "suben" : "bajan"} el mar ${cm} cm`;
+};
 
 function geometry(day) {
   const vals = [...day.points.map(p => p[1]), ...(day.observed?.points ?? []).map(p => p[1])];
@@ -121,8 +126,8 @@ export function bindTideChart(root, day, tz, now) {
       </div>
       <div class="ro-sub muted">
         ${next ? `<span>${next.type === "high" ? "Pleamar" : "Bajamar"} en ${duration(next.t - current)} (${hhmm(next.t, tz)}, ${fmt(next.h)} m)</span>` : ""}
-        ${residual != null && Math.abs(residual) >= 0.03 ? `<span>Meteorología: ${signedCm(residual)}</span>` : ""}
-        ${measured != null ? `<span>Medido: ${fmt(measured, 2)} m</span>` : ""}
+        ${day.surge ? `<span>${surgeText(residual)}</span>` : ""}
+        ${day.observed?.points?.length ? `<span>${measured != null ? `Medido: ${fmt(measured, 2)} m` : "Medido: sin dato a esta hora"}</span>` : ""}
       </div>`;
   }
 

@@ -39,7 +39,9 @@ export function installFetch(opts = {}) {
       } : {
         utc_offset_seconds: 0,
         current: { time: iso(Date.now()), wind_speed_10m: wind, wind_direction_10m: windDir, wind_gusts_10m: wind + 3, temperature_2m: 17 },
-        hourly: { time: times, wind_speed_10m: times.map(() => wind), wind_direction_10m: times.map(() => windDir), wind_gusts_10m: times.map(() => wind + 3), temperature_2m: times.map(() => 17) },
+        hourly: { time: times, wind_speed_10m: times.map(() => wind), wind_direction_10m: times.map(() => windDir), wind_gusts_10m: times.map(() => wind + 3), temperature_2m: times.map(() => 17),
+          // Índice UV con forma de campana alrededor de las 13 UTC.
+          uv_index: times.map(t => Math.max(0, 6 - Math.abs(new Date(t + "Z").getUTCHours() - 13))) },
         daily: { time: days, sunrise: days.map(d => `${d}T06:00`), sunset: days.map(d => `${d}T18:30`) },
       };
       return json(lats.length > 1 ? lats.map(one) : one());

@@ -13,9 +13,16 @@ const b64ToBytes = b64 => {
   return Uint8Array.from(raw, c => c.charCodeAt(0));
 };
 
+// Si el service worker no llega a registrarse (navegadores integrados, modo privado…), `ready` no se
+// resuelve nunca: se espera como mucho 4 s para no dejar la pantalla de avisos cargando para siempre.
+const swReady = () => Promise.race([
+  navigator.serviceWorker.ready,
+  new Promise((_, reject) => setTimeout(() => reject(new Error("Este navegador no permite activar avisos ahora mismo.")), 4000)),
+]);
+
 async function currentSubscription() {
   if (!supported()) return null;
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await swReady();
   return reg.pushManager.getSubscription();
 }
 
@@ -35,7 +42,7 @@ async function ensureSubscription() {
   const permission = await Notification.requestPermission();
   if (permission !== "granted") throw new Error("Para recibir avisos, permite las notificaciones de Marea en los ajustes del navegador.");
   const { publicKey } = await push.key();
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await swReady();
   return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(publicKey) });
 }
 

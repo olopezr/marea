@@ -8,6 +8,7 @@ import { SPOTS, spotById } from "../public/js/spots.js";
 import { rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
 import { forecastAll } from "./forecast.js";
 import { forecastFor } from "./conditions.js";
+import * as nativePush from "./native-push.js";
 
 import { DATA_DIR } from "./config.js";
 
@@ -47,10 +48,14 @@ db.exec(`
   );
   PRAGMA foreign_keys = ON;
 `);
+// Las apps nativas comparten tabla con Web Push: endpoint "apns:<token>" o "fcm:<token>", sin claves.
+if (!db.prepare(`PRAGMA table_info(subscriptions)`).all().some(c => c.name === "kind")) {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN kind TEXT NOT NULL DEFAULT 'web'`);
+}
 
 const q = {
-  upsertSub: db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at) VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, min_score = excluded.min_score`),
+  upsertSub: db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at, kind) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, min_score = excluded.min_score, kind = excluded.kind`),
   clearAlerts: db.prepare(`DELETE FROM alerts WHERE endpoint = ?`),
   addAlert: db.prepare(`INSERT OR IGNORE INTO alerts (endpoint, spot_id) VALUES (?, ?)`),
   deleteSub: db.prepare(`DELETE FROM subscriptions WHERE endpoint = ?`),
@@ -67,14 +72,29 @@ const q = {
 // ---------- API ----------
 const isSub = s => s && typeof s.endpoint === "string" && /^https:\/\//.test(s.endpoint) && s.endpoint.length < 1000 && s.keys?.p256dh && s.keys?.auth;
 
-export function subscribe({ subscription, spots, minScore }) {
+// Token de dispositivo de las apps: APNs en hexadecimal; FCM, texto sin espacios.
+const NATIVE = { ios: { kind: "apns", re: /^[0-9a-f]{64,200}$/i }, android: { kind: "fcm", re: /^[\w:.-]{20,4096}$/ } };
+
+// `subscription` (navegador) o `device: { platform, token }` (app nativa).
+function target({ subscription, device }) {
+  const n = device && NATIVE[device.platform];
+  if (n) {
+    const token = String(device.token ?? "");
+    if (!n.re.test(token)) throw Object.assign(new Error("Token de dispositivo no válido"), { status: 400 });
+    return { kind: n.kind, endpoint: `${n.kind}:${token}`, p256dh: "", auth: "" };
+  }
   if (!isSub(subscription)) throw Object.assign(new Error("Suscripción no válida"), { status: 400 });
+  return { kind: "web", endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth };
+}
+
+export function subscribe({ subscription, device, spots, minScore }) {
+  const t = target({ subscription, device });
   const ids = (Array.isArray(spots) ? spots : []).filter(id => spotById[id]).slice(0, 50);
   const min = [2, 3, 4].includes(+minScore) ? +minScore : 3;
-  const ep = subscription.endpoint;
+  const ep = t.endpoint;
   db.exec("BEGIN");
   try {
-    q.upsertSub.run(ep, subscription.keys.p256dh, subscription.keys.auth, min, Date.now());
+    q.upsertSub.run(ep, t.p256dh, t.auth, min, Date.now(), t.kind);
     q.clearAlerts.run(ep);
     for (const id of ids) q.addAlert.run(ep, id);
     db.exec("COMMIT");
@@ -98,16 +118,22 @@ export function status(endpoint) {
 }
 
 // Sustituible en los tests para no depender de los servicios push reales.
-let deliver = (sub, body, opts) => webpush.sendNotification(sub, body, opts);
+const native = nativePush.fromEnv();
+let deliver = async (sub, body, opts) => {
+  if (sub.kind === "web") return webpush.sendNotification(sub, body, opts);
+  const channel = native[sub.kind];
+  if (!channel) throw Object.assign(new Error(`canal ${sub.kind} sin configurar`), { statusCode: 503 });
+  return channel(sub.endpoint.slice(sub.kind.length + 1), JSON.parse(body), { ttl: opts.TTL });
+};
 export const _setDeliver = fn => { deliver = fn; };
 
 async function send(sub, payload) {
   try {
-    await deliver({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify(payload), { TTL: 6 * 3600 });
+    await deliver({ kind: sub.kind ?? "web", endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify(payload), { TTL: 6 * 3600 });
     return true;
   } catch (err) {
-    if (err.statusCode === 404 || err.statusCode === 410) {
-      unsubscribe(sub.endpoint); // el navegador ya no la acepta
+    if (err.gone || ((sub.kind ?? "web") === "web" && (err.statusCode === 404 || err.statusCode === 410))) {
+      unsubscribe(sub.endpoint); // el navegador o el móvil ya no la acepta
     } else {
       console.warn(`[push] envío fallido (${err.statusCode ?? err.message})`);
     }

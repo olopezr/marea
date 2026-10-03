@@ -19,9 +19,14 @@ export function ports() {
   });
 }
 
-export async function nearestPort(spot) {
+// El IHM publica mareas del Atlántico, el Cantábrico, el Estrecho y Canarias, no del Mediterráneo
+// (allí la marea es de pocos centímetros). Más allá de MAX_PORT_KM no hay puerto que represente al spot.
+export const MAX_PORT_KM = 60;
+
+export async function nearestPort(spot, maxKm = MAX_PORT_KM) {
   const list = await ports();
-  return list.map(p => ({ ...p, distKm: km(spot, p) })).sort((a, b) => a.distKm - b.distKm)[0];
+  const best = list.map(p => ({ ...p, distKm: km(spot, p) })).sort((a, b) => a.distKm - b.distKm)[0];
+  return best && best.distKm <= maxKm ? best : null;
 }
 
 const monthKey = t => { const d = new Date(t); return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}`; };

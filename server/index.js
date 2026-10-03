@@ -20,7 +20,7 @@ const TYPES = {
 
 const SECURITY = {
   "Content-Security-Policy": [
-    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data:", "connect-src 'self'", "worker-src 'self'",
+    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data:", "connect-src 'self'", "worker-src 'self'", "frame-src https://www.openstreetmap.org",
     "manifest-src 'self'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
   ].join("; "),
   "X-Content-Type-Options": "nosniff",

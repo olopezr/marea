@@ -9,6 +9,14 @@ export const angDiff = (a, b) => {
 const CARDINALS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"];
 export const cardinal = deg => deg == null ? "–" : CARDINALS[Math.round((((deg % 360) + 360) % 360) / 22.5) % 16];
 
+// Rumbo inicial (0–360°) para ir de a hacia b.
+export function bearing(a, b) {
+  const rad = x => (x * Math.PI) / 180;
+  const y = Math.sin(rad(b.lon - a.lon)) * Math.cos(rad(b.lat));
+  const x = Math.cos(rad(a.lat)) * Math.sin(rad(b.lat)) - Math.sin(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.cos(rad(b.lon - a.lon));
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
 export function km(a, b) {
   const R = 6371, rad = x => (x * Math.PI) / 180;
   const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);

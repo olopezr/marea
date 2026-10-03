@@ -14,3 +14,16 @@ services:
       # Contacto para los servicios de notificaciones push (Google, Apple, Mozilla).
       - key: VAPID_SUBJECT
         value: https://github.com/olopezr/marea
+      # Avisos en las apps nativas: se rellenan en el panel de Render (ver .env.example).
+      - key: APNS_KEY_ID
+        sync: false
+      - key: APNS_TEAM_ID
+        sync: false
+      - key: APNS_KEY
+        sync: false
+      - key: APNS_BUNDLE_ID
+        value: es.marea.app
+      - key: APNS_SANDBOX
+        value: "false"
+      - key: FCM_SERVICE_ACCOUNT
+        sync: false

@@ -14,7 +14,7 @@ async function request(path, init) {
 }
 
 async function cachedGet(path, force) {
-  const key = `marea:v3:${path}`;
+  const key = `marea:v4:${path}`; // v4: índice UV. Sube la versión cuando cambien las respuestas.
   const hit = store.get(key);
   if (!force && hit && Date.now() - hit.ts < FRESH_MS) return { ...hit, stale: false };
   try {

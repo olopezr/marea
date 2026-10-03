@@ -12,9 +12,10 @@ const push = await import("../server/push.js");
 
 const sent = [];
 let failWith = null;
+let failGone = false;
 push._setDeliver(async (sub, body) => {
-  if (failWith) throw Object.assign(new Error("fallo"), { statusCode: failWith });
-  sent.push({ endpoint: sub.endpoint, ...JSON.parse(body) });
+  if (failWith) throw Object.assign(new Error("fallo"), { statusCode: failWith, gone: failGone });
+  sent.push({ kind: sub.kind, endpoint: sub.endpoint, ...JSON.parse(body) });
 });
 
 const sub = endpoint => ({ endpoint, keys: { p256dh: "BPk", auth: "aut" } });
@@ -55,6 +56,44 @@ test("una suscripción caducada (410) se borra", async () => {
   await push.checkAlerts(at10() + 2 * 60e3);
   failWith = null;
   assert.equal(push.status("https://push.example/d").subscribed, false);
+});
+
+const APNS = "a1".repeat(32);
+const FCM = "dQw4w9WgXcQ:APA91bH-token_de_prueba";
+
+test("subscribe acepta dispositivos de las apps y valida el token", () => {
+  assert.throws(() => push.subscribe({ device: { platform: "ios", token: "corto" }, spots: ["somo"] }), /Token de dispositivo no válido/);
+  assert.throws(() => push.subscribe({ device: { platform: "android", token: "con espacios no vale" }, spots: ["somo"] }), /no válido/);
+  assert.throws(() => push.subscribe({ device: { platform: "otra", token: APNS }, spots: ["somo"] }), /Suscripción no válida/);
+  assert.deepEqual(push.subscribe({ device: { platform: "ios", token: APNS }, spots: ["somo"], minScore: 2 }),
+    { subscribed: true, spots: ["somo"], minScore: 2 });
+  assert.equal(push.status(`apns:${APNS}`).subscribed, true);
+  push.subscribe({ device: { platform: "android", token: FCM }, spots: ["somo"], minScore: 2 });
+  assert.equal(push.status(`fcm:${FCM}`).subscribed, true);
+});
+
+test("checkAlerts avisa también a las apps nativas", async () => {
+  await push.checkAlerts(at10() + 3 * 60e3);
+  const ios = sent.find(s => s.endpoint === `apns:${APNS}`);
+  const android = sent.find(s => s.endpoint === `fcm:${FCM}`);
+  assert.equal(ios.kind, "apns");
+  assert.equal(android.kind, "fcm");
+  assert.equal(ios.url, "/#/spot/somo");
+  await push.sendTest(`apns:${APNS}`);
+  assert.equal(sent.at(-1).title, "Avisos de Marea activados");
+});
+
+test("un token nativo rechazado se borra; un fallo pasajero no", async () => {
+  failWith = 500;
+  await assert.rejects(push.sendTest(`fcm:${FCM}`), /rechazó/);
+  assert.equal(push.status(`fcm:${FCM}`).subscribed, true);
+  failWith = 404; // en un dispositivo nativo, solo `gone` indica token inválido
+  await assert.rejects(push.sendTest(`fcm:${FCM}`));
+  assert.equal(push.status(`fcm:${FCM}`).subscribed, true);
+  failWith = 400; failGone = true;
+  await assert.rejects(push.sendTest(`fcm:${FCM}`));
+  failWith = null; failGone = false;
+  assert.equal(push.status(`fcm:${FCM}`).subscribed, false);
 });
 
 test("unsubscribe borra la suscripción", () => {
