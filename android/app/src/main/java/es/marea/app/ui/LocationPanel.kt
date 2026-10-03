@@ -32,15 +32,16 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 
-// Dónde está la playa: mapa de OpenStreetMap y coordenadas. Al tocar se abre en la app de mapas.
+// Dónde está la playa: mapa de OpenStreetMap y coordenadas. Al tocar se abre la ruta hasta la playa
+// (Google Maps, o la app de mapas que haya si no está instalado).
 @Composable
 fun LocationPanel(name: String, lat: Double, lon: Double) {
     val c = LocalColors.current
     val context = LocalContext.current
     val open = {
-        val uri = "geo:$lat,$lon?q=$lat,$lon(${Uri.encode(name)})".toUri()
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-            .onFailure { context.startActivity(Intent(Intent.ACTION_VIEW, "https://www.openstreetmap.org/?mlat=$lat&mlon=$lon#map=15/$lat/$lon".toUri())) }
+        val route = "https://www.google.com/maps/dir/?api=1&destination=$lat,$lon".toUri()
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, route)) }
+            .onFailure { context.startActivity(Intent(Intent.ACTION_VIEW, "geo:$lat,$lon?q=$lat,$lon(${Uri.encode(name)})".toUri())) }
         Unit
     }
     Panel {
@@ -66,7 +67,7 @@ fun LocationPanel(name: String, lat: Double, lon: Double) {
             )
             // Capa encima del mapa: el mapa no roba el desplazamiento de la pantalla y un toque lo abre.
             Box(
-                Modifier.matchParentSize().clickable(role = Role.Button, onClickLabel = "Abrir en mapas", onClick = open)
+                Modifier.matchParentSize().clickable(role = Role.Button, onClickLabel = "Cómo llegar", onClick = open)
                     .semantics { contentDescription = "Mapa de $name" },
             )
             Text("© OpenStreetMap", style = Type.body(10.sp), color = c.muted, modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp))
@@ -75,7 +76,7 @@ fun LocationPanel(name: String, lat: Double, lon: Double) {
             SelectionContainer { Text(Surf.coords(lat, lon), style = Type.mono(13.sp), color = c.ink) }
             Spacer(Modifier.weight(1f))
             Box(Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = open), contentAlignment = Alignment.Center) {
-                Text("Abrir en mapas", style = Type.bodySemibold(14.sp), color = c.accentText)
+                Text("Cómo llegar", style = Type.bodySemibold(14.sp), color = c.accentText)
             }
         }
     }

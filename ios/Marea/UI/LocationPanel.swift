@@ -1,7 +1,9 @@
 import MapKit
 import SwiftUI
 
-// Dónde está la playa: mapa (satélite con nombres) y coordenadas. Al tocar se abre en Mapas.
+// Dónde está la playa: mapa (satélite con nombres) y coordenadas. Al tocar se abre Mapas con la ruta
+// hasta la playa: se busca su punto de interés en Apple Maps (la playa ya creada en el mapa) y, si no
+// aparece cerca, se usa la coordenada del spot.
 struct LocationPanel: View {
     let name: String
     let lat: Double
@@ -23,19 +25,45 @@ struct LocationPanel: View {
             .onTapGesture(perform: openInMaps)
             .accessibilityElement()
             .accessibilityLabel("Mapa de \(name)")
-            .accessibilityHint("Abre la ubicación en Mapas")
+            .accessibilityHint("Abre la ruta hasta la playa en Mapas")
             .accessibilityAddTraits(.isButton)
             HStack(alignment: .firstTextBaseline) {
                 Text(Surf.coords(lat, lon)).font(Theme.mono(13)).foregroundStyle(Theme.ink).textSelection(.enabled)
                     .accessibilityLabel("Coordenadas \(Surf.coords(lat, lon))")
                 Spacer()
-                Button("Abrir en Mapas", action: openInMaps).font(Theme.bodySemibold(14)).foregroundStyle(Theme.accentText)
+                Button("Cómo llegar", action: openInMaps).font(Theme.bodySemibold(14)).foregroundStyle(Theme.accentText)
                     .frame(minHeight: 44)
             }
         }
     }
 
     private func openInMaps() {
+        Task { @MainActor in
+            let item = await beachPointOfInterest() ?? coordinateItem()
+            item.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault])
+        }
+    }
+
+    /// La playa como punto de interés de Apple Maps, si hay una con ese nombre a menos de 1,5 km.
+    private func beachPointOfInterest() async -> MKMapItem? {
+        let request = MKLocalSearch.Request()
+        let base = name.replacingOccurrences(of: #"\s*\(.*\)"#, with: "", options: .regularExpression)
+        request.naturalLanguageQuery = base.lowercased().hasPrefix("playa") ? base : "Playa \(base)"
+        request.region = MKCoordinateRegion(center: coordinate, latitudinalMeters: 4000, longitudinalMeters: 4000)
+        request.resultTypes = .pointOfInterest
+        request.pointOfInterestFilter = MKPointOfInterestFilter(including: [.beach])
+        guard let items = try? await MKLocalSearch(request: request).start().mapItems else { return nil }
+        let here = CLLocation(latitude: lat, longitude: lon)
+        return items
+            .map { item -> (MKMapItem, CLLocationDistance) in
+                let c = item.placemark.coordinate
+                return (item, CLLocation(latitude: c.latitude, longitude: c.longitude).distance(from: here))
+            }
+            .filter { $0.1 < 1500 }
+            .min { $0.1 < $1.1 }?.0
+    }
+
+    private func coordinateItem() -> MKMapItem {
         let item: MKMapItem
         if #available(iOS 26, *) {
             item = MKMapItem(location: CLLocation(latitude: lat, longitude: lon), address: nil)
@@ -43,6 +71,6 @@ struct LocationPanel: View {
             item = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
         }
         item.name = name
-        item.openInMaps(launchOptions: [MKLaunchOptionsMapTypeKey: MKMapType.hybrid.rawValue])
+        return item
     }
 }

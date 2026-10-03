@@ -311,12 +311,13 @@ function weekRows(days, tz, todayFrom) {
 const coords = (lat, lon) => `${fmt(Math.abs(lat), 4)}° ${lat >= 0 ? "N" : "S"} · ${fmt(Math.abs(lon), 4)}° ${lon >= 0 ? "E" : "O"}`;
 function locationPanel(s) {
   const d = 0.02, bbox = [s.lon - d * 1.4, s.lat - d, s.lon + d * 1.4, s.lat + d].map(x => x.toFixed(4)).join(",");
-  const link = `https://www.openstreetmap.org/?mlat=${s.lat}&mlon=${s.lon}#map=15/${s.lat}/${s.lon}`;
+  // Ruta hasta la playa (abre Google Maps o su app en el móvil).
+  const link = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
   return `<section class="panel location">
     <h3>Ubicación</h3>
     <iframe class="map" title="Mapa de ${esc(s.name)}" loading="lazy" referrerpolicy="no-referrer"
       src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik&amp;marker=${s.lat},${s.lon}"></iframe>
-    <div class="location-row"><span class="coords">${coords(s.lat, s.lon)}</span><a href="${link}" target="_blank" rel="noopener">Abrir en el mapa</a></div>
+    <div class="location-row"><span class="coords">${coords(s.lat, s.lon)}</span><a href="${link}" target="_blank" rel="noopener">Cómo llegar</a></div>
   </section>`;
 }
 
