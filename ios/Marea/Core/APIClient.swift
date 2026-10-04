@@ -30,7 +30,8 @@ actor APIClient {
 
     init() {
         let cfg = URLSessionConfiguration.default
-        cfg.timeoutIntervalForRequest = 20
+        // 60 s: margen para que el servidor de Render despierte si estaba dormido.
+        cfg.timeoutIntervalForRequest = 60
         cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
         session = URLSession(configuration: cfg)
         // Sube la versión cuando cambien las respuestas de la API (v4: índice UV) para no mostrar

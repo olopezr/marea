@@ -1,0 +1,217 @@
+package es.marea.app.data
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+// Respuestas de la API de Marea (server/conditions.js). Los números que pueden faltar son nulos,
+// igual que en el cliente web, que los muestra como "–". Las horas son milisegundos desde epoch.
+
+@Serializable
+data class Spot(
+    val id: String,
+    val name: String,
+    val region: String,
+    val lat: Double,
+    val lon: Double,
+    val facing: Double,
+    val tide: String,
+    val tz: String,
+)
+
+@Serializable
+data class WindType(val key: String, val label: String)
+
+@Serializable
+data class Now(
+    val h: Double? = null,
+    @SerialName("T") val period: Double? = null,
+    val dir: Double? = null,
+    val sh: Double? = null,
+    @SerialName("sT") val swellPeriod: Double? = null,
+    val sDir: Double? = null,
+    val wind: Double? = null,
+    val windDir: Double? = null,
+    val gust: Double? = null,
+    val windType: WindType = WindType("na", "–"),
+    val air: Double? = null,
+    val water: Double? = null,
+)
+
+@Serializable
+data class Port(val name: String, val distKm: Double)
+
+@Serializable
+data class TideExtreme(val t: Double, val h: Double, val type: String, val coef: Int? = null) {
+    val word: String get() = if (type == "high") "Pleamar" else "Bajamar"
+}
+
+@Serializable
+data class TideNow(
+    val source: String? = null,
+    /** Con marea del modelo: "no-port" (el IHM no cubre la zona) o "down" (el IHM no responde). */
+    val reason: String? = null,
+    val port: Port? = null,
+    val h: Double? = null,
+    val rising: Boolean? = null,
+    val next: TideExtreme? = null,
+    val coef: Int? = null,
+)
+
+@Serializable
+data class SpotSummary(
+    val id: String,
+    val name: String,
+    val region: String,
+    val tz: String,
+    val lat: Double,
+    val lon: Double,
+    val score: Double,
+    val now: Now,
+    val tide: TideNow,
+)
+
+@Serializable
+data class Overview(val updatedAt: Double, val forecastSource: String? = null, val spots: List<SpotSummary>)
+
+/** Punto de una serie [t, valor]. */
+data class SeriesPoint(val t: Double, val v: Double)
+
+// Las series llegan como [[t, v], ...] con valores que pueden ser nulos; se descartan.
+private fun List<List<Double?>>.toSeries() = mapNotNull { p ->
+    val t = p.getOrNull(0); val v = p.getOrNull(1)
+    if (t != null && v != null) SeriesPoint(t, v) else null
+}
+
+@Serializable
+data class Surge(val beach: String = "", val points: List<List<Double?>> = emptyList()) {
+    val series by lazy { points.toSeries() }
+}
+
+@Serializable
+data class Observed(
+    val gauge: String,
+    val distKm: Double? = null,
+    val samePort: Boolean? = null,
+    val points: List<List<Double?>> = emptyList(),
+) {
+    val series by lazy { points.toSeries() }
+}
+
+@Serializable
+data class TideDay(
+    val from: Double,
+    val to: Double,
+    val ext: List<TideExtreme> = emptyList(),
+    val points: List<List<Double?>> = emptyList(),
+    val surge: Surge? = null,
+    val observed: Observed? = null,
+) {
+    val series by lazy { points.toSeries() }
+}
+
+@Serializable
+data class Sun(val rise: Double, val set: Double)
+
+/** Índice UV de hoy: el de la hora en curso y el máximo del día con su hora. */
+@Serializable
+data class UVToday(val now: Double? = null, val max: Double, val maxT: Double)
+
+@Serializable
+data class ClosestBuoy(val name: String, val distKm: Double)
+
+@Serializable
+data class BuoyMeta(
+    val name: String,
+    val distKm: Double,
+    val deep: Boolean? = null,
+    val far: Boolean? = null,
+    val fallback: Boolean? = null,
+    val closest: ClosestBuoy? = null,
+)
+
+@Serializable
+data class BuoyPrediction(val h: Double, @SerialName("Tp") val tp: Double? = null, val dir: Double? = null)
+
+@Serializable
+data class BuoyReading(
+    val buoy: BuoyMeta,
+    val t: Double,
+    val h: Double,
+    @SerialName("Tp") val tp: Double? = null,
+    val dir: Double? = null,
+    val water: Double? = null,
+    val predicted: BuoyPrediction? = null,
+)
+
+@Serializable
+data class BuoyResponse(val buoy: BuoyReading? = null)
+
+@Serializable
+data class Station(val name: String, val distKm: Double)
+
+@Serializable
+data class MeteoWind(val wind: Double? = null, val windDir: Double? = null, val gust: Double? = null, val t: Double, val station: Station)
+
+@Serializable
+data class MeteoAir(val air: Double? = null, val t: Double, val station: Station)
+
+@Serializable
+data class MeteoPressure(val pressure: Double? = null, val t: Double, val station: Station)
+
+@Serializable
+data class Meteo(val wind: MeteoWind? = null, val air: MeteoAir? = null, val pressure: MeteoPressure? = null)
+
+@Serializable
+data class Hour(
+    val t: Double,
+    val h: Double? = null,
+    @SerialName("T") val period: Double? = null,
+    val dir: Double? = null,
+    val wind: Double? = null,
+    val windDir: Double? = null,
+    val score: Double,
+)
+
+@Serializable
+data class DayCell(val t: Double, val score: Double)
+
+@Serializable
+data class BestHour(val t: Double, val score: Double)
+
+@Serializable
+data class Day(
+    val key: String,
+    val label: String,
+    val rise: Double,
+    val set: Double,
+    val cells: List<DayCell>,
+    val maxH: Double? = null,
+    val best: BestHour,
+)
+
+@Serializable
+data class SpotDetail(
+    val id: String,
+    val name: String,
+    val region: String,
+    val tz: String,
+    val lat: Double,
+    val lon: Double,
+    val score: Double,
+    val now: Now,
+    val tide: TideNow,
+    val facing: Double,
+    val tidePref: String,
+    val updatedAt: Double,
+    val forecastSource: String? = null,
+    val sun: Sun? = null,
+    val uv: UVToday? = null,
+    val buoy: BuoyReading? = null,
+    val meteo: Meteo? = null,
+    val tideDay: TideDay,
+    val hours: List<Hour>,
+    val days: List<Day>,
+)
+
+@Serializable
+data class AlertState(val subscribed: Boolean = false, val spots: List<String> = emptyList(), val minScore: Double = 3.0)
