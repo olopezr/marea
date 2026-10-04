@@ -27,7 +27,8 @@ const SPOTS_DATA = [
     statusText: "Condiciones Épicas",
     statusClass: "tag-epic",
     bestWindow: "10:00 - 13:30",
-    advice: "El pico de Somo aguanta tamaño con el banco de arena actual. Sesión limpia con viento sur suave durante toda la mañana."
+    advice:
+      "El pico de Somo aguanta tamaño con el banco de arena actual. Sesión limpia con viento sur suave durante toda la mañana.",
   },
   {
     id: "mundaka",
@@ -50,7 +51,7 @@ const SPOTS_DATA = [
     statusText: "Legendario",
     statusClass: "tag-epic",
     bestWindow: "11:30 - 14:45",
-    advice: "La barra izquierda más famosa de Europa funcionando a la perfección con periodo largo y coeficiente alto."
+    advice: "La barra izquierda más famosa de Europa funcionando a la perfección con periodo largo y coeficiente alto.",
   },
   {
     id: "rodiles",
@@ -73,7 +74,7 @@ const SPOTS_DATA = [
     statusText: "Excelente",
     statusClass: "tag-epic",
     bestWindow: "09:30 - 12:30",
-    advice: "La izquierda de la desembocadura rompe tubular sobre el banco de arena. Ideal entrar con marea baja."
+    advice: "La izquierda de la desembocadura rompe tubular sobre el banco de arena. Ideal entrar con marea baja.",
   },
   {
     id: "zarautz",
@@ -96,7 +97,8 @@ const SPOTS_DATA = [
     statusText: "Muy Bueno",
     statusClass: "tag-good",
     bestWindow: "14:00 - 17:30",
-    advice: "Múltiples picos a lo largo del arenal. Zona del restaurante Arguiñano y el centro ofreciendo derechas consistentes."
+    advice:
+      "Múltiples picos a lo largo del arenal. Zona del restaurante Arguiñano y el centro ofreciendo derechas consistentes.",
   },
   {
     id: "elpalmar",
@@ -119,7 +121,7 @@ const SPOTS_DATA = [
     statusText: "Épico",
     statusClass: "tag-epic",
     bestWindow: "08:30 - 12:00",
-    advice: "El levante suave abre paredes muy limpias en los picos de la torre. Periodo atlántico empujando bien."
+    advice: "El levante suave abre paredes muy limpias en los picos de la torre. Periodo atlántico empujando bien.",
   },
   {
     id: "pantin",
@@ -142,7 +144,7 @@ const SPOTS_DATA = [
     statusText: "Muy Bueno",
     statusClass: "tag-good",
     bestWindow: "10:30 - 15:00",
-    advice: "La fábrica de olas gallega. Mucha consistencia y potencia en la orilla derecha protegida por las rocas."
+    advice: "La fábrica de olas gallega. Mucha consistencia y potencia en la orilla derecha protegida por las rocas.",
   },
   {
     id: "salinas",
@@ -165,7 +167,7 @@ const SPOTS_DATA = [
     statusText: "Bueno",
     statusClass: "tag-good",
     bestWindow: "09:00 - 12:30",
-    advice: "Buenas secciones en la zona del balneario. Viento terral matutino manteniendo el mar liso."
+    advice: "Buenas secciones en la zona del balneario. Viento terral matutino manteniendo el mar liso.",
   },
   {
     id: "famara",
@@ -188,8 +190,8 @@ const SPOTS_DATA = [
     statusText: "Muy Bueno",
     statusClass: "tag-good",
     bestWindow: "08:00 - 11:30",
-    advice: "El risco de Famara amortigua el alisio temprano. Olas rápidas y tuberas con fondo de arena y lajas."
-  }
+    advice: "El risco de Famara amortigua el alisio temprano. Olas rápidas y tuberas con fondo de arena y lajas.",
+  },
 ];
 
 let selectedSpot = SPOTS_DATA[0];
@@ -233,11 +235,9 @@ function renderSpotCards(filterRegion) {
   if (!grid) return;
   grid.innerHTML = "";
 
-  const filtered = filterRegion === "all" 
-    ? SPOTS_DATA 
-    : SPOTS_DATA.filter(s => s.region === filterRegion);
+  const filtered = filterRegion === "all" ? SPOTS_DATA : SPOTS_DATA.filter((s) => s.region === filterRegion);
 
-  filtered.forEach(spot => {
+  filtered.forEach((spot) => {
     const card = document.createElement("div");
     card.className = `spot-card ${spot.id === selectedSpot.id ? "selected" : ""}`;
     card.dataset.id = spot.id;
@@ -263,7 +263,7 @@ function renderSpotCards(filterRegion) {
 
     const selectHandler = () => {
       selectedSpot = spot;
-      document.querySelectorAll(".spot-card").forEach(c => c.classList.remove("selected"));
+      document.querySelectorAll(".spot-card").forEach((c) => c.classList.remove("selected"));
       card.classList.add("selected");
       updateSpotDetail(spot);
       updateHeroMockup(spot);
@@ -283,9 +283,9 @@ function renderSpotCards(filterRegion) {
 
 function initRegionTabs() {
   const tabs = document.querySelectorAll(".region-tabs .tab-btn");
-  tabs.forEach(tab => {
+  tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
+      tabs.forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       renderSpotCards(tab.dataset.region);
     });
@@ -299,7 +299,7 @@ function updateSpotDetail(spot) {
   const elStars = document.getElementById("detail-stars");
   const elScoreNum = document.getElementById("detail-score-num");
   const elScoreText = document.getElementById("detail-score-text");
-  
+
   const elWaveH = document.getElementById("detail-wave-height");
   const elWaveP = document.getElementById("detail-wave-period");
   const elBuoy = document.getElementById("detail-buoy-dist");
@@ -312,7 +312,7 @@ function updateSpotDetail(spot) {
   if (elTag) elTag.textContent = spot.regionLabel.toUpperCase();
   if (elName) elName.textContent = `${spot.name} · ${spot.beach}`;
   if (elDesc) elDesc.textContent = `Orientación ${spot.facing} · Marea óptima: ${spot.tidePref}`;
-  
+
   const fullStars = "★".repeat(Math.round(spot.score));
   if (elStars) elStars.textContent = fullStars;
   if (elScoreNum) elScoreNum.textContent = spot.score.toFixed(1);
@@ -481,7 +481,8 @@ function initPwaGuideModal() {
 function initSharingButtons() {
   const shareUrl = window.location.href.split("#")[0];
   const shareTitle = "Marea — Telemetría de surf y boyas en tiempo real para España";
-  const shareText = "Mira esta app de surf para España: datos en directo de boyas de Puertos del Estado, mareas oficiales IHM y 83 spots calibrados sin anuncios:";
+  const shareText =
+    "Mira esta app de surf para España: datos en directo de boyas de Puertos del Estado, mareas oficiales IHM y 83 spots calibrados sin anuncios:";
 
   const btnWa = document.getElementById("btn-share-wa");
   if (btnWa) {
@@ -525,11 +526,13 @@ function initSharingButtons() {
   if (btnHeroShare) {
     btnHeroShare.addEventListener("click", () => {
       if (navigator.share) {
-        navigator.share({
-          title: shareTitle,
-          text: shareText,
-          url: shareUrl
-        }).catch(() => {});
+        navigator
+          .share({
+            title: shareTitle,
+            text: shareText,
+            url: shareUrl,
+          })
+          .catch(() => {});
       } else {
         const shareSection = document.getElementById("compartir");
         if (shareSection) shareSection.scrollIntoView({ behavior: "smooth" });
@@ -566,7 +569,7 @@ function initOceanCanvas() {
       radius: Math.random() * 2 + 1,
       speedX: (Math.random() - 0.5) * 0.4,
       speedY: (Math.random() - 0.5) * 0.3,
-      alpha: Math.random() * 0.4 + 0.1
+      alpha: Math.random() * 0.4 + 0.1,
     });
   }
 

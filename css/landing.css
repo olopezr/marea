@@ -10,34 +10,36 @@
   --bg-card-hover: rgba(19, 48, 57, 0.85);
   --bg-surface: #0e2730;
   --bg-surface-2: #143540;
-  
+
   --ink: #eaf3f5;
   --ink-secondary: #9cb4bb;
   --ink-muted: #64828b;
-  
+
   --coral-bright: #ff6a3d;
   --coral-glow: rgba(255, 106, 61, 0.35);
   --teal-neon: #56e6f5;
   --teal-glow: rgba(86, 230, 245, 0.28);
   --sea-emerald: #34d399;
   --amber-gold: #f59e0b;
-  
+
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-glass: rgba(86, 230, 245, 0.16);
   --border-active: rgba(86, 230, 245, 0.45);
-  
+
   /* Typography */
   --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-body: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  
+
   /* Transitions */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Base Reset & Smooth Scroll */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -90,7 +92,10 @@ body {
    TYPOGRAPHY & ACCENTS
    ========================================================================== */
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--font-display);
   font-weight: 800;
   line-height: 1.15;
@@ -123,9 +128,15 @@ a {
   display: inline-block;
 }
 
-.text-cyan { color: var(--teal-neon) !important; }
-.text-green { color: var(--sea-emerald) !important; }
-.text-coral { color: var(--coral-bright) !important; }
+.text-cyan {
+  color: var(--teal-neon) !important;
+}
+.text-green {
+  color: var(--sea-emerald) !important;
+}
+.text-coral {
+  color: var(--coral-bright) !important;
+}
 
 /* Badges & Pills */
 .badge-pill {
@@ -163,9 +174,18 @@ a {
 }
 
 @keyframes pulse-dot {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
-  70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+  }
 }
 
 /* ==========================================================================
@@ -261,7 +281,7 @@ a {
 }
 
 .btn-whatsapp {
-  background: #25D366;
+  background: #25d366;
   color: #ffffff;
   box-shadow: 0 4px 16px rgba(37, 211, 102, 0.3);
 }
@@ -273,7 +293,7 @@ a {
 }
 
 .btn-telegram {
-  background: #229ED9;
+  background: #229ed9;
   color: #ffffff;
   box-shadow: 0 4px 16px rgba(34, 158, 217, 0.3);
 }
@@ -491,7 +511,7 @@ a {
   background: #081d24;
   border: 10px solid #163842;
   border-radius: 46px;
-  box-shadow: 
+  box-shadow:
     0 25px 60px -15px rgba(0, 0, 0, 0.8),
     0 0 50px rgba(86, 230, 245, 0.12),
     inset 0 0 2px rgba(255, 255, 255, 0.3);
@@ -828,8 +848,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  100% { transform: translateY(-12px); }
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-12px);
+  }
 }
 
 /* ==========================================================================
@@ -1569,8 +1593,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .guide-header {
@@ -1805,20 +1835,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .desktop-nav {
     display: none;
   }
-  
+
   .tide-feature-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .comparison-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .footer-inner {
     grid-template-columns: 1fr;
     gap: 30px;
   }
-  
+
   .floating-badge {
     display: none;
   }
