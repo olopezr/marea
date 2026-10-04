@@ -1,218 +1,45 @@
 /**
  * Marea Landing Page Interactive Logic
- * Handles spot exploration, real-time tide slider simulations,
- * canvas ocean dynamics, and social sharing.
+ * Explora los 83 spots de surf de España con telemetría en tiempo real,
+ * simulador interactivo de marea 24h, búsqueda dinámica y enlaces directos a la webapp.
  */
 
-// 1. DATASET OF EMBLEMATIC SPOTS IN SPAIN
-const SPOTS_DATA = [
-  {
-    id: "somo",
-    name: "Somo",
-    beach: "Playa de Somo",
-    region: "cantabrico",
-    regionLabel: "Cantabria · Ribamontán al Mar",
-    facing: "NNO (340°)",
-    tidePref: "Media marea subiendo",
-    buoy: "Boya IEO Santander (a 14 km)",
-    waveHeight: "2,2 m",
-    wavePeriod: "13 s",
-    waveDir: "NO (305°)",
-    windSpeed: "7 kn",
-    windDir: "Terral Sur (Offshore)",
-    windTag: "tag-terral",
-    tideState: "Bajamar 0,7 m",
-    tideCoef: "Coeficiente 82 (Vivas)",
-    score: 4.8,
-    statusText: "Condiciones Épicas",
-    statusClass: "tag-epic",
-    bestWindow: "10:00 - 13:30",
-    advice:
-      "El pico de Somo aguanta tamaño con el banco de arena actual. Sesión limpia con viento sur suave durante toda la mañana.",
-  },
-  {
-    id: "mundaka",
-    name: "Mundaka",
-    beach: "Barra de Mundaka",
-    region: "euskadi",
-    regionLabel: "País Vasco · Urdaibai (Bizkaia)",
-    facing: "NNE (020°)",
-    tidePref: "Bajamar a media marea",
-    buoy: "Boya Bilbao-Vizcaya (a 18 km)",
-    waveHeight: "2,6 m",
-    wavePeriod: "14 s",
-    waveDir: "NO (315°)",
-    windSpeed: "6 kn",
-    windDir: "Terral SO (Offshore puro)",
-    windTag: "tag-terral",
-    tideState: "Bajamar seca 0,5 m",
-    tideCoef: "Coeficiente 86 (Mareas vivas)",
-    score: 5.0,
-    statusText: "Legendario",
-    statusClass: "tag-epic",
-    bestWindow: "11:30 - 14:45",
-    advice: "La barra izquierda más famosa de Europa funcionando a la perfección con periodo largo y coeficiente alto.",
-  },
-  {
-    id: "rodiles",
-    name: "Rodiles",
-    beach: "Playa y Ría de Rodiles",
-    region: "cantabrico",
-    regionLabel: "Asturias · Villaviciosa",
-    facing: "N (005°)",
-    tidePref: "Bajamar seca",
-    buoy: "Boya Cabo Peñas (a 22 km)",
-    waveHeight: "1,9 m",
-    wavePeriod: "12 s",
-    waveDir: "NO (310°)",
-    windSpeed: "5 kn",
-    windDir: "Terral Sur (Valle)",
-    windTag: "tag-terral",
-    tideState: "Bajamar 0,6 m",
-    tideCoef: "Coeficiente 80",
-    score: 4.7,
-    statusText: "Excelente",
-    statusClass: "tag-epic",
-    bestWindow: "09:30 - 12:30",
-    advice: "La izquierda de la desembocadura rompe tubular sobre el banco de arena. Ideal entrar con marea baja.",
-  },
-  {
-    id: "zarautz",
-    name: "Zarautz",
-    beach: "Playa de Zarautz",
-    region: "euskadi",
-    regionLabel: "País Vasco · Gipuzkoa",
-    facing: "NNO (335°)",
-    tidePref: "Media marea a pleamar",
-    buoy: "Boya Pasaia (a 24 km)",
-    waveHeight: "1,6 m",
-    wavePeriod: "11 s",
-    waveDir: "NO (320°)",
-    windSpeed: "8 kn",
-    windDir: "Terral ONO suave",
-    windTag: "tag-terral",
-    tideState: "Media subiendo 2,1 m",
-    tideCoef: "Coeficiente 76",
-    score: 4.3,
-    statusText: "Muy Bueno",
-    statusClass: "tag-good",
-    bestWindow: "14:00 - 17:30",
-    advice:
-      "Múltiples picos a lo largo del arenal. Zona del restaurante Arguiñano y el centro ofreciendo derechas consistentes.",
-  },
-  {
-    id: "elpalmar",
-    name: "El Palmar",
-    beach: "Playa de El Palmar",
-    region: "sur",
-    regionLabel: "Andalucía · Vejer (Cádiz)",
-    facing: "SO (225°)",
-    tidePref: "Todas las mareas",
-    buoy: "Boya de Cádiz (a 28 km)",
-    waveHeight: "1,4 m",
-    wavePeriod: "11 s",
-    waveDir: "Oeste (260°)",
-    windSpeed: "9 kn",
-    windDir: "Levante Offshore ESE",
-    windTag: "tag-terral",
-    tideState: "Media marea 1,5 m",
-    tideCoef: "Coeficiente 74",
-    score: 4.6,
-    statusText: "Épico",
-    statusClass: "tag-epic",
-    bestWindow: "08:30 - 12:00",
-    advice: "El levante suave abre paredes muy limpias en los picos de la torre. Periodo atlántico empujando bien.",
-  },
-  {
-    id: "pantin",
-    name: "Pantín",
-    beach: "Playa de Pantín",
-    region: "galicia",
-    regionLabel: "Galicia · Valdoviño (A Coruña)",
-    facing: "NO (315°)",
-    tidePref: "Todas las mareas",
-    buoy: "Boya Estaca de Bares (a 31 km)",
-    waveHeight: "2,4 m",
-    wavePeriod: "13 s",
-    waveDir: "NO (300°)",
-    windSpeed: "10 kn",
-    windDir: "Terral SE",
-    windTag: "tag-terral",
-    tideState: "Bajamar 0,8 m",
-    tideCoef: "Coeficiente 82",
-    score: 4.5,
-    statusText: "Muy Bueno",
-    statusClass: "tag-good",
-    bestWindow: "10:30 - 15:00",
-    advice: "La fábrica de olas gallega. Mucha consistencia y potencia en la orilla derecha protegida por las rocas.",
-  },
-  {
-    id: "salinas",
-    name: "Salinas",
-    beach: "Playa de Salinas y El Espartal",
-    region: "cantabrico",
-    regionLabel: "Asturias · Castrillón",
-    facing: "NNO (330°)",
-    tidePref: "Media marea a baja",
-    buoy: "Boya Cabo Peñas (a 12 km)",
-    waveHeight: "1,8 m",
-    wavePeriod: "12 s",
-    waveDir: "NO (315°)",
-    windSpeed: "6 kn",
-    windDir: "Terral SO",
-    windTag: "tag-terral",
-    tideState: "Bajamar 0,7 m",
-    tideCoef: "Coeficiente 78",
-    score: 4.3,
-    statusText: "Bueno",
-    statusClass: "tag-good",
-    bestWindow: "09:00 - 12:30",
-    advice: "Buenas secciones en la zona del balneario. Viento terral matutino manteniendo el mar liso.",
-  },
-  {
-    id: "famara",
-    name: "Famara",
-    beach: "Playa de Famara",
-    region: "islas",
-    regionLabel: "Canarias · Teguise (Lanzarote)",
-    facing: "NNO (325°)",
-    tidePref: "Media marea",
-    buoy: "Boya Gran Canaria (a 45 km)",
-    waveHeight: "1,7 m",
-    wavePeriod: "12 s",
-    waveDir: "NNO (330°)",
-    windSpeed: "11 kn",
-    windDir: "Alisio ENE suave",
-    windTag: "tag-terral",
-    tideState: "Media subiendo 1,6 m",
-    tideCoef: "Coeficiente 75",
-    score: 4.4,
-    statusText: "Muy Bueno",
-    statusClass: "tag-good",
-    bestWindow: "08:00 - 11:30",
-    advice: "El risco de Famara amortigua el alisio temprano. Olas rápidas y tuberas con fondo de arena y lajas.",
-  },
-];
-
-let selectedSpot = SPOTS_DATA[0];
+// Obtenemos los 83 spots cargados desde js/spots-data.js (o fallback)
+let allSpots = Array.isArray(window.MAREA_SPOTS) ? window.MAREA_SPOTS : [];
+let currentRegion = "all";
+let currentQuery = "";
+let selectedSpot = allSpots.find(s => s.id === "somo") || allSpots[0] || {};
 
 // ==========================================================================
-// 2. DOM INITIALIZATION
+// 1. DOM INITIALIZATION
 // ==========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+  if (!allSpots.length && Array.isArray(window.MAREA_SPOTS)) {
+    allSpots = window.MAREA_SPOTS;
+  }
+  if (!selectedSpot || !selectedSpot.id) {
+    selectedSpot = allSpots.find(s => s.id === "somo") || allSpots[0];
+  }
+
   initClock();
   initOceanCanvas();
-  renderSpotCards("all");
-  updateSpotDetail(selectedSpot);
-  updateHeroMockup(selectedSpot);
+  renderSpotCards();
+  if (selectedSpot) {
+    updateSpotDetail(selectedSpot);
+    updateHeroMockup(selectedSpot);
+  }
   initTideSliders();
   initRegionTabs();
+  initSearchInput();
   initPwaGuideModal();
   initSharingButtons();
+
+  // Intento de sincronización en vivo con la API de Render
+  syncLiveTelemetry();
 });
 
-// Real-time clock inside mockup
+// Reloj dinámico en el marco del teléfono
 function initClock() {
   const clockEl = document.getElementById("live-time");
   if (!clockEl) return;
@@ -227,53 +54,115 @@ function initClock() {
 }
 
 // ==========================================================================
-// 3. RENDER SPOTS & INTERACTIVE SELECTION
+// 2. RENDER DE LOS 83 SPOTS & BÚSQUEDA
 // ==========================================================================
 
-function renderSpotCards(filterRegion) {
+function filterSpots() {
+  return allSpots.filter(spot => {
+    // Filtro por región/zona
+    const matchRegion = currentRegion === "all" || spot.zone === currentRegion;
+
+    // Filtro por texto de búsqueda
+    const q = currentQuery.trim().toLowerCase();
+    const matchQuery = !q || 
+      spot.name.toLowerCase().includes(q) || 
+      spot.region.toLowerCase().includes(q) ||
+      (spot.zone && spot.zone.toLowerCase().includes(q));
+
+    return matchRegion && matchQuery;
+  });
+}
+
+function renderSpotCards() {
   const grid = document.getElementById("spots-cards-grid");
+  const counterEl = document.getElementById("spots-count-indicator");
   if (!grid) return;
+
   grid.innerHTML = "";
+  const filtered = filterSpots();
 
-  const filtered = filterRegion === "all" ? SPOTS_DATA : SPOTS_DATA.filter((s) => s.region === filterRegion);
+  if (counterEl) {
+    if (currentQuery) {
+      counterEl.textContent = `${filtered.length} spot${filtered.length === 1 ? '' : 's'} para "${currentQuery}"`;
+    } else if (currentRegion !== "all") {
+      counterEl.textContent = `${filtered.length} spots en esta zona`;
+    } else {
+      counterEl.textContent = `Mostrando los ${filtered.length} spots`;
+    }
+  }
 
-  filtered.forEach((spot) => {
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; background: rgba(13,37,45,0.4); border-radius: 16px; border: 1px dashed var(--border-subtle);">
+        <p style="font-size: 1.1rem; color: #fff; margin-bottom: 8px;">No se encontraron spots para esa búsqueda.</p>
+        <p style="font-size: 0.88rem; color: var(--ink-secondary);">Prueba buscando por provincia (ej. Cantabria, Asturias, A Coruña, Cádiz, Bizkaia, Lanzarote...)</p>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach(spot => {
     const card = document.createElement("div");
-    card.className = `spot-card ${spot.id === selectedSpot.id ? "selected" : ""}`;
+    card.className = `spot-card ${selectedSpot && spot.id === selectedSpot.id ? "selected" : ""}`;
     card.dataset.id = spot.id;
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
     card.setAttribute("aria-label", `Ver telemetría de ${spot.name}`);
 
+    // Etiqueta de puntuación
+    let scoreClass = "tag-fair";
+    if (spot.score >= 4.0) scoreClass = "tag-epic";
+    else if (spot.score >= 3.0) scoreClass = "tag-good";
+    else if (spot.score < 1.5) scoreClass = "tag-flat";
+
     card.innerHTML = `
       <div class="card-top">
         <div>
-          <span class="card-region">${spot.regionLabel.split("·")[0].trim()}</span>
+          <span class="card-region">${spot.region} · ${spot.facingCardinal}</span>
           <h4 class="card-name">${spot.name}</h4>
         </div>
-        <div class="card-score-badge ${spot.statusClass}">
+        <div class="card-score-badge ${scoreClass}">
           <span>★</span> ${spot.score.toFixed(1)}
         </div>
       </div>
       <div class="card-telemetry-row">
-        <span class="card-wave">🌊 ${spot.waveHeight} · ${spot.wavePeriod}</span>
-        <span class="card-wind ${spot.windTag}">💨 ${spot.windSpeed}</span>
+        <span class="card-wave">🌊 ${spot.waveHeight || '–'} · ${spot.wavePeriod || '–'}</span>
+        <span class="card-wind ${spot.windTag || ''}">💨 ${spot.windSpeed || '–'}</span>
+      </div>
+      <div class="card-action-row">
+        <span class="card-tide-info">⏱️ ${spot.tidePref}</span>
+        <a href="${spot.url}" target="_blank" rel="noopener noreferrer" class="card-direct-link" title="Abrir ${spot.name} directamente en Marea App">
+          <span>Abrir</span>
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 3h7v7M13 3L7 9"/>
+          </svg>
+        </a>
       </div>
     `;
 
-    const selectHandler = () => {
+    // Clic en la tarjeta selecciona y previsualiza en la página
+    const selectHandler = (e) => {
+      // Si hizo clic en el botón directo de enlace externo, dejamos que abra el enlace
+      if (e.target.closest(".card-direct-link")) return;
+
       selectedSpot = spot;
-      document.querySelectorAll(".spot-card").forEach((c) => c.classList.remove("selected"));
+      document.querySelectorAll(".spot-card").forEach(c => c.classList.remove("selected"));
       card.classList.add("selected");
       updateSpotDetail(spot);
       updateHeroMockup(spot);
+
+      // Desplazamiento suave al detalle si estamos en móvil
+      if (window.innerWidth < 768) {
+        const detailEl = document.getElementById("spot-detail-container");
+        if (detailEl) detailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     };
 
     card.addEventListener("click", selectHandler);
     card.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        selectHandler();
+        selectHandler(e);
       }
     });
 
@@ -281,18 +170,49 @@ function renderSpotCards(filterRegion) {
   });
 }
 
+function initSearchInput() {
+  const searchInput = document.getElementById("spots-search-input");
+  const clearBtn = document.getElementById("spots-search-clear");
+  if (!searchInput) return;
+
+  searchInput.addEventListener("input", (e) => {
+    currentQuery = e.target.value;
+    if (clearBtn) {
+      clearBtn.style.display = currentQuery ? "block" : "none";
+    }
+    renderSpotCards();
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      currentQuery = "";
+      clearBtn.style.display = "none";
+      searchInput.focus();
+      renderSpotCards();
+    });
+  }
+}
+
 function initRegionTabs() {
   const tabs = document.querySelectorAll(".region-tabs .tab-btn");
-  tabs.forEach((tab) => {
+  tabs.forEach(tab => {
     tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
+      tabs.forEach(t => t.classList.remove("active"));
       tab.classList.add("active");
-      renderSpotCards(tab.dataset.region);
+      currentRegion = tab.dataset.region || "all";
+      renderSpotCards();
     });
   });
 }
 
+// ==========================================================================
+// 3. ACTUALIZACIÓN DEL DETALLE DEL SPOT Y ENLACE DIRECTO
+// ==========================================================================
+
 function updateSpotDetail(spot) {
+  if (!spot) return;
+
   const elTag = document.getElementById("detail-tag");
   const elName = document.getElementById("detail-name");
   const elDesc = document.getElementById("detail-desc");
@@ -308,33 +228,52 @@ function updateSpotDetail(spot) {
   const elTideS = document.getElementById("detail-tide-state");
   const elTideC = document.getElementById("detail-tide-coef");
   const elAdvice = document.getElementById("detail-advice");
+  const elAppLink = document.getElementById("detail-app-link");
 
-  if (elTag) elTag.textContent = spot.regionLabel.toUpperCase();
-  if (elName) elName.textContent = `${spot.name} · ${spot.beach}`;
-  if (elDesc) elDesc.textContent = `Orientación ${spot.facing} · Marea óptima: ${spot.tidePref}`;
+  if (elTag) elTag.textContent = `${spot.region.toUpperCase()} · COSTA ESPAÑOLA`;
+  if (elName) elName.textContent = `${spot.name} (${spot.region})`;
+  if (elDesc) elDesc.textContent = `Orientación ${spot.facing}° (${spot.facingCardinal}) · Marea ideal: ${spot.tidePref}`;
 
-  const fullStars = "★".repeat(Math.round(spot.score));
+  const score = spot.score != null ? spot.score : 3.5;
+  const fullStars = "★".repeat(Math.min(5, Math.max(1, Math.round(score))));
   if (elStars) elStars.textContent = fullStars;
-  if (elScoreNum) elScoreNum.textContent = spot.score.toFixed(1);
+  if (elScoreNum) elScoreNum.textContent = score.toFixed(1);
+
+  let statusClass = "tag-fair";
+  let statusText = "Condiciones Aceptables";
+  if (score >= 4.5) { statusClass = "tag-epic"; statusText = "Condiciones Épicas"; }
+  else if (score >= 3.5) { statusClass = "tag-good"; statusText = "Buenas Condiciones"; }
+  else if (score < 1.5) { statusClass = "tag-flat"; statusText = "Mar Plano / Poco Oleaje"; }
+
   if (elScoreText) {
-    elScoreText.textContent = spot.statusText;
-    elScoreText.className = `score-status-pill ${spot.statusClass}`;
+    elScoreText.textContent = spot.ratingText || statusText;
+    elScoreText.className = `score-status-pill ${statusClass}`;
   }
 
-  if (elWaveH) elWaveH.textContent = spot.waveHeight;
-  if (elWaveP) elWaveP.textContent = `Periodo ${spot.wavePeriod} · Rumbo ${spot.waveDir}`;
-  if (elBuoy) elBuoy.textContent = spot.buoy;
-  if (elWindS) elWindS.textContent = spot.windSpeed;
+  if (elWaveH) elWaveH.textContent = spot.waveHeight || "1,4 m";
+  if (elWaveP) elWaveP.textContent = `Periodo ${spot.wavePeriod || '10 s'} · Rumbo ${spot.waveDir || spot.facingCardinal}`;
+  if (elBuoy) elBuoy.textContent = `Puerto / Boya: ${spot.port || spot.region}`;
+  if (elWindS) elWindS.textContent = spot.windSpeed || "7 nudos";
   if (elWindD) {
-    elWindD.textContent = spot.windDir;
-    elWindD.className = `metric-detail ${spot.windTag}`;
+    elWindD.textContent = `${spot.windLabel || 'Viento'} (${spot.facingCardinal})`;
+    elWindD.className = `metric-detail ${spot.windTag || ''}`;
   }
-  if (elTideS) elTideS.textContent = spot.tideState;
-  if (elTideC) elTideC.textContent = spot.tideCoef;
-  if (elAdvice) elAdvice.textContent = spot.advice;
+  if (elTideS) elTideS.textContent = spot.tideState || "Media marea";
+  if (elTideC) elTideC.textContent = `Marea recomendada: ${spot.tidePref}`;
+  if (elAdvice) {
+    elAdvice.textContent = `Spot situado en ${spot.region}. Consulta el detalle horario en directo en la app de Marea para ver la predicción de oleaje y boyas más cercanas.`;
+  }
+
+  // Actualizamos el enlace directo al spot específico en Render:
+  if (elAppLink) {
+    elAppLink.href = spot.url || `https://marea.onrender.com/#/spot/${spot.id}`;
+    elAppLink.textContent = `Abrir ${spot.name} en la App ↗`;
+  }
 }
 
 function updateHeroMockup(spot) {
+  if (!spot) return;
+
   const elTitle = document.getElementById("hero-spot-title");
   const elSub = document.getElementById("hero-spot-subtitle");
   const elScore = document.getElementById("hero-score-val");
@@ -348,32 +287,99 @@ function updateHeroMockup(spot) {
   const elTideSub = document.getElementById("hero-tide-sub");
   const elWinVal = document.getElementById("hero-window-val");
 
-  if (elTitle) elTitle.textContent = `${spot.name} · ${spot.regionLabel.split("·")[0].trim()}`;
-  if (elSub) elSub.textContent = `${spot.beach} · ${spot.buoy}`;
-  if (elScore) elScore.textContent = spot.score.toFixed(1);
+  if (elTitle) elTitle.textContent = `${spot.name} · ${spot.region}`;
+  if (elSub) elSub.textContent = `Orientación ${spot.facingCardinal} · Marea óptima: ${spot.tidePref}`;
+
+  const score = spot.score != null ? spot.score : 3.5;
+  if (elScore) elScore.textContent = score.toFixed(1);
+
+  let statusClass = "tag-fair";
+  let statusText = "Aceptable";
+  if (score >= 4.5) { statusClass = "tag-epic"; statusText = "Épico"; }
+  else if (score >= 3.5) { statusClass = "tag-good"; statusText = "Bueno"; }
+  else if (score < 1.5) { statusClass = "tag-flat"; statusText = "Plato"; }
+
   if (elBadge) {
-    elBadge.textContent = spot.statusText;
-    elBadge.className = `score-label ${spot.statusClass}`;
+    elBadge.textContent = spot.ratingText || statusText;
+    elBadge.className = `score-label ${statusClass}`;
   }
-  if (elReason) elReason.textContent = spot.advice;
-  if (elWaveVal) elWaveVal.textContent = spot.waveHeight;
-  if (elWaveSub) elWaveSub.textContent = `${spot.wavePeriod} · ${spot.waveDir}`;
-  if (elWindVal) elWindVal.textContent = spot.windSpeed;
+
+  if (elReason) {
+    elReason.textContent = `Oleaje y viento en tiempo real para ${spot.name}. Abre la app para ver el desglose hora a hora con curvas de marea del IHM.`;
+  }
+
+  if (elWaveVal) elWaveVal.textContent = spot.waveHeight || "1,4 m";
+  if (elWaveSub) elWaveSub.textContent = `${spot.wavePeriod || '10 s'} · ${spot.waveDir || spot.facingCardinal}`;
+  if (elWindVal) elWindVal.textContent = spot.windSpeed || "6 kn";
   if (elWindSub) {
-    elWindSub.textContent = spot.windDir;
-    elWindSub.className = `box-sub ${spot.windTag}`;
+    elWindSub.textContent = spot.windLabel || "Viento local";
+    elWindSub.className = `box-sub ${spot.windTag || ''}`;
   }
-  if (elTideVal) elTideVal.textContent = spot.tideState;
-  if (elTideSub) elTideSub.textContent = spot.tideCoef;
-  if (elWinVal) elWinVal.textContent = spot.bestWindow;
+  if (elTideVal) elTideVal.textContent = spot.tideState || "Media marea";
+  if (elTideSub) elTideSub.textContent = `Ideal en ${spot.tidePref}`;
+  if (elWinVal) elWinVal.textContent = "Ver en la App";
 }
 
 // ==========================================================================
-// 4. INTERACTIVE TIDE SLIDERS
+// 4. SINCRONIZACIÓN EN VIVO DESDE LA API DE RENDER
+// ==========================================================================
+
+async function syncLiveTelemetry() {
+  try {
+    const res = await fetch("https://marea.onrender.com/api/spots", { mode: "cors" });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (data && Array.isArray(data.spots)) {
+      const liveMap = new Map(data.spots.map(s => [s.id, s]));
+
+      function cardinal(deg) {
+        if (deg == null) return '-';
+        const c = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
+        return c[Math.round(((deg % 360) / 22.5)) % 16];
+      }
+
+      allSpots.forEach(s => {
+        const live = liveMap.get(s.id);
+        if (live) {
+          if (live.score != null) s.score = Math.round(live.score * 10) / 10;
+          if (live.now?.h != null) s.waveHeight = live.now.h.toFixed(1).replace('.', ',') + ' m';
+          if (live.now?.T != null) s.wavePeriod = Math.round(live.now.T) + ' s';
+          if (live.now?.dir != null) s.waveDir = cardinal(live.now.dir);
+          if (live.now?.wind != null) s.windSpeed = Math.round(live.now.wind) + ' kn';
+          if (live.now?.windType?.label) s.windLabel = live.now.windType.label;
+          if (live.now?.windType?.key === 'off') s.windTag = 'tag-terral';
+          if (live.tide?.h != null) {
+            s.tideState = (live.tide.rising ? 'Subiendo ' : 'Bajando ') + live.tide.h.toFixed(1).replace('.', ',') + ' m';
+          }
+        }
+      });
+
+      // Indicador de estado en vivo
+      const indicator = document.getElementById("spots-count-indicator");
+      if (indicator) {
+        indicator.textContent = `🟢 Conectado a boyas en vivo · ${allSpots.length} spots`;
+      }
+
+      renderSpotCards();
+      if (selectedSpot) {
+        const updated = allSpots.find(s => s.id === selectedSpot.id) || selectedSpot;
+        updateSpotDetail(updated);
+        updateHeroMockup(updated);
+      }
+    }
+  } catch {
+    // Si la llamada falla o CORS está bloqueado por el navegador,
+    // el sistema continúa funcionando a la perfección con la base de datos precargada.
+  }
+}
+
+// ==========================================================================
+// 5. SIMULADORES DE CURVA DE MAREA
 // ==========================================================================
 
 function initTideSliders() {
-  // A) Hero mockup slider
+  // A) Deslizador del mockup del teléfono
   const heroSlider = document.getElementById("hero-time-slider");
   const heroHourText = document.getElementById("slider-hour-display");
   const heroCursor = document.getElementById("hero-tide-cursor");
@@ -385,9 +391,7 @@ function initTideSliders() {
       const strH = String(hour).padStart(2, "0");
       heroHourText.textContent = `${strH}:00 (Simulada)`;
 
-      // Map hour (0-23) to SVG X coordinate (0 to 460)
       const x = (hour / 23) * 460;
-      // Sinusoidal wave height calculation
       const y = 50 + 28 * Math.sin((hour / 23) * Math.PI * 3.8);
 
       heroCursor.setAttribute("x1", x);
@@ -397,7 +401,7 @@ function initTideSliders() {
     });
   }
 
-  // B) Big feature tide slider
+  // B) Simulador de marea 24h grande
   const bigSlider = document.getElementById("interactive-tide-range");
   const bigHourVal = document.getElementById("ctrl-hour-val");
   const bigHeightVal = document.getElementById("ctrl-height-val");
@@ -412,7 +416,7 @@ function initTideSliders() {
       const strH = String(hour).padStart(2, "0");
       bigHourVal.textContent = `${strH}:00`;
 
-      // Calculate realistic semi-diurnal tide in northern Spain (0.5m to 3.9m)
+      // Simulación sinusoidal semidiurna (0.5m a 3.9m)
       const tAngle = (hour / 12.4) * Math.PI * 2;
       const height = 2.2 + 1.6 * Math.cos(tAngle);
       const derivative = -1.6 * Math.sin(tAngle);
@@ -427,7 +431,6 @@ function initTideSliders() {
 
       if (bigPhase) bigPhase.textContent = phaseText;
 
-      // Quality score based on tide (Rodiles likes low to mid-low)
       let dynamicScore = 4.9;
       if (height > 3.2) dynamicScore = 3.6;
       else if (height > 2.4) dynamicScore = 4.2;
@@ -436,9 +439,7 @@ function initTideSliders() {
       const stars = "★".repeat(Math.round(dynamicScore));
       bigScoreVal.textContent = `${stars} ${dynamicScore.toFixed(1)}`;
 
-      // SVG cursor positioning (0-600 width, 0-200 height)
       const x = (hour / 23) * 600;
-      // Invert Y because SVG 0 is top
       const svgY = 190 - ((height - 0.5) / 3.4) * 160;
 
       bigCursorLine.setAttribute("x1", x);
@@ -450,7 +451,7 @@ function initTideSliders() {
 }
 
 // ==========================================================================
-// 5. PWA GUIDE MODAL TOGGLE
+// 6. MODAL DE AYUDA PWA
 // ==========================================================================
 
 function initPwaGuideModal() {
@@ -475,14 +476,13 @@ function initPwaGuideModal() {
 }
 
 // ==========================================================================
-// 6. SOCIAL SHARING & DISTRIBUTION
+// 7. COMPARTIR EN REDES Y PORTAPAPELES
 // ==========================================================================
 
 function initSharingButtons() {
-  const shareUrl = window.location.href.split("#")[0];
+  const shareUrl = "https://olopezr.github.io/marea/";
   const shareTitle = "Marea — Telemetría de surf y boyas en tiempo real para España";
-  const shareText =
-    "Mira esta app de surf para España: datos en directo de boyas de Puertos del Estado, mareas oficiales IHM y 83 spots calibrados sin anuncios:";
+  const shareText = "Mira esta app de surf para España: datos en directo de boyas de Puertos del Estado, mareas oficiales IHM y 83 spots calibrados sin anuncios:";
 
   const btnWa = document.getElementById("btn-share-wa");
   if (btnWa) {
@@ -526,13 +526,11 @@ function initSharingButtons() {
   if (btnHeroShare) {
     btnHeroShare.addEventListener("click", () => {
       if (navigator.share) {
-        navigator
-          .share({
-            title: shareTitle,
-            text: shareText,
-            url: shareUrl,
-          })
-          .catch(() => {});
+        navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        }).catch(() => {});
       } else {
         const shareSection = document.getElementById("compartir");
         if (shareSection) shareSection.scrollIntoView({ behavior: "smooth" });
@@ -542,7 +540,7 @@ function initSharingButtons() {
 }
 
 // ==========================================================================
-// 7. BACKGROUND OCEAN CANVAS (SUBTLE WAVE MOTION)
+// 8. CANVAS OCEÁNICO DE FONDO
 // ==========================================================================
 
 function initOceanCanvas() {
@@ -569,7 +567,7 @@ function initOceanCanvas() {
       radius: Math.random() * 2 + 1,
       speedX: (Math.random() - 0.5) * 0.4,
       speedY: (Math.random() - 0.5) * 0.3,
-      alpha: Math.random() * 0.4 + 0.1,
+      alpha: Math.random() * 0.4 + 0.1
     });
   }
 
@@ -579,7 +577,6 @@ function initOceanCanvas() {
     ctx.clearRect(0, 0, width, height);
     step += 0.015;
 
-    // Draw subtle glowing oceanic particles
     for (let p of particles) {
       p.x += p.speedX;
       p.y += p.speedY;
@@ -598,7 +595,6 @@ function initOceanCanvas() {
     requestAnimationFrame(render);
   }
 
-  // Only animate if reduced motion is not preferred
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!prefersReduced) {
     render();

@@ -112,7 +112,12 @@
             </svg>
             <span class="btn-text">GitHub</span>
           </a>
-          <a href="https://marea.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-glow">
+          <a
+            href="https://marea.onrender.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-primary btn-glow"
+          >
             <span>Abrir App Web</span>
             <svg
               viewBox="0 0 20 20"
@@ -462,22 +467,39 @@
       <section class="section spots-section" id="spots">
         <div class="container">
           <div class="section-header text-center">
-            <div class="badge-pill">EXPLORADOR INTERACTIVO</div>
-            <h2 class="section-title">Elige un spot y consulta la telemetría</h2>
+            <div class="badge-pill">83 SPOTS EN TIEMPO REAL</div>
+            <h2 class="section-title">Todos los spots de surf de España</h2>
             <p class="section-desc">
-              Haz clic en cualquiera de estos spots emblemáticos para comprobar cómo responde la red de boyas y el
-              algoritmo de valoración en tiempo real.
+              Explora los 83 spots monitorizados con boyas y mareas oficiales. Haz clic en cualquiera para abrir su previsión y telemetría completa en directo en la app de Marea.
             </p>
+          </div>
+
+          <!-- Search and live counter bar -->
+          <div class="spots-search-bar-wrap">
+            <div class="search-input-box">
+              <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" id="spots-search-input" placeholder="Buscar entre los 83 spots por nombre o provincia (ej. Somo, Mundaka, Rodiles, El Palmar, Famara, Pantín...)" aria-label="Buscar spot de surf" autocomplete="off" />
+              <button id="spots-search-clear" class="btn-clear" aria-label="Limpiar búsqueda" style="display: none;">✕</button>
+            </div>
+            <div class="spots-live-indicator">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span id="spots-count-indicator">Mostrando 83 spots</span>
+            </div>
           </div>
 
           <!-- Filter tabs by region -->
           <div class="region-tabs" role="tablist" aria-label="Regiones de Surf">
-            <button class="tab-btn active" data-region="all">Todos los Destacados</button>
-            <button class="tab-btn" data-region="cantabrico">Cantabria & Asturias</button>
-            <button class="tab-btn" data-region="euskadi">País Vasco</button>
-            <button class="tab-btn" data-region="galicia">Galicia</button>
-            <button class="tab-btn" data-region="sur">Andalucía</button>
-            <button class="tab-btn" data-region="islas">Canarias & Baleares</button>
+            <button class="tab-btn active" data-region="all">Todos (83)</button>
+            <button class="tab-btn" data-region="cantabrico">Cantabria (10)</button>
+            <button class="tab-btn" data-region="asturias">Asturias (14)</button>
+            <button class="tab-btn" data-region="galicia">Galicia (15)</button>
+            <button class="tab-btn" data-region="euskadi">País Vasco (13)</button>
+            <button class="tab-btn" data-region="sur">Andalucía (8)</button>
+            <button class="tab-btn" data-region="canarias">Canarias (16)</button>
+            <button class="tab-btn" data-region="mediterraneo">Mediterráneo & Baleares (7)</button>
           </div>
 
           <!-- Spots Grid Cards -->
@@ -542,7 +564,14 @@
                   ></span
                 >
               </div>
-              <a href="https://marea.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Abrir en la App</a>
+              <a
+                href="https://marea.onrender.com/#/spot/somo"
+                id="detail-app-link"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary btn-sm"
+                >Abrir este spot en la App ↗</a
+              >
             </div>
           </div>
         </div>
@@ -969,7 +998,12 @@
                 <span>✓ Notificaciones Web Push</span>
               </div>
               <div class="channel-actions">
-                <a href="https://marea.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block btn-glow">
+                <a
+                  href="https://marea.onrender.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="btn btn-primary btn-block btn-glow"
+                >
                   <span>Abrir Marea Web</span>
                 </a>
                 <button class="btn btn-secondary btn-block" id="btn-show-pwa-guide">
@@ -1240,7 +1274,9 @@
           <h4 class="footer-heading">Navegación</h4>
           <ul class="footer-nav">
             <li><a href="#spots">Spots en Vivo</a></li>
-            <li><a href="https://marea.onrender.com/" target="_blank" rel="noopener noreferrer">App Web (Render)</a></li>
+            <li>
+              <a href="https://marea.onrender.com/" target="_blank" rel="noopener noreferrer">App Web (Render)</a>
+            </li>
             <li><a href="#telemetria">Telemetría de Boyas</a></li>
             <li><a href="#marea">Curva de Marea</a></li>
             <li><a href="#algoritmo">Algoritmo 0 a 5</a></li>
@@ -1282,6 +1318,7 @@
     </footer>
 
     <!-- Scripts -->
+    <script src="js/spots-data.js"></script>
     <script src="js/landing.js"></script>
   </body>
 </html>
