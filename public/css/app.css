@@ -53,11 +53,12 @@ button { font: inherit; color: inherit; }
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
-.brand { display: flex; align-items: center; gap: 8px; font: 800 1.3rem var(--display); font-stretch: 125%; }
+.brand { display: flex; align-items: center; gap: 8px; font: 800 1.3rem var(--display); font-stretch: 125%; white-space: nowrap; flex: none; }
 .brand svg { width: 28px; height: 28px; }
 .logo-bg { fill: var(--ink); }
 .logo-wave { stroke: var(--accent); }
-.top-actions { display: flex; align-items: center; gap: 8px; font-size: .78rem; white-space: nowrap; }
+.top-actions { display: flex; align-items: center; gap: 8px; font-size: .78rem; white-space: nowrap; min-width: 0; }
+.top-actions .updated { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .icon-btn {
   display: grid; place-items: center; width: 40px; height: 40px; flex: none;
   border: 0; border-radius: 50%; background: var(--surface); cursor: pointer; text-decoration: none;
@@ -368,3 +369,16 @@ dialog.help form { display: flex; justify-content: flex-end; }
 #map-view { display: grid; gap: 10px; }
 .spots-map { height: calc(100dvh - 190px); min-height: 320px; border-radius: 18px; overflow: hidden; background: var(--surface-2); }
 .spots-map .leaflet-popup-content a { color: var(--accent); font-weight: 600; }
+
+/* ---------- Horas de luz (ficha "Primera luz") ---------- */
+.daylight { display: grid; gap: 6px; margin-top: 4px; }
+.daylight svg { width: 100%; height: auto; display: block; overflow: visible; }
+.daylight .night { fill: var(--surface-2); }
+.daylight .day { fill: var(--q-fair); fill-opacity: .8; }
+.daylight .edge { stroke: var(--q-fair); stroke-width: 2; }
+.daylight .now { stroke: var(--accent); stroke-width: 2; stroke-dasharray: none; }
+.daylight .now-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.daylight .axis { fill: var(--muted); font: 600 9px var(--mono); }
+.daylight-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .82rem; }
+.daylight-row b { font: 650 .95rem var(--mono); color: var(--ink); }
+.daylight-row .len { color: var(--muted); text-align: center; }

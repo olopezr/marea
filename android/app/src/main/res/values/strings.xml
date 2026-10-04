@@ -118,6 +118,10 @@
     <string name="uv_none">Sin previsión ahora mismo</string>
     <string name="tile_firstLight">Primera luz</string>
     <string name="sunset">Puesta %1$s</string>
+    <string name="sun_rise">Amanecer</string>
+    <string name="sun_set">Atardecer</string>
+    <string name="sun_daylight">%1$s de luz</string>
+    <string name="sun_aria">Horas de luz de hoy: amanece a las %1$s y anochece a las %2$s, %3$s de luz</string>
     <string name="tile_energy">Energía</string>
     <string name="energy_low">Floja</string>
     <string name="energy_moderate">Moderada</string>

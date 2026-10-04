@@ -400,6 +400,30 @@ function locationPanel(s) {
   </section>`;
 }
 
+// Horas de luz de hoy: barra de 0 a 24 h con la noche, el día entre el amanecer y el atardecer y la hora actual.
+const lightLength = ms => { const m = Math.round(ms / 60e3); return t("duration.hm", Math.floor(m / 60), String(m % 60).padStart(2, "0")); };
+function daylight(sun, from, to, now, tz) {
+  const W = 320, H = 34, BAR = 12, Y = 4;
+  const x = tm => Math.max(0, Math.min(W, ((tm - from) / (to - from)) * W));
+  const len = lightLength(sun.set - sun.rise);
+  const inDay = now >= from && now < to;
+  return `<div class="daylight">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t("sun.aria", hhmm(sun.rise, tz), hhmm(sun.set, tz), len))}">
+      <rect class="night" x="0" y="${Y}" width="${W}" height="${BAR}" rx="6"/>
+      <rect class="day" x="${x(sun.rise)}" y="${Y}" width="${x(sun.set) - x(sun.rise)}" height="${BAR}"/>
+      <line class="edge" x1="${x(sun.rise)}" x2="${x(sun.rise)}" y1="${Y - 2}" y2="${Y + BAR + 2}"/>
+      <line class="edge" x1="${x(sun.set)}" x2="${x(sun.set)}" y1="${Y - 2}" y2="${Y + BAR + 2}"/>
+      ${inDay ? `<circle class="now-dot" cx="${x(now)}" cy="${Y + BAR / 2}" r="4.5"/>` : ""}
+      ${[0, 6, 12, 18, 24].map(h => `<text class="axis" x="${(h / 24) * W}" y="${H - 2}" text-anchor="${h === 0 ? "start" : h === 24 ? "end" : "middle"}">${String(h).padStart(2, "0")}h</text>`).join("")}
+    </svg>
+    <div class="daylight-row">
+      <span><span class="muted">${t("sun.rise")}</span> <b>${hhmm(sun.rise, tz)}</b></span>
+      <span class="len">${t("sun.daylight", len)}</span>
+      <span><span class="muted">${t("sun.set")}</span> <b>${hhmm(sun.set, tz)}</b></span>
+    </div>
+  </div>`;
+}
+
 // Medido frente a lo previsto por el modelo de Puertos del Estado en la misma posición de la boya.
 function buoyForecastBlock(b) {
   if (!b.predicted) return `<p class="muted small">${t("buoy.noPred")}</p>`;
@@ -535,7 +559,7 @@ async function renderSpot(id, force = false) {
       ${tile(t("tile.air"), `${fmt(s.meteo?.air?.air ?? n.air, 0)} °C`, t(s.meteo?.air ? "air.measured" : "air.forecast"))}
       ${tile(t("tile.uv"), s.uv?.now != null ? `${Math.round(s.uv.now)} · ${uvLabel(s.uv.now)}` : "–",
         s.uv ? t("uv.max", Math.round(s.uv.max), hhmm(s.uv.maxT, tz).slice(0, 2), uvAdvice(s.uv.max)) : t("uv.none"))}
-      <div class="tile tile-wide"><span class="eyebrow">${t("tile.firstLight")}</span><strong>${s.sun ? hhmm(s.sun.rise, tz) : "–"}</strong><span class="muted small">${s.sun ? t("sunset", hhmm(s.sun.set, tz)) : ""}</span></div>
+      <div class="tile tile-wide"><span class="eyebrow">${t("tile.firstLight")}</span>${s.sun ? daylight(s.sun, s.tideDay.from, s.tideDay.to, now, tz) : "<strong>–</strong>"}</div>
     </section>
 
     <section class="panel tide-panel">

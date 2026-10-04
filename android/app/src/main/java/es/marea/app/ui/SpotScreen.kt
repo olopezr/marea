@@ -1,5 +1,21 @@
 package es.marea.app.ui
 
+import es.marea.app.data.Sun
+
+import androidx.compose.ui.text.withStyle
+
+import androidx.compose.ui.text.buildAnnotatedString
+
+import androidx.compose.ui.text.SpanStyle
+
+import androidx.compose.ui.geometry.CornerRadius
+
+import androidx.compose.ui.geometry.Size
+
+import androidx.compose.ui.geometry.Offset
+
+import androidx.compose.foundation.Canvas
+
 import androidx.compose.foundation.layout.offset
 
 import es.marea.app.R
@@ -149,7 +165,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
                 // Misma altura para las dos fichas de cada fila.
                 Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) { pair.forEach { Box(Modifier.weight(1f).fillMaxHeight()) { it() } } }
             }
-            Tile(tr(R.string.tile_firstLight), s.sun?.let { Surf.hhmm(it.rise, tz) } ?: "–") { SubText(s.sun?.let { tr(R.string.sunset, Surf.hhmm(it.set, tz)) } ?: "") }
+            DaylightTile(s.sun, s.tideDay.from, s.tideDay.to, tz)
         }
     }
     item {
@@ -460,5 +476,48 @@ private fun Note(text: String) {
     ) {
         Box(Modifier.padding(top = 6.dp)) { LiveDot(off = true) }
         Text(text, style = Type.body(13.sp), color = c.ink)
+    }
+}
+
+/** Ficha "Primera luz": barra de 0 a 24 h con la noche, el día entre el amanecer y el atardecer y la hora actual. */
+@Composable
+private fun DaylightTile(sun: Sun?, from: Double, to: Double, tz: String) {
+    val c = LocalColors.current
+    val now = System.currentTimeMillis().toDouble()
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.surface).padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Eyebrow(tr(R.string.tile_firstLight))
+        if (sun == null) { Text("–", style = Type.mono(17.sp), color = c.ink); return@Column }
+        val len = Surf.daylight(sun.set - sun.rise)
+        val aria = tr(R.string.sun_aria, Surf.hhmm(sun.rise, tz), Surf.hhmm(sun.set, tz), len)
+        Column(Modifier.clearAndSetSemantics { contentDescription = aria }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Canvas(Modifier.fillMaxWidth().height(16.dp)) {
+                fun x(t: Double) = (((t - from) / (to - from)).coerceIn(0.0, 1.0) * size.width).toFloat()
+                val top = 2.dp.toPx(); val bar = 12.dp.toPx()
+                drawRoundRect(c.surface2, Offset(0f, top), Size(size.width, bar), CornerRadius(bar / 2))
+                drawRect(c.qFair.copy(alpha = 0.8f), Offset(x(sun.rise), top), Size(x(sun.set) - x(sun.rise), bar))
+                listOf(sun.rise, sun.set).forEach { drawLine(c.qFair, Offset(x(it), 0f), Offset(x(it), size.height), strokeWidth = 2.dp.toPx()) }
+                if (now >= from && now < to) {
+                    drawCircle(c.surface, 6.dp.toPx(), Offset(x(now), top + bar / 2))
+                    drawCircle(c.accent, 4.dp.toPx(), Offset(x(now), top + bar / 2))
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf(0, 6, 12, 18, 24).forEach { Text("%02dh".format(it), style = Type.mono(10.sp), color = c.muted) }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(buildAnnotatedString {
+                    withStyle(SpanStyle(color = c.muted)) { append(tr(R.string.sun_rise) + " ") }
+                    withStyle(SpanStyle(color = c.ink, fontFamily = Fonts.monoBold, fontSize = 15.sp)) { append(Surf.hhmm(sun.rise, tz)) }
+                }, style = Type.body(13.sp))
+                Text(tr(R.string.sun_daylight, len), style = Type.body(13.sp), color = c.muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                Text(buildAnnotatedString {
+                    withStyle(SpanStyle(color = c.muted)) { append(tr(R.string.sun_set) + " ") }
+                    withStyle(SpanStyle(color = c.ink, fontFamily = Fonts.monoBold, fontSize = 15.sp)) { append(Surf.hhmm(sun.set, tz)) }
+                }, style = Type.body(13.sp))
+            }
+        }
     }
 }

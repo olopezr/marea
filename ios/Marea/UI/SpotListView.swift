@@ -66,14 +66,13 @@ struct SpotListView: View {
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
                     Logo()
-                    Text("Marea").font(Theme.display(21)).foregroundStyle(Theme.ink)
+                    Text("Marea").font(Theme.display(21)).foregroundStyle(Theme.ink).lineLimit(1)
                 }
-                Spacer()
-                if let result {
-                    Text(Surf.ago(result.data.updatedAt).capitalizedFirst).font(Theme.body(12.5)).foregroundStyle(Theme.muted)
-                } else {
-                    Text(L("loading")).font(Theme.body(12.5)).foregroundStyle(Theme.muted)
-                }
+                .fixedSize() // el nombre nunca se parte; lo que se ajusta es la hora de actualización
+                Spacer(minLength: 4)
+                Text(result.map { Surf.ago($0.data.updatedAt).capitalizedFirst } ?? L("loading"))
+                    .font(Theme.body(12.5)).foregroundStyle(Theme.muted)
+                    .lineLimit(1).minimumScaleFactor(0.75)
                 IconCircleButton(systemName: "map", label: L("map.title")) { app.path.append(.map) }
                 IconCircleButton(systemName: app.alerts.state.spots.isEmpty ? "bell" : "bell.fill",
                                  on: !app.alerts.state.spots.isEmpty, label: L("alerts")) { app.path.append(.alerts) }

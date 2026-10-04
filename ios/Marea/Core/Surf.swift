@@ -197,6 +197,12 @@ extension Surf {
         return s.prefix(1).uppercased() + s.dropFirst()
     }
 
+    /// Duración de las horas de luz: "11 h 35 min".
+    static func daylight(_ ms: Double) -> String {
+        let m = Int((ms / 60_000).rounded())
+        return L("duration.hm", "\(m / 60)", String(format: "%02d", m % 60))
+    }
+
     /// Potencia del oleaje en aguas profundas (kW por metro de frente de ola): 0,49 · H² · T.
     static func power(_ h: Double?, _ T: Double?) -> Double? {
         guard let h, let T else { return nil }

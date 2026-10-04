@@ -104,10 +104,8 @@ struct SpotDetailView: View {
                 }
             }
             GridRow {
-                Tile(label: L("tile.firstLight"), value: Text(s.sun.map { Surf.hhmm($0.rise, tz) } ?? "–")) {
-                    Text(s.sun.map { L("sunset", Surf.hhmm($0.set, tz)) } ?? "")
-                }
-                .gridCellColumns(2)
+                DaylightTile(sun: s.sun, from: s.tideDay.from, to: s.tideDay.to, tz: tz)
+                    .gridCellColumns(2)
             }
         }
 
@@ -396,5 +394,63 @@ struct FlowLayout: Layout {
             rows[rows.count - 1] = r
         }
         return rows
+    }
+}
+
+/// Ficha "Primera luz": barra de 0 a 24 h con la noche, el día entre el amanecer y el atardecer y la hora actual.
+struct DaylightTile: View {
+    let sun: Sun?
+    let from: Double
+    let to: Double
+    let tz: String
+    var now = Date.now.ms
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Eyebrow(text: L("tile.firstLight"))
+            if let sun {
+                let len = Surf.daylight(sun.set - sun.rise)
+                VStack(spacing: 4) {
+                    GeometryReader { geo in
+                        let w = geo.size.width
+                        let x = { (t: Double) in CGFloat(min(1, max(0, (t - from) / (to - from)))) * w }
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Theme.surface2)
+                            Rectangle().fill(Theme.q(.fair).opacity(0.8))
+                                .frame(width: max(0, x(sun.set) - x(sun.rise))).offset(x: x(sun.rise))
+                            ForEach([sun.rise, sun.set], id: \.self) { t in
+                                Rectangle().fill(Theme.q(.fair)).frame(width: 2, height: 16).offset(x: x(t) - 1)
+                            }
+                            if now >= from && now < to {
+                                Circle().fill(Theme.accent).overlay(Circle().stroke(Theme.surface, lineWidth: 2))
+                                    .frame(width: 10, height: 10).offset(x: x(now) - 5)
+                            }
+                        }
+                        .frame(height: 12).frame(maxHeight: .infinity)
+                    }
+                    .frame(height: 16)
+                    HStack {
+                        ForEach([0, 6, 12, 18, 24], id: \.self) { h in
+                            Text(String(format: "%02dh", h)).font(.custom("JetBrainsMono-SemiBold", fixedSize: 10)).foregroundStyle(Theme.muted)
+                            if h < 24 { Spacer(minLength: 0) }
+                        }
+                    }
+                }
+                HStack(alignment: .firstTextBaseline) {
+                    (Text(L("sun.rise") + " ").foregroundColor(Theme.muted) + Text(Surf.hhmm(sun.rise, tz)).font(Theme.monoBold(15)).foregroundColor(Theme.ink))
+                    Spacer(minLength: 6)
+                    Text(L("sun.daylight", len)).foregroundStyle(Theme.muted).multilineTextAlignment(.center).lineLimit(2)
+                    Spacer(minLength: 6)
+                    (Text(L("sun.set") + " ").foregroundColor(Theme.muted) + Text(Surf.hhmm(sun.set, tz)).font(Theme.monoBold(15)).foregroundColor(Theme.ink))
+                }
+                .font(Theme.body(13))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(L("sun.aria", Surf.hhmm(sun.rise, tz), Surf.hhmm(sun.set, tz), len))
+            } else {
+                Text("–").font(Theme.mono(17.5)).foregroundStyle(Theme.ink)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
     }
 }

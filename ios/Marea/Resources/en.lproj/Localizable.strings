@@ -115,6 +115,10 @@
 "uv.none" = "No forecast right now";
 "tile.firstLight" = "First light";
 "sunset" = "Sunset %1$@";
+"sun.rise" = "Sunrise";
+"sun.set" = "Sunset";
+"sun.daylight" = "%1$@ of daylight";
+"sun.aria" = "Today's daylight: sunrise at %1$@ and sunset at %2$@, %3$@ of daylight";
 "tile.energy" = "Energy";
 "energy.low" = "Weak";
 "energy.moderate" = "Moderate";

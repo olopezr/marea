@@ -185,6 +185,12 @@ object Surf {
         return s.replaceFirstChar { it.uppercase() }
     }
 
+    /** Duración de las horas de luz: "11 h 35 min". */
+    fun daylight(ms: Double): String {
+        val m = (ms / 60_000).roundToInt()
+        return tr(R.string.duration_hm, m / 60, "%02d".format(m % 60))
+    }
+
     /** Potencia del oleaje en aguas profundas (kW por metro de frente de ola): 0,49 · H² · T. */
     fun power(h: Double?, period: Double?) = if (h == null || period == null) null else 0.49 * h * h * period
 

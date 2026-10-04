@@ -115,6 +115,10 @@
 "uv.none" = "Sin previsión ahora mismo";
 "tile.firstLight" = "Primera luz";
 "sunset" = "Puesta %1$@";
+"sun.rise" = "Amanecer";
+"sun.set" = "Atardecer";
+"sun.daylight" = "%1$@ de luz";
+"sun.aria" = "Horas de luz de hoy: amanece a las %1$@ y anochece a las %2$@, %3$@ de luz";
 "tile.energy" = "Energía";
 "energy.low" = "Floja";
 "energy.moderate" = "Moderada";

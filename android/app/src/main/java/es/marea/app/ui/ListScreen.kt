@@ -1,5 +1,7 @@
 package es.marea.app.ui
 
+import androidx.compose.ui.text.style.TextOverflow
+
 import es.marea.app.R
 
 import es.marea.app.data.tr
@@ -135,9 +137,13 @@ fun ListScreen(app: AppState, openSpot: (String) -> Unit, openAlerts: () -> Unit
         Column(Modifier.background(c.bg).statusBarsPadding().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Logo()
-                Text("Marea", style = Type.display(21.sp), color = c.ink)
-                Spacer(Modifier.weight(1f))
-                Text(result?.let { Surf.ago(it.data.updatedAt).replaceFirstChar { ch -> ch.uppercase() } } ?: tr(R.string.loading), style = Type.body(12.5.sp), color = c.muted)
+                // El nombre nunca se parte; lo que se recorta es la hora de actualización.
+                Text("Marea", style = Type.display(21.sp), color = c.ink, maxLines = 1, softWrap = false)
+                Text(
+                    result?.let { Surf.ago(it.data.updatedAt).replaceFirstChar { ch -> ch.uppercase() } } ?: tr(R.string.loading),
+                    style = Type.body(12.5.sp), color = c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f),
+                )
                 IconCircleButton(Icons.map, tr(R.string.map_title), onClick = openMap)
                 IconCircleButton(if (app.alerts.state.spots.isEmpty()) Icons.bell else Icons.bellOn, tr(R.string.alerts), on = app.alerts.state.spots.isNotEmpty(), onClick = openAlerts)
                 val spin = rememberInfiniteTransition(label = "spin").animateFloat(0f, 360f, infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Restart), label = "r")

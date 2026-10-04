@@ -117,6 +117,10 @@
     <string name="uv_none">No forecast right now</string>
     <string name="tile_firstLight">First light</string>
     <string name="sunset">Sunset %1$s</string>
+    <string name="sun_rise">Sunrise</string>
+    <string name="sun_set">Sunset</string>
+    <string name="sun_daylight">%1$s of daylight</string>
+    <string name="sun_aria">Today\'s daylight: sunrise at %1$s and sunset at %2$s, %3$s of daylight</string>
     <string name="tile_energy">Energy</string>
     <string name="energy_low">Weak</string>
     <string name="energy_moderate">Moderate</string>
