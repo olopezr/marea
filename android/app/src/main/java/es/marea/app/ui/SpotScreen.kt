@@ -507,16 +507,17 @@ private fun DaylightTile(sun: Sun?, from: Double, to: Double, tz: String) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 listOf(0, 6, 12, 18, 24).forEach { Text("%02dh".format(it), style = Type.mono(10.sp), color = c.muted) }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(buildAnnotatedString {
-                    withStyle(SpanStyle(color = c.muted)) { append(tr(R.string.sun_rise) + " ") }
-                    withStyle(SpanStyle(color = c.ink, fontFamily = Fonts.monoBold, fontSize = 15.sp)) { append(Surf.hhmm(sun.rise, tz)) }
-                }, style = Type.body(13.sp))
+            // Hora arriba y "Amanecer" / "Atardecer" debajo.
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column {
+                    Text(Surf.hhmm(sun.rise, tz), style = Type.monoBold(15.sp), color = c.ink)
+                    Text(tr(R.string.sun_rise), style = Type.body(13.sp), color = c.muted)
+                }
                 Text(tr(R.string.sun_daylight, len), style = Type.body(13.sp), color = c.muted, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
-                Text(buildAnnotatedString {
-                    withStyle(SpanStyle(color = c.muted)) { append(tr(R.string.sun_set) + " ") }
-                    withStyle(SpanStyle(color = c.ink, fontFamily = Fonts.monoBold, fontSize = 15.sp)) { append(Surf.hhmm(sun.set, tz)) }
-                }, style = Type.body(13.sp))
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(Surf.hhmm(sun.set, tz), style = Type.monoBold(15.sp), color = c.ink)
+                    Text(tr(R.string.sun_set), style = Type.body(13.sp), color = c.muted)
+                }
             }
         }
     }

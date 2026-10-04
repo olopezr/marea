@@ -417,9 +417,9 @@ function daylight(sun, from, to, now, tz) {
       ${[0, 6, 12, 18, 24].map(h => `<text class="axis" x="${(h / 24) * W}" y="${H - 2}" text-anchor="${h === 0 ? "start" : h === 24 ? "end" : "middle"}">${String(h).padStart(2, "0")}h</text>`).join("")}
     </svg>
     <div class="daylight-row">
-      <span><span class="muted">${t("sun.rise")}</span> <b>${hhmm(sun.rise, tz)}</b></span>
+      <span class="sun-time"><b>${hhmm(sun.rise, tz)}</b><span class="muted">${t("sun.rise")}</span></span>
       <span class="len">${t("sun.daylight", len)}</span>
-      <span><span class="muted">${t("sun.set")}</span> <b>${hhmm(sun.set, tz)}</b></span>
+      <span class="sun-time end"><b>${hhmm(sun.set, tz)}</b><span class="muted">${t("sun.set")}</span></span>
     </div>
   </div>`;
 }

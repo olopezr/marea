@@ -436,12 +436,12 @@ struct DaylightTile: View {
                         }
                     }
                 }
-                HStack(alignment: .firstTextBaseline) {
-                    (Text(L("sun.rise") + " ").foregroundColor(Theme.muted) + Text(Surf.hhmm(sun.rise, tz)).font(Theme.monoBold(15)).foregroundColor(Theme.ink))
+                HStack(alignment: .center) {
+                    sunTime(sun.rise, L("sun.rise"), .leading)
                     Spacer(minLength: 6)
                     Text(L("sun.daylight", len)).foregroundStyle(Theme.muted).multilineTextAlignment(.center).lineLimit(2)
                     Spacer(minLength: 6)
-                    (Text(L("sun.set") + " ").foregroundColor(Theme.muted) + Text(Surf.hhmm(sun.set, tz)).font(Theme.monoBold(15)).foregroundColor(Theme.ink))
+                    sunTime(sun.set, L("sun.set"), .trailing)
                 }
                 .font(Theme.body(13))
                 .accessibilityElement(children: .ignore)
@@ -452,5 +452,13 @@ struct DaylightTile: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    /// Hora arriba y "Amanecer" / "Atardecer" debajo.
+    private func sunTime(_ t: Double, _ label: String, _ align: HorizontalAlignment) -> some View {
+        VStack(alignment: align, spacing: 1) {
+            Text(Surf.hhmm(t, tz)).font(Theme.monoBold(15)).foregroundStyle(Theme.ink)
+            Text(label).foregroundStyle(Theme.muted)
+        }
     }
 }

@@ -379,6 +379,8 @@ dialog.help form { display: flex; justify-content: flex-end; }
 .daylight .now { stroke: var(--accent); stroke-width: 2; stroke-dasharray: none; }
 .daylight .now-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
 .daylight .axis { fill: var(--muted); font: 600 9px var(--mono); }
-.daylight-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: .82rem; }
+.daylight-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .82rem; }
+.sun-time { display: grid; gap: 1px; }
+.sun-time.end { text-align: right; }
 .daylight-row b { font: 650 .95rem var(--mono); color: var(--ink); }
 .daylight-row .len { color: var(--muted); text-align: center; }
