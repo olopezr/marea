@@ -1,0 +1,2 @@
+/* Location permission text. */
+"NSLocationWhenInUseUsageDescription" = "Marea only uses your location to sort the spots by distance. It never leaves your phone.";

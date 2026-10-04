@@ -8,6 +8,7 @@ import { forecastAll } from "./forecast.js";
 import * as ihm from "./sources/ihm.js";
 import * as portus from "./sources/portus.js";
 import { airTemperature } from "./sources/metno.js";
+import { pointWaves } from "./sources/openmeteo.js";
 
 const H = 3600e3;
 
@@ -212,6 +213,28 @@ export function uvToday(hours, now, from, to) {
   return { now: cur ? r(cur.uv) : null, max: r(max.uv), maxT: max.t };
 }
 
+// Previsión en la posición de la boya y cuánto se ha desviado de lo medido en las últimas 24 h:
+// `bias` > 0 si la boya mide más de lo previsto (el modelo se queda corto), `mae` el error medio.
+export function forecastFit(history, model, now = Date.now()) {
+  const byHour = new Map(model.map(([t, h]) => [Math.round(t / H), h]));
+  const pairs = history.filter(([t]) => now - t <= 24 * H)
+    .map(([t, h]) => [h, byHour.get(Math.round(t / H))]).filter(([, m]) => m != null);
+  if (pairs.length < 6) return null;
+  const r = x => Math.round(x * 100) / 100;
+  return {
+    bias: r(pairs.reduce((a, [h, m]) => a + h - m, 0) / pairs.length),
+    mae: r(pairs.reduce((a, [h, m]) => a + Math.abs(h - m), 0) / pairs.length),
+    n: pairs.length,
+  };
+}
+
+async function withModel(buoy) {
+  if (!buoy || buoy.buoy.lat == null) return buoy;
+  const model = await pointWaves(buoy.buoy).catch(() => null);
+  if (!model?.length) return { ...buoy, model: null, fit: null };
+  return { ...buoy, model, fit: forecastFit(buoy.history ?? [], model) };
+}
+
 export async function detail(spot) {
   const now = Date.now();
   const { source, spots: all } = await forecastAll(SPOTS);
@@ -223,7 +246,7 @@ export async function detail(spot) {
   // Temperatura del aire: si la previsión no la trae, la de MET Norway.
   if (summary.now.air == null) summary.now.air = await airTemperature(spot).catch(() => null);
   const [buoy, surgeRaw, obsRaw, meteo] = await Promise.all([
-    portus.nearestReading(spot).catch(() => null),
+    portus.nearestReading(spot).then(withModel).catch(() => null),
     surge(spot, f.dayStart, todayEnd),
     observed(spot, f.tide, f.dayStart, todayEnd),
     portus.meteo(spot).catch(() => null),

@@ -26,12 +26,13 @@ fun MareaRoot(app: AppState) {
         Box(Modifier.fillMaxSize()) {
             NavHost(nav, startDestination = "list") {
                 composable("list") {
-                    ListScreen(app, openSpot = { nav.navigate("spot/$it") }, openAlerts = { nav.navigate("alerts") })
+                    ListScreen(app, openSpot = { nav.navigate("spot/$it") }, openAlerts = { nav.navigate("alerts") }, openMap = { nav.navigate("map") })
                 }
                 composable("spot/{id}") { entry ->
                     SpotScreen(app, entry.arguments?.getString("id").orEmpty(), onBack = { nav.popBackStack() })
                 }
                 composable("alerts") { AlertsScreen(app, onBack = { nav.popBackStack() }) }
+                composable("map") { MapScreen(app, openSpot = { nav.navigate("spot/$it") }, onBack = { nav.popBackStack() }) }
             }
             Toast(app.toast, Modifier.align(Alignment.BottomCenter).navigationBarsPadding())
         }

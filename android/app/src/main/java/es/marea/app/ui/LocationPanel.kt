@@ -1,5 +1,9 @@
 package es.marea.app.ui
 
+import es.marea.app.R
+
+import es.marea.app.data.tr
+
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,7 +49,7 @@ fun LocationPanel(name: String, lat: Double, lon: Double) {
         Unit
     }
     Panel {
-        PanelTitle("Ubicación")
+        PanelTitle(tr(R.string.loc_title))
         Box(Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp))) {
             AndroidView(
                 factory = { ctx ->
@@ -67,8 +71,8 @@ fun LocationPanel(name: String, lat: Double, lon: Double) {
             )
             // Capa encima del mapa: el mapa no roba el desplazamiento de la pantalla y un toque lo abre.
             Box(
-                Modifier.matchParentSize().clickable(role = Role.Button, onClickLabel = "Cómo llegar", onClick = open)
-                    .semantics { contentDescription = "Mapa de $name" },
+                Modifier.matchParentSize().clickable(role = Role.Button, onClickLabel = tr(R.string.loc_directions), onClick = open)
+                    .semantics { contentDescription = tr(R.string.loc_map, name) },
             )
             Text("© OpenStreetMap", style = Type.body(10.sp), color = c.muted, modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp))
         }
@@ -76,7 +80,7 @@ fun LocationPanel(name: String, lat: Double, lon: Double) {
             SelectionContainer { Text(Surf.coords(lat, lon), style = Type.mono(13.sp), color = c.ink) }
             Spacer(Modifier.weight(1f))
             Box(Modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = open), contentAlignment = Alignment.Center) {
-                Text("Cómo llegar", style = Type.bodySemibold(14.sp), color = c.accentText)
+                Text(tr(R.string.loc_directions), style = Type.bodySemibold(14.sp), color = c.accentText)
             }
         }
     }

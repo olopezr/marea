@@ -115,6 +115,16 @@ export function installFetch(opts = {}) {
         return json([{ id: 3109, nombre: "Mareografo de Santander 2", latitud: 43.4613, longitud: -3.7908, disponible: true }]);
       }
       if (url.pathname.includes("/parametros/")) return json([{ id: 27 }]);
+      // Últimas 48 h de la boya de prueba: el oleaje sube de 1,5 a 2,5 m.
+      if (url.pathname.endsWith("/RTData/station/900")) {
+        const last = Math.floor(Date.now() / H) * H;
+        return json(Array.from({ length: 48 }, (_, i) => {
+          const h = 1.5 + Math.max(0, 12 - i) / 12;
+          return { fecha: pDate(last - i * H), datos: [
+            { nombreColumna: "hm0", valor: String(Math.round(h * 100)), factor: 100 },
+            { nombreColumna: "tp", valor: "1400", factor: 100 }] };
+        }));
+      }
       if (url.pathname.includes("/RTData/station/")) {
         // 24 h de lecturas por minuto respecto al nivel medio, siguiendo la misma marea que la tabla
         // simulada del IHM (pleamar 4 m y bajamar 1 m cada 6 h 12 min desde el día 1 a las 03:00 UTC).

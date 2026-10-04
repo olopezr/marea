@@ -72,15 +72,16 @@ struct SpotListView: View {
                 if let result {
                     Text(Surf.ago(result.data.updatedAt).capitalizedFirst).font(Theme.body(12.5)).foregroundStyle(Theme.muted)
                 } else {
-                    Text("Cargando…").font(Theme.body(12.5)).foregroundStyle(Theme.muted)
+                    Text(L("loading")).font(Theme.body(12.5)).foregroundStyle(Theme.muted)
                 }
+                IconCircleButton(systemName: "map", label: L("map.title")) { app.path.append(.map) }
                 IconCircleButton(systemName: app.alerts.state.spots.isEmpty ? "bell" : "bell.fill",
-                                 on: !app.alerts.state.spots.isEmpty, label: "Avisos") { app.path.append(.alerts) }
-                IconCircleButton(systemName: "arrow.clockwise", label: "Actualizar datos") { Task { await load(force: true) } }
+                                 on: !app.alerts.state.spots.isEmpty, label: L("alerts")) { app.path.append(.alerts) }
+                IconCircleButton(systemName: "arrow.clockwise", label: L("refresh")) { Task { await load(force: true) } }
                     .rotationEffect(.degrees(loading ? 360 : 0))
                     .animation(loading ? .linear(duration: 0.8).repeatForever(autoreverses: false) : .default, value: loading)
             }
-            Picker("Filtrar spots", selection: $app.filter) {
+            Picker(L("filter.label"), selection: $app.filter) {
                 ForEach(ListFilter.allCases, id: \.self) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
@@ -88,7 +89,7 @@ struct SpotListView: View {
 
             HStack(spacing: 4) {
                 Image(systemName: "magnifyingglass").foregroundStyle(Theme.muted).padding(.leading, 12)
-                TextField("Buscar playa o zona", text: $app.query)
+                TextField(L("search.placeholder"), text: $app.query)
                     .font(Theme.body(16)).foregroundStyle(Theme.ink)
                     .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.search)
                     .focused($searchFocused).padding(.vertical, 12)
@@ -96,7 +97,7 @@ struct SpotListView: View {
                     Button { app.query = "" } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.muted).frame(width: 44, height: 44)
                     }
-                    .accessibilityLabel("Borrar la búsqueda")
+                    .accessibilityLabel(L("search.clear"))
                 }
             }
             .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
@@ -117,19 +118,19 @@ struct SpotListView: View {
         let list = shown
         if app.filter == .all, q.isEmpty, let best = rows.max(by: { $0.s.score < $1.s.score })?.s {
             Button { app.path.append(.spot(best.id)) } label: {
-                (Text("Ahora mismo lo mejor está en ") + Text(best.name).foregroundColor(Theme.ink).bold().underline()
-                 + Text(": \(Surf.fmt(best.now.h)) m a \(Surf.fmt(best.now.T, 0)) s, \(Surf.windPhrase(best.now.windType, best.now.wind))."))
+                (Text(L("list.bestPrefix")) + Text(best.name).foregroundColor(Theme.ink).bold().underline()
+                 + Text(L("list.bestSuffix", Surf.fmt(best.now.h), Surf.fmt(best.now.T, 0), Surf.windPhrase(best.now.windType, best.now.wind))))
                     .font(Theme.body(15)).foregroundStyle(Theme.muted).multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 2)
             }
             .buttonStyle(.plain)
         }
         if !q.isEmpty, !list.isEmpty {
-            Text("\(list.count) \(list.count == 1 ? "spot" : "spots") para «\(q)»").font(Theme.body(15)).foregroundStyle(Theme.muted)
+            Text(L(list.count == 1 ? "list.results.one" : "list.results.other", "\(list.count)", q)).font(Theme.body(15)).foregroundStyle(Theme.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         if app.filter == .near, app.location.position == nil {
-            Banner(text: "Permite el acceso a tu ubicación para ordenar los spots por cercanía.")
+            Banner(text: L("list.locationNeeded"))
         }
         if list.isEmpty {
             emptyState(q)
@@ -144,16 +145,16 @@ struct SpotListView: View {
     private func emptyState(_ q: String) -> some View {
         VStack(spacing: 8) {
             if q.isEmpty {
-                Text("Aún no tienes favoritos.").font(Theme.body())
-                Text("Toca la estrella de un spot para tenerlo aquí.").font(Theme.body(13)).foregroundStyle(Theme.muted)
+                Text(L("empty.favs")).font(Theme.body())
+                Text(L("empty.favsHint")).font(Theme.body(13)).foregroundStyle(Theme.muted)
             } else {
-                Text("Ningún spot coincide con «\(q)».").font(Theme.body())
+                Text(L("empty.noMatch", q)).font(Theme.body())
                 let elsewhere = app.filter == .fav ? rows.filter { Surf.matches(name: $0.s.name, region: $0.s.region, query: q) }.count : 0
                 if elsewhere > 0 {
-                    Button("Ver \(elsewhere) \(elsewhere == 1 ? "resultado" : "resultados") en Todos") { app.filter = .all }
+                    Button(L(elsewhere == 1 ? "empty.seeAll.one" : "empty.seeAll.other", "\(elsewhere)")) { app.filter = .all }
                         .buttonStyle(GhostButtonStyle())
                 } else {
-                    Text("Prueba con el nombre de la playa o la zona, por ejemplo «Cantabria» o «Lanzarote».")
+                    Text(L("empty.hint"))
                         .font(Theme.body(13)).foregroundStyle(Theme.muted)
                 }
             }
@@ -195,14 +196,14 @@ struct SpotCard: View {
             HStack(spacing: 10) { RatingChip(rating: r); ScoreBar(score: s.score) }
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 10) {
                 GridRow {
-                    metric("Ola") { num(n.h); unit("m") }
-                    metric("Periodo") { num(n.T, 0); unit("s"); DirArrow(deg: n.dir) }
+                    metric(L("metric.wave")) { num(n.h); unit("m") }
+                    metric(L("metric.period")) { num(n.T, 0); unit("s"); DirArrow(deg: n.dir) }
                 }
                 GridRow {
-                    metric("Viento") { num(n.wind, 0); unit("kn"); WindTypePill(type: n.windType) }
+                    metric(L("metric.wind")) { num(n.wind, 0); unit("kn"); WindTypePill(type: n.windType) }
                     VStack(alignment: .leading, spacing: 4) {
-                        Eyebrow(text: "Marea")
-                        Text(t.rising == nil ? "–" : t.rising! ? "↗ Sube" : "↘ Baja").font(Theme.body(15)).foregroundStyle(Theme.ink)
+                        Eyebrow(text: L("metric.tide"))
+                        Text(t.rising == nil ? "–" : L(t.rising! ? "tide.rising" : "tide.falling")).font(Theme.body(15)).foregroundStyle(Theme.ink)
                         if let next = t.next {
                             Text("\(next.word) \(Surf.hhmm(next.t, s.tz))").font(Theme.body(13)).foregroundStyle(Theme.muted)
                         }
@@ -217,7 +218,7 @@ struct SpotCard: View {
         .contentShape(RoundedRectangle(cornerRadius: 18))
         .onTapGesture { app.path.append(.spot(s.id)) }
         .accessibilityElement(children: .contain)
-        .accessibilityAction(named: "Ver \(s.name)") { app.path.append(.spot(s.id)) }
+        .accessibilityAction(named: L("card.open", s.name)) { app.path.append(.spot(s.id)) }
     }
 
     private func metric<V: View>(_ label: String, @ViewBuilder _ value: () -> V) -> some View {
@@ -238,7 +239,7 @@ struct WindTypePill: View {
     let type: WindType
     var body: some View {
         let color = ["off": Theme.greenText, "calm": Theme.greenText, "on": Theme.accentText][type.key] ?? Theme.ink
-        Text(type.label).font(Theme.bodySemibold(12, relativeTo: .caption)).foregroundStyle(color)
+        Text(Surf.windLabel(type)).font(Theme.bodySemibold(12, relativeTo: .caption)).foregroundStyle(color)
             .padding(.horizontal, 7).padding(.vertical, 2).background(Theme.surface2, in: Capsule())
     }
 }
@@ -270,9 +271,9 @@ struct BuoyLine: View {
     var body: some View {
         Group {
             switch state {
-            case .loading: Text("Boya: cargando…").foregroundStyle(Theme.muted)
-            case .none: Text("Sin boya operativa cerca").foregroundStyle(Theme.muted)
-            case .failed: Text("Boya no disponible ahora").foregroundStyle(Theme.muted)
+            case .loading: Text(L("buoyline.loading")).foregroundStyle(Theme.muted)
+            case .none: Text(L("buoyline.none")).foregroundStyle(Theme.muted)
+            case .failed: Text(L("buoyline.failed")).foregroundStyle(Theme.muted)
             case .loaded(let b): line(b)
             }
         }
@@ -289,18 +290,21 @@ struct BuoyLine: View {
 
     private func line(_ b: BuoyReading) -> some View {
         let off = b.buoy.fallback == true
-        var text = Text("Boya \(b.buoy.name)\(off ? " (a \(Int(b.buoy.distKm)) km)" : ""): ").foregroundColor(Theme.ink)
+        var text = Text(L("buoyline.name", b.buoy.name) + (off ? L("buoyline.away", "\(Int(b.buoy.distKm))") : "") + ": ").foregroundColor(Theme.ink)
             + Text("\(Surf.fmt(b.h)) m").font(Theme.monoBold(13)).foregroundColor(Theme.ink)
         if let tp = b.Tp { text = text + Text(" · \(Surf.fmt(tp, 0)) s").foregroundColor(Theme.ink) }
         if let d = b.dir { text = text + Text(" \(Surf.cardinal(d))").foregroundColor(Theme.ink) }
-        if let p = b.predicted { text = text + Text(" · prev. \(Surf.fmt(p.h)) m").foregroundColor(Theme.muted) }
+        if let tr = b.trend {
+            text = text + Text(" · \(Surf.trendArrow(tr.key)) \(L("trend.\(tr.key)"))").foregroundColor(Theme.trend(tr.key))
+        }
+        if let p = b.predicted { text = text + Text(" · " + L("buoyline.pred", Surf.fmt(p.h))).foregroundColor(Theme.muted) }
         text = text + Text(" · \(Surf.hhmm(b.t, tz))").foregroundColor(Theme.muted)
         return HStack(alignment: .firstTextBaseline, spacing: 6) {
             LiveDot(off: off)
             text
         }
         .accessibilityElement(children: .combine)
-        .accessibilityHint(off ? "Aviso: no es la boya más cercana." : "")
+        .accessibilityHint(off ? L("buoyline.notClosest") : "")
     }
 }
 

@@ -1,0 +1,2 @@
+/* Texto del permiso de ubicación. */
+"NSLocationWhenInUseUsageDescription" = "Marea usa tu ubicación solo para ordenar los spots por cercanía. No sale de tu móvil.";

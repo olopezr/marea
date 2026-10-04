@@ -1,6 +1,9 @@
 // Gráfico "Marea de hoy" con cursor deslizable: al arrastrar (o con las flechas del teclado)
 // muestra la hora, la altura, si sube o baja, el coeficiente, el efecto del viento y la presión y el nivel medido.
-import { tideAt, coefficientAt, coefLabel, hhmm, fmt } from "./surf.js";
+import { tideAt, coefficientAt, hhmm, fmt } from "./surf.js";
+import { t as tr } from "./i18n.js";
+
+const coefLabel = c => tr(c >= 95 ? "coef.springStrong" : c >= 70 ? "coef.spring" : c >= 45 ? "coef.mean" : "coef.neap");
 
 const W = 340, H = 176, TOP = 26, BOTTOM = 40;
 const STEP = 15 * 60e3;
@@ -17,13 +20,13 @@ function valueAt(points, t, maxGap = 2 * 3600e3) {
 
 const duration = ms => {
   const m = Math.round(ms / 60e3), h = Math.floor(m / 60);
-  return h ? `${h} h ${String(m % 60).padStart(2, "0")} min` : `${m} min`;
+  return h ? tr("duration.hm", h, String(m % 60).padStart(2, "0")) : tr("duration.m", m);
 };
 // Cuánto suben o bajan el mar el viento y la presión (residuo meteorológico de Puertos del Estado).
 const surgeText = m => {
-  if (m == null) return "Viento y presión: sin dato a esta hora";
+  if (m == null) return tr("surge.none");
   const cm = Math.abs(Math.round(m * 100));
-  return cm < 3 ? "Viento y presión: sin efecto apreciable" : `Viento y presión: ${m > 0 ? "suben" : "bajan"} el mar ${cm} cm`;
+  return cm < 3 ? tr("surge.flat") : tr(m > 0 ? "surge.up" : "surge.down", cm);
 };
 
 function geometry(day) {
@@ -40,7 +43,7 @@ function geometry(day) {
 const path = (pts, g) => pts.map(([t, v], i) => `${i ? "L" : "M"}${g.x(t).toFixed(1)},${g.y(v).toFixed(1)}`).join(" ");
 
 export function tideChartHTML(day, sun, tz) {
-  if (!day || day.points.length < 4) return `<p class="muted">Sin datos de marea para hoy.</p>`;
+  if (!day || day.points.length < 4) return `<p class="muted">${tr("tide.none")}</p>`;
   const g = geometry(day);
   const line = path(day.points, g);
   const area = `${line} L${g.x(day.points.at(-1)[0]).toFixed(1)},${H - BOTTOM} L${g.x(day.points[0][0]).toFixed(1)},${H - BOTTOM} Z`;
@@ -55,14 +58,14 @@ export function tideChartHTML(day, sun, tz) {
   const obs = obsPts.length ? `<path d="${path(obsPts, g)}" class="obs-line"/>` : "";
   // Etiqueta "medido" al principio de la línea medida, encima de ella, donde no tapa los extremos.
   const first = obsPts.find(([t]) => t >= day.from + 20 * 60e3);
-  const obsLabel = first ? `<text x="${g.x(first[0]) + 4}" y="${Math.max(12, g.y(first[1]) - 8)}" class="obs-lbl">medido</text>` : "";
+  const obsLabel = first ? `<text x="${g.x(first[0]) + 4}" y="${Math.max(12, g.y(first[1]) - 8)}" class="obs-lbl">${tr("chart.measuredLabel")}</text>` : "";
   const ticks = [0, 6, 12, 18].map(hh => `<text x="${(hh / 24) * W + 2}" y="${H - 4}" class="axis">${String(hh).padStart(2, "0")}h</text>`).join("");
   const coefs = ext.filter(e => e.coef != null);
 
   return `
     <div class="tide-readout" aria-live="polite"></div>
     <div class="chart tide-chart">
-      <svg viewBox="0 0 ${W} ${H}" role="slider" tabindex="0" aria-label="Curva de marea de hoy. Arrastra o usa las flechas para cambiar la hora"
+      <svg viewBox="0 0 ${W} ${H}" role="slider" tabindex="0" aria-label="${tr("chart.aria")}"
         aria-valuemin="0" aria-valuemax="1440" aria-valuenow="0">
         <defs><clipPath id="tide-clip"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath></defs>
         <g clip-path="url(#tide-clip)">${night}<path d="${area}" class="tide-area"/><path d="${line}" class="tide-line"/>${obs}</g>
@@ -77,10 +80,10 @@ export function tideChartHTML(day, sun, tz) {
       </svg>
     </div>
     <div class="tide-legend small muted">
-      <span><i class="sw sw-pred"></i>Predicción</span>
-      ${obs ? `<span><i class="sw sw-obs"></i>Medido en ${day.observed.gauge}${day.observed.samePort === false ? ` (a ${day.observed.distKm} km)` : ""}</span>` : ""}
-      <span><i class="sw sw-now"></i>Ahora</span>
-      ${coefs.length ? `<span>Coeficientes: ${coefs.map(e => `<b>${e.coef}</b> (${hhmm(e.t, tz)})`).join(" · ")}</span>` : ""}
+      <span><i class="sw sw-pred"></i>${tr("legend.prediction")}</span>
+      ${obs ? `<span><i class="sw sw-obs"></i>${tr("legend.measuredAt", day.observed.gauge)}${day.observed.samePort === false ? tr("legend.away", day.observed.distKm) : ""}</span>` : ""}
+      <span><i class="sw sw-now"></i>${tr("legend.now")}</span>
+      ${coefs.length ? `<span>${tr("legend.coefs", coefs.map(e => `<b>${e.coef}</b> (${hhmm(e.t, tz)})`).join(" · "))}</span>` : ""}
     </div>`;
 }
 
@@ -116,18 +119,18 @@ export function bindTideChart(root, day, tz, now) {
     const residual = valueAt(day.surge?.points, current);
     const isNow = Math.abs(current - now) < 8 * 60e3;
     svg.setAttribute("aria-valuenow", Math.round((current - day.from) / 60e3));
-    svg.setAttribute("aria-valuetext", `${hhmm(current, tz)}, ${fmt(at.h)} metros, ${at.rising ? "subiendo" : "bajando"}`);
+    svg.setAttribute("aria-valuetext", tr("chart.value", hhmm(current, tz), fmt(at.h), tr(at.rising ? "chart.rising" : "chart.falling")));
 
     readout.innerHTML = `
       <div class="ro-main">
-        <span class="ro-time">${hhmm(current, tz)}${isNow ? ` <em>ahora</em>` : ""}</span>
-        <span class="ro-height"><b>${fmt(at.h, 2)}</b> m ${at.rising ? "↗ subiendo" : "↘ bajando"}</span>
-        ${coef != null ? `<span class="ro-coef" title="Coeficiente de marea">Coef. <b>${coef}</b> <span class="muted">${coefLabel(coef)}</span></span>` : ""}
+        <span class="ro-time">${hhmm(current, tz)}${isNow ? ` <em>${tr("chart.now").toLowerCase()}</em>` : ""}</span>
+        <span class="ro-height"><b>${fmt(at.h, 2)}</b> m ${at.rising ? "↗" : "↘"} ${tr(at.rising ? "chart.rising" : "chart.falling")}</span>
+        ${coef != null ? `<span class="ro-coef" title="${tr("chart.coefTitle")}">${tr("chart.coef")} <b>${coef}</b> <span class="muted">${coefLabel(coef)}</span></span>` : ""}
       </div>
       <div class="ro-sub muted">
-        ${next ? `<span>${next.type === "high" ? "Pleamar" : "Bajamar"} en ${duration(next.t - current)} (${hhmm(next.t, tz)}, ${fmt(next.h)} m)</span>` : ""}
+        ${next ? `<span>${tr("chart.next", tr(next.type === "high" ? "tide.high" : "tide.low"), duration(next.t - current), hhmm(next.t, tz), fmt(next.h))}</span>` : ""}
         ${day.surge ? `<span>${surgeText(residual)}</span>` : ""}
-        ${day.observed?.points?.length ? `<span>${measured != null ? `Medido: ${fmt(measured, 2)} m` : "Medido: sin dato a esta hora"}</span>` : ""}
+        ${day.observed?.points?.length ? `<span>${measured != null ? tr("chart.measured", fmt(measured, 2)) : tr("chart.measuredNone")}</span>` : ""}
       </div>`;
   }
 

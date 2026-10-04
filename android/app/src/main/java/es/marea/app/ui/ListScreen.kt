@@ -1,5 +1,9 @@
 package es.marea.app.ui
 
+import es.marea.app.R
+
+import es.marea.app.data.tr
+
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -86,7 +90,7 @@ import kotlin.math.roundToInt
 // Lista de spots: filtro, búsqueda, frase destacada y tarjetas (renderHome en public/js/app.js).
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListScreen(app: AppState, openSpot: (String) -> Unit, openAlerts: () -> Unit) {
+fun ListScreen(app: AppState, openSpot: (String) -> Unit, openAlerts: () -> Unit, openMap: () -> Unit) {
     val c = LocalColors.current
     val scope = rememberCoroutineScope()
     var result by remember { mutableStateOf<Cached<Overview>?>(null) }
@@ -100,7 +104,7 @@ fun ListScreen(app: AppState, openSpot: (String) -> Unit, openAlerts: () -> Unit
             result = app.api.overview(force)
             error = null
         } catch (e: Exception) {
-            if (result == null) error = e.message ?: "Error"
+            if (result == null) error = e.message ?: tr(R.string.error_connect)
         } finally {
             loading = false
         }
@@ -133,11 +137,12 @@ fun ListScreen(app: AppState, openSpot: (String) -> Unit, openAlerts: () -> Unit
                 Logo()
                 Text("Marea", style = Type.display(21.sp), color = c.ink)
                 Spacer(Modifier.weight(1f))
-                Text(result?.let { Surf.ago(it.data.updatedAt).replaceFirstChar { ch -> ch.uppercase() } } ?: "Cargando…", style = Type.body(12.5.sp), color = c.muted)
-                IconCircleButton(if (app.alerts.state.spots.isEmpty()) Icons.bell else Icons.bellOn, "Avisos", on = app.alerts.state.spots.isNotEmpty(), onClick = openAlerts)
+                Text(result?.let { Surf.ago(it.data.updatedAt).replaceFirstChar { ch -> ch.uppercase() } } ?: tr(R.string.loading), style = Type.body(12.5.sp), color = c.muted)
+                IconCircleButton(Icons.map, tr(R.string.map_title), onClick = openMap)
+                IconCircleButton(if (app.alerts.state.spots.isEmpty()) Icons.bell else Icons.bellOn, tr(R.string.alerts), on = app.alerts.state.spots.isNotEmpty(), onClick = openAlerts)
                 val spin = rememberInfiniteTransition(label = "spin").animateFloat(0f, 360f, infiniteRepeatable(tween(800, easing = LinearEasing), RepeatMode.Restart), label = "r")
                 Box(Modifier.rotate(if (loading) spin.value else 0f)) {
-                    IconCircleButton(Icons.refresh, "Actualizar datos") { scope.launch { load(true) } }
+                    IconCircleButton(Icons.refresh, tr(R.string.refresh)) { scope.launch { load(true) } }
                 }
             }
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -173,17 +178,17 @@ fun ListScreen(app: AppState, openSpot: (String) -> Unit, openAlerts: () -> Unit
                     if (app.filter == ListFilter.All && q.isEmpty() && best != null) item {
                         Text(
                             buildAnnotatedString {
-                                append("Ahora mismo lo mejor está en ")
+                                append(tr(R.string.list_bestPrefix))
                                 withStyle(SpanStyle(color = c.ink, fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)) { append(best.name) }
-                                append(": ${Surf.fmt(best.now.h)} m a ${Surf.fmt(best.now.period, 0)} s, ${Surf.windPhrase(best.now.windType, best.now.wind)}.")
+                                append(tr(R.string.list_bestSuffix, Surf.fmt(best.now.h), Surf.fmt(best.now.period, 0), Surf.windPhrase(best.now.windType, best.now.wind)))
                             },
                             style = Type.body(15.sp), color = c.muted, modifier = Modifier.clickable { openSpot(best.id) }.padding(horizontal = 2.dp),
                         )
                     }
                     if (q.isNotEmpty() && shown.isNotEmpty()) item {
-                        Text("${shown.size} ${if (shown.size == 1) "spot" else "spots"} para «$q»", style = Type.body(15.sp), color = c.muted)
+                        Text(tr(if (shown.size == 1) R.string.list_results_one else R.string.list_results_other, shown.size, q), style = Type.body(15.sp), color = c.muted)
                     }
-                    if (app.filter == ListFilter.Near && pos == null) item { Banner("Permite el acceso a tu ubicación para ordenar los spots por cercanía.") }
+                    if (app.filter == ListFilter.Near && pos == null) item { Banner(tr(R.string.list_locationNeeded)) }
                     if (shown.isEmpty()) item {
                         EmptyState(q, if (app.filter == ListFilter.Fav) rows.count { Surf.matches(it.s.name, it.s.region, q) } else 0) { app.chooseFilter(ListFilter.All) }
                     }
@@ -214,15 +219,15 @@ private fun SearchField(value: String, onChange: (String) -> Unit) {
     ) {
         Icon(Icons.search, null, tint = c.muted, modifier = Modifier.padding(start = 12.dp).size(18.dp))
         Box(Modifier.weight(1f).padding(horizontal = 10.dp, vertical = 12.dp)) {
-            if (value.isEmpty()) Text("Buscar playa o zona", style = Type.body(), color = c.muted)
+            if (value.isEmpty()) Text(tr(R.string.search_placeholder), style = Type.body(), color = c.muted)
             BasicTextField(
                 value, onChange, singleLine = true, textStyle = Type.body().copy(color = c.ink), cursorBrush = SolidColor(c.ink),
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false, imeAction = ImeAction.Search),
-                modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.semantics { contentDescription = "Buscar playa o zona" },
+                modifier = Modifier.fillMaxWidth().focusRequester(focus).onFocusChanged { focused = it.isFocused }.semantics { contentDescription = tr(R.string.search_placeholder) },
             )
         }
         if (value.isNotEmpty()) {
-            Box(Modifier.size(48.dp).clip(RoundedCornerShape(24.dp)).clickable(role = Role.Button) { onChange("") }.semantics { contentDescription = "Borrar la búsqueda" }, contentAlignment = Alignment.Center) {
+            Box(Modifier.size(48.dp).clip(RoundedCornerShape(24.dp)).clickable(role = Role.Button) { onChange("") }.semantics { contentDescription = tr(R.string.search_clear) }, contentAlignment = Alignment.Center) {
                 Icon(Icons.clear, null, tint = c.muted, modifier = Modifier.size(18.dp))
             }
         }
@@ -234,12 +239,12 @@ private fun EmptyState(q: String, elsewhere: Int, showAll: () -> Unit) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().padding(vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (q.isEmpty()) {
-            Text("Aún no tienes favoritos.", style = Type.body(), color = c.ink)
-            Text("Toca la estrella de un spot para tenerlo aquí.", style = Type.body(13.sp), color = c.muted)
+            Text(tr(R.string.empty_favs), style = Type.body(), color = c.ink)
+            Text(tr(R.string.empty_favsHint), style = Type.body(13.sp), color = c.muted)
         } else {
-            Text("Ningún spot coincide con «$q».", style = Type.body(), color = c.ink, textAlign = TextAlign.Center)
-            if (elsewhere > 0) GhostButton("Ver $elsewhere ${if (elsewhere == 1) "resultado" else "resultados"} en Todos", onClick = showAll)
-            else Text("Prueba con el nombre de la playa o la zona, por ejemplo «Cantabria» o «Lanzarote».", style = Type.body(13.sp), color = c.muted, textAlign = TextAlign.Center)
+            Text(tr(R.string.empty_noMatch, q), style = Type.body(), color = c.ink, textAlign = TextAlign.Center)
+            if (elsewhere > 0) GhostButton(tr(if (elsewhere == 1) R.string.empty_seeAll_one else R.string.empty_seeAll_other, elsewhere), onClick = showAll)
+            else Text(tr(R.string.empty_hint), style = Type.body(13.sp), color = c.muted, textAlign = TextAlign.Center)
         }
     }
 }
@@ -251,7 +256,7 @@ private fun SpotCard(app: AppState, s: SpotSummary, dist: Double?, onOpen: () ->
     val c = LocalColors.current
     val n = s.now; val t = s.tide
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.surface).clickable(onClickLabel = "Ver ${s.name}", onClick = onOpen).padding(16.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.surface).clickable(onClickLabel = tr(R.string.card_open, s.name), onClick = onOpen).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(verticalAlignment = Alignment.Top) {
@@ -264,14 +269,14 @@ private fun SpotCard(app: AppState, s: SpotSummary, dist: Double?, onOpen: () ->
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { RatingChip(Rating.of(s.score)); ScoreBar(s.score) }
         Row {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Metric("Ola") { Num(n.h); UnitText("m") }
-                Metric("Viento") { Num(n.wind, 0); UnitText("kn"); WindTypePill(n.windType.key, n.windType.label) }
+                Metric(tr(R.string.metric_wave)) { Num(n.h); UnitText("m") }
+                Metric(tr(R.string.metric_wind)) { Num(n.wind, 0); UnitText("kn"); WindTypePill(n.windType.key, Surf.windLabel(n.windType.key)) }
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Metric("Periodo") { Num(n.period, 0); UnitText("s"); DirArrow(n.dir) }
+                Metric(tr(R.string.metric_period)) { Num(n.period, 0); UnitText("s"); DirArrow(n.dir) }
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Eyebrow("Marea")
-                    Text(when (t.rising) { null -> "–"; true -> "↗ Sube"; false -> "↘ Baja" }, style = Type.body(15.sp), color = c.ink)
+                    Eyebrow(tr(R.string.metric_tide))
+                    Text(when (t.rising) { null -> "–"; true -> tr(R.string.tide_rising); false -> tr(R.string.tide_falling) }, style = Type.body(15.sp), color = c.ink)
                     t.next?.let { Text("${it.word} ${Surf.hhmm(it.t, s.tz)}", style = Type.body(13.sp), color = c.muted) }
                 }
             }
@@ -310,14 +315,17 @@ private fun BuoyLine(app: AppState, spotId: String, tz: String) {
                 Box(Modifier.padding(top = 6.dp)) { LiveDot(off) }
                 Text(
                     buildAnnotatedString {
-                        withStyle(SpanStyle(color = c.ink)) { append("Boya ${s.buoy.name}${if (off) " (a ${s.buoy.distKm.toInt()} km)" else ""}: ") }
+                        withStyle(SpanStyle(color = c.ink)) { append(tr(R.string.buoyline_name, s.buoy.name) + (if (off) tr(R.string.buoyline_away, s.buoy.distKm.toInt()) else "") + ": ") }
                         withStyle(SpanStyle(color = c.ink, fontFamily = Fonts.monoBold)) { append("${Surf.fmt(s.h)} m") }
                         withStyle(SpanStyle(color = c.ink)) {
                             if (s.tp != null) append(" · ${Surf.fmt(s.tp, 0)} s")
                             if (s.dir != null) append(" ${Surf.cardinal(s.dir)}")
                         }
+                        s.trend?.let { tr0 ->
+                            withStyle(SpanStyle(color = trendColor(tr0.key))) { append(" · ${Surf.trendArrow(tr0.key)} ${Surf.trendLabel(tr0.key)}") }
+                        }
                         withStyle(SpanStyle(color = c.muted)) {
-                            if (s.predicted != null) append(" · prev. ${Surf.fmt(s.predicted.h)} m")
+                            if (s.predicted != null) append(" · " + tr(R.string.buoyline_pred, Surf.fmt(s.predicted.h)))
                             append(" · ${Surf.hhmm(s.t, tz)}")
                         }
                     },
@@ -325,8 +333,8 @@ private fun BuoyLine(app: AppState, spotId: String, tz: String) {
                 )
             }
         }
-        "none" -> Text("Sin boya operativa cerca", style = Type.body(13.sp), color = c.muted)
-        "failed" -> Text("Boya no disponible ahora", style = Type.body(13.sp), color = c.muted)
-        else -> Text("Boya: cargando…", style = Type.body(13.sp), color = c.muted)
+        "none" -> Text(tr(R.string.buoyline_none), style = Type.body(13.sp), color = c.muted)
+        "failed" -> Text(tr(R.string.buoyline_failed), style = Type.body(13.sp), color = c.muted)
+        else -> Text(tr(R.string.buoyline_loading), style = Type.body(13.sp), color = c.muted)
     }
 }

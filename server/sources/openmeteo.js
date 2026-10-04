@@ -71,3 +71,15 @@ function normalize(m, w) {
     sun: w.daily.time.map((_, i) => ({ rise: utc(w.daily.sunrise[i]), set: utc(w.daily.sunset[i]) })),
   };
 }
+
+// Oleaje previsto en la posición de una boya, de hace 48 h a dentro de 24 h, para compararlo con lo medido.
+// Es el mismo modelo que da la previsión de los spots: así se ve si la previsión de hoy está acertando.
+export function pointWaves({ lat, lon }) {
+  const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+  return cached(`openmeteo:point:${key}`, TTL, async () => {
+    const d = await fetchJSON(url(MARINE, { latitude: lat, longitude: lon, timezone: "GMT", hourly: "wave_height", past_days: 2, forecast_days: 2, cell_selection: "sea" }));
+    const now = Date.now();
+    return d.hourly.time.map((t, i) => [utc(t), d.hourly.wave_height[i]])
+      .filter(([t, h]) => h != null && t >= now - 49 * 3600e3 && t <= now + 25 * 3600e3);
+  });
+}

@@ -1,5 +1,9 @@
 package es.marea.app.ui
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import es.marea.app.R
+
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import androidx.compose.animation.AnimatedVisibility
@@ -86,6 +90,8 @@ object Icons {
     val refresh = svgIcon("refresh", "M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5", false, 2f)
     val back = svgIcon("back", "M15 5l-7 7 7 7", false, 2.2f)
     val clear = svgIcon("clear", "M7 7l10 10M17 7L7 17", false, 2f)
+    val map = svgIcon("map", "M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6zM9 4v14M15 6v14", false, 1.8f)
+    val help = svgIcon("help", "M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2.9-1.2 1.8v.4M12 17v.2", false, 1.8f)
 }
 
 // ---------- Piezas de interfaz ----------
@@ -202,8 +208,8 @@ fun SkeletonCard(height: Dp = 168.dp) {
 fun ErrorBox(message: String) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("No se pudieron cargar los datos.", style = Type.body(), color = c.ink)
-        Text("$message. Comprueba la conexión y desliza hacia abajo para actualizar.", style = Type.body(13.sp), color = c.muted, textAlign = TextAlign.Center)
+        Text(stringResource(R.string.error_title), style = Type.body(), color = c.ink)
+        Text(stringResource(R.string.error_hint, message), style = Type.body(13.sp), color = c.muted, textAlign = TextAlign.Center)
     }
 }
 
@@ -211,13 +217,10 @@ fun ErrorBox(message: String) {
 @Composable
 fun DataBanners(ts: Double, stale: Boolean, offline: Boolean, forecastSource: String?) {
     if (stale) {
-        Banner(
-            if (offline) "Sin conexión. Mostrando los datos guardados ${Surf.ago(ts)}."
-            else "No se han podido actualizar los datos ahora mismo. Mostrando los guardados ${Surf.ago(ts)}.",
-        )
+        Banner(stringResource(if (offline) R.string.banner_offline else R.string.banner_stale, Surf.ago(ts)))
     }
     if (forecastSource == "portus") {
-        Banner("Open-Meteo no responde ahora mismo: la previsión es la del modelo de Puertos del Estado, que llega a 3 días.")
+        Banner(stringResource(R.string.banner_portus))
     }
 }
 
@@ -228,11 +231,12 @@ fun Footer(legalUrl: (String) -> String) {
     val open = { path: String -> CustomTabsIntent.Builder().build().launchUrl(context, legalUrl(path).toUri()) }
     Column(Modifier.fillMaxWidth().padding(top = 20.dp)) {
         Text(
-            "Previsión: Open-Meteo, Puertos del Estado y MET Norway. Mareas: Instituto Hidrográfico de la Marina. Boyas y mareógrafos: Puertos del Estado. No usar para navegación.",
+            stringResource(R.string.footer_sources),
             style = Type.body(12.sp), color = c.muted,
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            listOf("Fuentes de datos" to "/legal/fuentes.html", "Privacidad" to "/legal/privacidad.html", "Aviso legal" to "/legal/aviso-legal.html").forEach { (label, path) ->
+            listOf(R.string.footer_dataSources to "/legal/fuentes.html", R.string.footer_privacy to "/legal/privacidad.html", R.string.footer_legal to "/legal/aviso-legal.html").forEach { (labelRes, path) ->
+                val label = stringResource(labelRes)
                 // Zona táctil de 48 dp aunque el texto sea pequeño.
                 Box(Modifier.heightIn(min = 48.dp).clickable { open(path) }, contentAlignment = Alignment.CenterStart) {
                     Text(label, style = Type.body(12.sp).copy(textDecoration = TextDecoration.Underline), color = c.muted)
@@ -257,8 +261,9 @@ fun IconCircleButton(icon: ImageVector, label: String, on: Boolean = false, onCl
 @Composable
 fun FavButton(on: Boolean, onClick: () -> Unit) {
     val c = LocalColors.current
+    val label = stringResource(R.string.favorite)
     Box(
-        Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onClick).semantics { contentDescription = if (on) "Favorito, activado" else "Favorito" },
+        Modifier.size(48.dp).clip(CircleShape).clickable(onClick = onClick).semantics { contentDescription = label; selected = on },
         contentAlignment = Alignment.Center,
     ) {
         Icon(if (on) Icons.starOn else Icons.star, contentDescription = null, tint = if (on) c.accent else c.muted, modifier = Modifier.size(22.dp))
@@ -308,3 +313,7 @@ fun GhostButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
             .clickable(enabled = enabled, onClick = onClick).padding(vertical = 14.dp, horizontal = 16.dp),
     )
 }
+
+/** Color de la tendencia de la boya: verde si sube, acento si baja. */
+@Composable
+fun trendColor(key: String) = LocalColors.current.let { c -> when (key) { "up" -> c.greenText; "down" -> c.accentText; else -> c.ink } }

@@ -1,5 +1,7 @@
 package es.marea.app.data
 
+import es.marea.app.R
+
 import android.content.Context
 import es.marea.app.BuildConfig
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +82,8 @@ class Api(context: Context, private val base: String = BuildConfig.API_BASE) {
             readTimeout = 60_000
             useCaches = false
             setRequestProperty("Accept", "application/json")
+            // Los mensajes de error del servidor llegan en el idioma de la app.
+            setRequestProperty("Accept-Language", L10n.lang)
             if (body != null) {
                 doOutput = true
                 setRequestProperty("Content-Type", "application/json")
@@ -91,7 +95,7 @@ class Api(context: Context, private val base: String = BuildConfig.API_BASE) {
             val text = (if (status in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.use { it.readText() } ?: ""
             if (status !in 200..299) {
                 val msg = runCatching { json.parseToJsonElement(text).let { (it as JsonObject)["error"]?.jsonPrimitive?.content } }.getOrNull()
-                throw ApiException(msg ?: "Error $status")
+                throw ApiException(msg ?: tr(R.string.error_status, status))
             }
             return text
         } catch (e: UnknownHostException) {
@@ -99,9 +103,9 @@ class Api(context: Context, private val base: String = BuildConfig.API_BASE) {
         } catch (e: ConnectException) {
             throw e
         } catch (e: SocketTimeoutException) {
-            throw ApiException("El servidor no responde")
+            throw ApiException(tr(R.string.error_timeout))
         } catch (e: IOException) {
-            throw ApiException("No se pudo conectar con el servidor")
+            throw ApiException(tr(R.string.error_connect))
         } finally {
             conn.disconnect()
         }
@@ -110,7 +114,7 @@ class Api(context: Context, private val base: String = BuildConfig.API_BASE) {
     // ---------- Avisos ----------
 
     @Serializable private data class Device(val platform: String = "android", val token: String)
-    @Serializable private data class Subscribe(val device: Device, val spots: List<String>, val minScore: Double)
+    @Serializable private data class Subscribe(val device: Device, val spots: List<String>, val minScore: Double, val lang: String = L10n.lang)
     @Serializable private data class Endpoint(val endpoint: String)
 
     private fun endpoint(token: String) = json.encodeToString(Endpoint.serializer(), Endpoint("fcm:$token"))
@@ -131,6 +135,6 @@ class Api(context: Context, private val base: String = BuildConfig.API_BASE) {
     fun legalUrl(path: String) = base + path
 
     private companion object {
-        const val CACHE_VERSION = "api-v4"
+        const val CACHE_VERSION = "api-v5"
     }
 }

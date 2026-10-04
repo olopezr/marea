@@ -2,6 +2,29 @@ import XCTest
 @testable import Marea
 
 final class SurfTests: XCTestCase {
+    override func setUp() { L10n.lang = "es" }
+    override func tearDown() { L10n.lang = "es" }
+
+    func testIngles() {
+        L10n.lang = "en"
+        XCTAssertEqual(Surf.fmt(1.25, 1), "1.3")
+        XCTAssertEqual(Surf.cardinal(315), "NW")
+        XCTAssertEqual(Rating.epic.label, "Very good")
+        XCTAssertEqual(L("ago.min", "5"), "5 min ago")
+        XCTAssertEqual(Surf.dayLabel(1_791_100_800_000, "Europe/Madrid"), "Sun 4")
+        L10n.lang = "es"
+        XCTAssertEqual(Rating.epic.label, "Muy bueno")
+        XCTAssertEqual(L("ago.min", "5"), "hace 5 min")
+        XCTAssertEqual(Surf.dayLabel(1_791_100_800_000, "Europe/Madrid"), "Dom 4")
+    }
+
+    func testEnergiaYTendencia() {
+        XCTAssertEqual(Surf.power(1, 14)!, 6.86, accuracy: 0.01)
+        XCTAssertGreaterThan(Surf.power(1, 14)!, Surf.power(1.4, 6)!, "1 m a 14 s lleva más energía que 1,4 m a 6 s")
+        XCTAssertEqual(Surf.signed(0.42), "+0,4")
+        XCTAssertEqual(Surf.signed(-0.2), "−0,2")
+        XCTAssertEqual(Surf.signed(0.03), "0,0")
+    }
     func testFmtUsaComaYGuion() {
         XCTAssertEqual(Surf.fmt(1.25, 1), "1,3")
         XCTAssertEqual(Surf.fmt(13.0, 0), "13")

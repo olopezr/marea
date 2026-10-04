@@ -18,6 +18,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import es.marea.app.data.AlertState
 import es.marea.app.data.Api
 import es.marea.app.data.ApiException
+import es.marea.app.data.tr
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,7 +29,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import kotlin.random.Random
 
-enum class ListFilter(val label: String) { All("Todos"), Fav("Favoritos"), Near("Cerca de mí") }
+enum class ListFilter(private val labelRes: Int) {
+    All(R.string.filter_all), Fav(R.string.filter_fav), Near(R.string.filter_near);
+    val label: String get() = tr(labelRes)
+}
 
 // Preferencias y estado compartido (equivale al estado global de public/js/app.js).
 class AppState(private val context: Context, val api: Api) {
@@ -116,16 +120,16 @@ class AlertsModel(private val context: Context, private val api: Api, private va
     }
 
     private suspend fun ensureToken(): String {
-        if (!notificationsAllowed()) throw ApiException("Para recibir avisos, permite las notificaciones de Marea en los ajustes del móvil.")
+        if (!notificationsAllowed()) throw ApiException(tr(R.string.err_permissionAndroid))
         val t = if (BuildConfig.HAS_FIREBASE && FirebaseApp.getApps(context).isNotEmpty()) {
             runCatching { fcmToken() }.getOrNull()
-                ?: throw ApiException("No se pudieron activar las notificaciones. Comprueba la conexión e inténtalo de nuevo.")
+                ?: throw ApiException(tr(R.string.err_pushFailedAndroid))
         } else if (BuildConfig.DEBUG) {
             // Compilación de desarrollo sin google-services.json: token de prueba para probar
             // la pantalla de avisos contra un servidor local.
             token ?: ("debug-" + (1..40).map { "0123456789abcdef"[Random.nextInt(16)] }.joinToString(""))
         } else {
-            throw ApiException("Los avisos no están disponibles en esta versión de la app.")
+            throw ApiException(tr(R.string.err_alertsUnavailable))
         }
         if (t != token) { token = t; prefs.edit { putString("fcmToken", t) } }
         return t
@@ -155,7 +159,7 @@ class AlertsModel(private val context: Context, private val api: Api, private va
 
     suspend fun sendTest() {
         val t = token
-        if (t == null || state.spots.isEmpty()) throw ApiException("Activa antes los avisos de algún spot.")
+        if (t == null || state.spots.isEmpty()) throw ApiException(tr(R.string.err_noSpots))
         api.sendTest(t)
     }
 }

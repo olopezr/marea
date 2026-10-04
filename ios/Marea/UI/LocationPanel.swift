@@ -13,7 +13,7 @@ struct LocationPanel: View {
 
     var body: some View {
         Panel {
-            PanelTitle(text: "Ubicación")
+            PanelTitle(text: L("loc.title"))
             Map(initialPosition: .region(MKCoordinateRegion(center: coordinate, latitudinalMeters: 5000, longitudinalMeters: 5000)),
                 interactionModes: []) {
                 Marker(name, coordinate: coordinate).tint(Theme.accent)
@@ -24,14 +24,14 @@ struct LocationPanel: View {
             .contentShape(Rectangle())
             .onTapGesture(perform: openInMaps)
             .accessibilityElement()
-            .accessibilityLabel("Mapa de \(name)")
-            .accessibilityHint("Abre la ruta hasta la playa en Mapas")
+            .accessibilityLabel(L("loc.map", name))
+            .accessibilityHint(L("loc.hint"))
             .accessibilityAddTraits(.isButton)
             HStack(alignment: .firstTextBaseline) {
                 Text(Surf.coords(lat, lon)).font(Theme.mono(13)).foregroundStyle(Theme.ink).textSelection(.enabled)
-                    .accessibilityLabel("Coordenadas \(Surf.coords(lat, lon))")
+                    .accessibilityLabel(L("loc.coords", Surf.coords(lat, lon)))
                 Spacer()
-                Button("Cómo llegar", action: openInMaps).font(Theme.bodySemibold(14)).foregroundStyle(Theme.accentText)
+                Button(L("loc.directions"), action: openInMaps).font(Theme.bodySemibold(14)).foregroundStyle(Theme.accentText)
                     .frame(minHeight: 44)
             }
         }

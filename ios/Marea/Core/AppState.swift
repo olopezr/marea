@@ -7,11 +7,12 @@ import UserNotifications
 enum Route: Hashable {
     case spot(String)
     case alerts
+    case map
 }
 
 enum ListFilter: String, CaseIterable {
     case all, fav, near
-    var label: String { ["all": "Todos", "fav": "Favoritos", "near": "Cerca de mí"][rawValue]! }
+    var label: String { L("filter.\(rawValue)") }
 }
 
 // Preferencias y estado compartido de la app (equivale al estado global de public/js/app.js).
@@ -152,8 +153,8 @@ final class AlertsModel {
         #else
         // Firmada sin la capacidad de avisos push (p. ej. con un equipo de desarrollo gratuito).
         let message = (error as NSError).localizedDescription.contains("aps-environment")
-            ? "Esta instalación de Marea no admite avisos: se firmó sin la capacidad de notificaciones push."
-            : "No se pudieron activar las notificaciones en este iPhone. Inténtalo de nuevo más tarde."
+            ? L("err.noPushEntitlement")
+            : L("err.pushFailedIos")
         tokenWaiters.forEach { $0.resume(throwing: APIError(message: message)) }
         tokenWaiters = []
         #endif
@@ -164,7 +165,7 @@ final class AlertsModel {
         let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
         guard granted else {
             permissionDenied = true
-            throw APIError(message: "Para recibir avisos, permite las notificaciones de Marea en Ajustes.")
+            throw APIError(message: L("err.permissionApp"))
         }
         permissionDenied = false
         let current = try await withCheckedThrowingContinuation { c in
@@ -197,7 +198,7 @@ final class AlertsModel {
     }
 
     func sendTest() async throws {
-        guard let token, !state.spots.isEmpty else { throw APIError(message: "Activa antes los avisos de algún spot.") }
+        guard let token, !state.spots.isEmpty else { throw APIError(message: L("err.noSpots")) }
         try await APIClient.shared.sendTest(token: token)
     }
 }

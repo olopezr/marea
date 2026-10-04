@@ -53,9 +53,14 @@ if (!db.prepare(`PRAGMA table_info(subscriptions)`).all().some(c => c.name === "
   db.exec(`ALTER TABLE subscriptions ADD COLUMN kind TEXT NOT NULL DEFAULT 'web'`);
 }
 
+// Idioma de los avisos de cada dispositivo ("es" o "en").
+if (!db.prepare(`PRAGMA table_info(subscriptions)`).all().some(c => c.name === "lang")) {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN lang TEXT NOT NULL DEFAULT 'es'`);
+}
+
 const q = {
-  upsertSub: db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at, kind) VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, min_score = excluded.min_score, kind = excluded.kind`),
+  upsertSub: db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at, kind, lang) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, min_score = excluded.min_score, kind = excluded.kind, lang = excluded.lang`),
   clearAlerts: db.prepare(`DELETE FROM alerts WHERE endpoint = ?`),
   addAlert: db.prepare(`INSERT OR IGNORE INTO alerts (endpoint, spot_id) VALUES (?, ?)`),
   deleteSub: db.prepare(`DELETE FROM subscriptions WHERE endpoint = ?`),
@@ -87,14 +92,14 @@ function target({ subscription, device }) {
   return { kind: "web", endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth };
 }
 
-export function subscribe({ subscription, device, spots, minScore }) {
+export function subscribe({ subscription, device, spots, minScore, lang }) {
   const t = target({ subscription, device });
   const ids = (Array.isArray(spots) ? spots : []).filter(id => spotById[id]).slice(0, 50);
   const min = [2, 3, 4].includes(+minScore) ? +minScore : 3;
   const ep = t.endpoint;
   db.exec("BEGIN");
   try {
-    q.upsertSub.run(ep, t.p256dh, t.auth, min, Date.now(), t.kind);
+    q.upsertSub.run(ep, t.p256dh, t.auth, min, Date.now(), t.kind, lang === "en" ? "en" : "es");
     q.clearAlerts.run(ep);
     for (const id of ids) q.addAlert.run(ep, id);
     db.exec("COMMIT");
@@ -144,22 +149,37 @@ async function send(sub, payload) {
 export async function sendTest(endpoint) {
   const sub = q.getSub.get(endpoint);
   if (!sub) throw Object.assign(new Error("No hay suscripción para este dispositivo"), { status: 404 });
-  const ok = await send(sub, { title: "Avisos de Marea activados", body: "Te avisaremos cuando tus spots se pongan buenos.", url: "/" });
+  const ok = await send(sub, sub.lang === "en"
+    ? { title: "Marea alerts are on", body: "We'll let you know when your spots are in good shape.", url: "/" }
+    : { title: "Avisos de Marea activados", body: "Te avisaremos cuando tus spots estén en buenas condiciones.", url: "/" });
   if (!ok) throw Object.assign(new Error("El servicio de notificaciones rechazó el envío"), { status: 502 });
   return { ok };
 }
 
 // ---------- Revisión periódica ----------
-function message(spot, day, isToday) {
+const EN_RATING = { flat: "flat", poor: "poor", fair: "fair", good: "good", epic: "very good" };
+const EN_WIND = { off: "offshore", cross: "cross-shore", on: "onshore" };
+const enCardinal = deg => cardinal(deg).replace(/O/g, "W");
+
+function message(spot, day, isToday, lang = "es") {
   const b = day.best;
+  const base = { url: `/#/spot/${spot.id}`, tag: `${spot.id}-${day.key}` };
+  if (lang === "en") {
+    const n = (x, d = 1) => fmt(x, d).replace(",", ".");
+    const wind = b.windType === "calm" ? "no wind" : `${EN_WIND[b.windType] ?? ""} wind ${n(b.wind, 0)} kn`.trim();
+    return {
+      ...base,
+      title: `${spot.name} looks ${EN_RATING[rating(b.score).key]} ${isToday ? "today" : "tomorrow"}`,
+      body: `Best around ${hhmm(b.t, spot.tz)}: ${n(b.h)} m · ${n(b.T, 0)} s from ${enCardinal(b.dir)} · ${wind}`,
+    };
+  }
   const when = isToday ? "hoy" : "mañana";
   const wind = b.windType === "calm" ? "sin viento"
     : `viento ${{ off: "terral", cross: "cruzado", on: "de mar" }[b.windType] ?? ""} de ${fmt(b.wind, 0)} kn`.replace("  ", " ");
   return {
+    ...base,
     title: `${spot.name} se pone ${rating(b.score).label.toLowerCase()} ${when}`,
     body: `Mejor hacia las ${hhmm(b.t, spot.tz)}: ${fmt(b.h)} m · ${fmt(b.T, 0)} s del ${cardinal(b.dir)} · ${wind}`,
-    url: `/#/spot/${spot.id}`,
-    tag: `${spot.id}-${day.key}`,
   };
 }
 
@@ -179,7 +199,7 @@ export async function checkAlerts(now = Date.now()) {
     for (const sub of q.watchers.all(id)) {
       for (const { d, isToday } of candidates) {
         if (d.best.score < sub.min_score || q.wasSent.get(sub.endpoint, id, d.key)) continue;
-        if (await send(sub, message(spot, d, isToday))) {
+        if (await send(sub, message(spot, d, isToday, sub.lang))) {
           q.markSent.run(sub.endpoint, id, d.key, now);
           sentCount++;
         }

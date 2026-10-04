@@ -20,7 +20,7 @@ const TYPES = {
 
 const SECURITY = {
   "Content-Security-Policy": [
-    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data:", "connect-src 'self'", "worker-src 'self'", "frame-src https://www.openstreetmap.org",
+    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "font-src 'self'", "img-src 'self' data: https://tile.openstreetmap.org", "connect-src 'self'", "worker-src 'self'", "frame-src https://www.openstreetmap.org",
     "manifest-src 'self'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
   ].join("; "),
   "X-Content-Type-Options": "nosniff",
@@ -39,7 +39,25 @@ function limited(ip, max = 30, windowMs = 10 * 60e3) {
 }
 setInterval(() => hits.clear(), 60 * 60e3).unref();
 
+// Mensajes de error en inglés para las apps y navegadores en ese idioma (Accept-Language).
+const EN_ERRORS = {
+  "Spot no encontrado": "Spot not found",
+  "Ruta no encontrada": "Route not found",
+  "Método no permitido": "Method not allowed",
+  "Demasiadas peticiones. Prueba dentro de unos minutos.": "Too many requests. Try again in a few minutes.",
+  "No se pudieron obtener los datos del mar. Inténtalo de nuevo en unos minutos.": "Couldn't get the sea data. Try again in a few minutes.",
+  "No hay previsión disponible para este spot ahora mismo": "There's no forecast for this spot right now",
+  "Token de dispositivo no válido": "Invalid device token",
+  "Suscripción no válida": "Invalid subscription",
+  "No hay suscripción para este dispositivo": "There's no subscription for this device",
+  "El servicio de notificaciones rechazó el envío": "The notification service rejected the message",
+  "Cuerpo demasiado grande": "Request body too large",
+  "JSON no válido": "Invalid JSON",
+};
+const wantsEnglish = req => /^en\b/i.test(req.headers["accept-language"] ?? "");
+
 function send(req, res, status, body, headers = {}) {
+  if (body?.error && wantsEnglish(req)) body = { ...body, error: EN_ERRORS[body.error] ?? body.error };
   let buf = Buffer.isBuffer(body) ? body : Buffer.from(typeof body === "string" ? body : JSON.stringify(body));
   const type = headers["Content-Type"] ?? "application/json; charset=utf-8";
   const h = { ...SECURITY, "Content-Type": type, ...headers };
@@ -81,7 +99,10 @@ async function api(req, res, url) {
   if (req.method === "GET" && mb) {
     const spot = spotById[mb[1]];
     if (!spot) return send(req, res, 404, { error: "Spot no encontrado" });
-    return send(req, res, 200, { buoy: await nearestReading(spot).catch(() => null) }, cache);
+    // La lista solo necesita la última lectura y la tendencia: el historial va en el detalle.
+    const b = await nearestReading(spot).catch(() => null);
+    if (b) delete b.history;
+    return send(req, res, 200, { buoy: b }, cache);
   }
   const m = p.match(/^\/api\/spots\/([\w-]+)$/);
   if (req.method === "GET" && m) {

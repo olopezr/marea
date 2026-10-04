@@ -103,9 +103,13 @@ scripts/             export-spots.mjs copia la lista de spots a las apps
 
 ## Apps nativas
 
-Dos apps nativas, una por plataforma, que usan la misma API que la web y repiten sus pantallas (lista, detalle con curva de marea deslizable y avisos), textos, colores y tipografías. La valoración la sigue calculando el servidor. Guardan la última respuesta para abrir sin conexión.
+Dos apps nativas, una por plataforma, que usan la misma API que la web y repiten sus pantallas (lista, mapa de spots, detalle con curva de marea deslizable, boya frente a previsión y avisos), textos, colores y tipografías. La valoración la sigue calculando el servidor. Guardan la última respuesta para abrir sin conexión.
 
 Al cambiar `public/js/spots.js`, ejecuta `node scripts/export-spots.mjs` para copiar la lista a las apps (un test lo comprueba).
+
+### Idiomas
+
+La web y las apps están en español e inglés (según el idioma del navegador o del móvil; español por defecto). Todos los textos están en `i18n/strings.json`; tras cambiarlo, ejecuta `node scripts/i18n.mjs` para generar `public/js/strings.js`, los `Localizable.strings` de iOS y los `strings.xml` de Android (un test comprueba que están al día y que el código solo usa claves que existen). Los avisos push llegan en el idioma con el que se activaron.
 
 ### iOS (`ios/`)
 

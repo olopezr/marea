@@ -54,6 +54,7 @@ struct RootView: View {
                     switch route {
                     case .spot(let id): SpotDetailView(id: id)
                     case .alerts: AlertsView()
+                    case .map: SpotsMapView()
                     }
                 }
         }

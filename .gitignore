@@ -16,3 +16,4 @@ android/.kotlin/
 
 # macOS
 .DS_Store
+ios/build-sim/

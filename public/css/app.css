@@ -322,3 +322,49 @@ input[role="switch"]:checked::after { transform: translateX(18px); }
 .location-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .location .coords { font: 600 .82rem var(--mono); user-select: all; }
 .location a { color: var(--accent); font-weight: 600; font-size: .88rem; padding: 12px 0; }
+
+/* ---------- Ayuda: botón "?" junto a un dato, diálogo y glosario ---------- */
+.help-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 28px; height: 28px; margin: -8px -6px -8px 0; padding: 0; border: 0; border-radius: 50%;
+  background: transparent; color: inherit; opacity: .7; cursor: pointer; vertical-align: middle;
+}
+.help-btn:hover, .help-btn:focus-visible { opacity: 1; }
+.help-btn svg { width: 15px; height: 15px; }
+.tile-label { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.hero-label { display: flex; align-items: center; gap: 6px; }
+.hero-label .help-btn { color: var(--bg); }
+.with-help { display: inline-flex; align-items: center; gap: 4px; }
+.tile-wide { grid-column: 1 / -1; }
+dialog.help {
+  border: 0; border-radius: 18px; padding: 20px; max-width: min(420px, calc(100vw - 32px));
+  background: var(--surface); color: var(--ink); display: grid; gap: 12px;
+}
+dialog.help:not([open]) { display: none; }
+dialog.help::backdrop { background: rgb(0 0 0 / .45); }
+dialog.help h3 { font-size: 1.1rem; }
+dialog.help p { line-height: 1.5; }
+dialog.help form { display: flex; justify-content: flex-end; }
+.glossary details { border-top: 1px solid var(--line); padding: 10px 0 2px; }
+.glossary summary { cursor: pointer; font-weight: 600; min-height: 28px; }
+.glossary details p { padding: 6px 0 4px; line-height: 1.5; }
+
+/* ---------- Tendencia de la boya ---------- */
+.trend-up { color: var(--green); }
+.trend-down { color: var(--accent); }
+
+/* ---------- Boya frente a previsión ---------- */
+.hist-chart { width: 100%; height: auto; display: block; overflow: visible; }
+.hist-chart .grid { stroke: var(--line); stroke-width: 1; }
+.hist-chart .axis { fill: var(--muted); font: 600 9px var(--mono); }
+.hist-chart .model { fill: none; stroke: var(--sea); stroke-width: 2.2; stroke-linejoin: round; }
+.hist-chart .measured { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; }
+.hist-chart .measured-dot { fill: var(--accent); }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw-buoy { border-top: 2px solid var(--accent); }
+
+/* ---------- Mapa de spots ---------- */
+#map-view { display: grid; gap: 10px; }
+.spots-map { height: calc(100dvh - 190px); min-height: 320px; border-radius: 18px; overflow: hidden; background: var(--surface-2); }
+.spots-map .leaflet-popup-content a { color: var(--accent); font-weight: 600; }

@@ -6,15 +6,7 @@ import Foundation
 enum Rating: String, CaseIterable, Sendable {
     case flat, poor, fair, good, epic
 
-    var label: String {
-        switch self {
-        case .flat: "Plato"
-        case .poor: "Pobre"
-        case .fair: "Aceptable"
-        case .good: "Bueno"
-        case .epic: "Muy bueno"
-        }
-    }
+    var label: String { L("rating.\(rawValue)") }
 
     var min: Double {
         switch self {
@@ -37,10 +29,11 @@ enum Surf {
     static func cardinal(_ deg: Double?) -> String {
         guard let deg else { return "–" }
         let norm = (deg.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
-        return cardinals[Int((norm / 22.5).rounded(.toNearestOrAwayFromZero)) % 16]
+        let c = cardinals[Int((norm / 22.5).rounded(.toNearestOrAwayFromZero)) % 16]
+        return L10n.isEnglish ? c.replacingOccurrences(of: "O", with: "W") : c
     }
 
-    /// Número con coma decimal; "–" si falta.
+    /// Número con coma decimal (punto en inglés); "–" si falta.
     static func fmt(_ n: Double?, _ digits: Int = 1) -> String {
         guard let n, !n.isNaN else { return "–" }
         // Redondeo como toFixed de JavaScript: sobre el valor decimal exacto del double y con la mitad
@@ -48,7 +41,8 @@ enum Surf {
         var exact = Decimal(string: String(format: "%.25f", n), locale: Locale(identifier: "en_US_POSIX")) ?? Decimal(n)
         var rounded = Decimal()
         NSDecimalRound(&rounded, &exact, digits, .plain)
-        return String(format: "%.\(digits)f", NSDecimalNumber(decimal: rounded).doubleValue).replacingOccurrences(of: ".", with: ",")
+        let out = String(format: "%.\(digits)f", NSDecimalNumber(decimal: rounded).doubleValue)
+        return L10n.isEnglish ? out : out.replacingOccurrences(of: ".", with: ",")
     }
 
     static func km(_ aLat: Double, _ aLon: Double, _ bLat: Double, _ bLon: Double) -> Double {
@@ -79,64 +73,64 @@ enum Surf {
 
     static func ago(_ ms: Double, now: Date = .now) -> String {
         let m = Int(((now.ms - ms) / 60_000).rounded())
-        if m < 1 { return "ahora mismo" }
-        if m < 60 { return "hace \(m) min" }
-        return "hace \(Int((Double(m) / 60).rounded())) h"
+        if m < 1 { return L("ago.now") }
+        if m < 60 { return L("ago.min", "\(m)") }
+        return L("ago.h", "\(Int((Double(m) / 60).rounded()))")
     }
 
     static func windPhrase(_ wt: WindType, _ kn: Double?) -> String {
-        wt.key == "calm" ? "sin apenas viento" : "viento \(wt.label.lowercased()) de \(fmt(kn, 0)) kn"
+        wt.key == "calm" ? L("windPhrase.calm") : L("windPhrase", windLabel(wt).lowercased(), fmt(kn, 0))
     }
 
     static func wetsuit(_ c: Double?) -> String {
         guard let c else { return "" }
-        return c < 15 ? "Neopreno 5/4 y escarpines" : c < 17 ? "Neopreno 4/3" : c < 20 ? "Neopreno 3/2" : "Neopreno corto"
+        return L(c < 15 ? "wetsuit.54" : c < 17 ? "wetsuit.43" : c < 20 ? "wetsuit.32" : "wetsuit.short")
     }
 
     // ---------- Índice UV (escala de la OMS) ----------
 
     static func uvLabel(_ uv: Double) -> String {
         switch Int(uv.rounded()) {
-        case ..<3: "Bajo"
-        case 3...5: "Moderado"
-        case 6...7: "Alto"
-        case 8...10: "Muy alto"
-        default: "Extremo"
+        case ..<3: L("uv.low")
+        case 3...5: L("uv.moderate")
+        case 6...7: L("uv.high")
+        case 8...10: L("uv.veryHigh")
+        default: L("uv.extreme")
         }
     }
 
     static func uvAdvice(_ uv: Double) -> String {
         let i = Int(uv.rounded())
-        return i < 3 ? "sin protección especial" : i < 8 ? "crema solar y gorra" : "evita el sol de mediodía"
+        return L(i < 3 ? "uv.adviceLow" : i < 8 ? "uv.adviceMid" : "uv.adviceHigh")
     }
 
     /// Cuándo llega la próxima marea favorable para el spot: "Próxima bajamar a las 03:28".
     /// `dayEnd` es el final del día local: lo que cae después se indica como "mañana".
     static func idealTideText(_ pref: String, ext: [TideExtreme], now: Double, dayEnd: Double, tz: String) -> String {
-        if pref == "all" { return "Funciona con cualquier marea" }
-        let tomorrow = { (t: Double) in t >= dayEnd ? "mañana " : "" }
+        if pref == "all" { return L("ideal.all") }
+        let tomorrow = { (t: Double) in t >= dayEnd ? L("ideal.tomorrow") : "" }
         if pref == "mid" {
             let mids = zip(ext, ext.dropFirst()).map { ($0.t + $1.t) / 2 }
-            guard let t = mids.first(where: { $0 > now }) else { return "Sin datos de marea suficientes" }
-            return "Próxima media marea \(tomorrow(t))hacia las \(hhmm(t, tz))"
+            guard let t = mids.first(where: { $0 > now }) else { return L("ideal.noData") }
+            return L("ideal.mid", tomorrow(t), hhmm(t, tz))
         }
         let type = pref == "low" ? "low" : "high"
-        guard let e = ext.first(where: { $0.type == type && $0.t > now }) else { return "Sin datos de marea suficientes" }
-        return "Próxima \(type == "low" ? "bajamar" : "pleamar") \(tomorrow(e.t))a las \(hhmm(e.t, tz))"
+        guard let e = ext.first(where: { $0.type == type && $0.t > now }) else { return L("ideal.noData") }
+        return L(type == "low" ? "ideal.low" : "ideal.high", tomorrow(e.t), hhmm(e.t, tz))
     }
 
     /// Coordenadas legibles: "43,4590° N · 3,7350° O".
     static func coords(_ lat: Double, _ lon: Double) -> String {
-        "\(fmt(abs(lat), 4))° \(lat >= 0 ? "N" : "S") · \(fmt(abs(lon), 4))° \(lon >= 0 ? "E" : "O")"
+        "\(fmt(abs(lat), 4))° \(lat >= 0 ? "N" : "S") · \(fmt(abs(lon), 4))° \(lon >= 0 ? "E" : L10n.isEnglish ? "W" : "O")"
     }
 
     static func tidePrefLabel(_ p: String) -> String {
-        ["low": "baja", "mid": "media", "high": "alta", "all": "cualquiera"][p] ?? "cualquiera"
+        L("tidePref.\(["low", "mid", "high"].contains(p) ? p : "all")")
     }
 
     static func coefLabel(_ c: Int?) -> String {
         guard let c else { return "" }
-        return c >= 95 ? "vivas fuertes" : c >= 70 ? "mareas vivas" : c >= 45 ? "marea media" : "mareas muertas"
+        return L(c >= 95 ? "coef.springStrong" : c >= 70 ? "coef.spring" : c >= 45 ? "coef.mean" : "coef.neap")
     }
 
     /// Búsqueda sin mayúsculas ni tildes; cada palabra debe aparecer.
@@ -178,15 +172,54 @@ enum Surf {
 
     static func duration(_ ms: Double) -> String {
         let m = Int((ms / 60_000).rounded()), h = m / 60
-        return h > 0 ? "\(h) h \(String(format: "%02d", m % 60)) min" : "\(m) min"
+        return h > 0 ? L("duration.hm", "\(h)", String(format: "%02d", m % 60)) : L("duration.m", "\(m)")
     }
 
     /// Cuánto suben o bajan el mar el viento y la presión (residuo meteorológico de Puertos del Estado).
     static func surgeText(_ m: Double?) -> String {
-        guard let m else { return "Viento y presión: sin dato a esta hora" }
+        guard let m else { return L("surge.none") }
         let cm = abs(Int((m * 100).rounded()))
-        if cm < 3 { return "Viento y presión: sin efecto apreciable" }
-        return "Viento y presión: \(m > 0 ? "suben" : "bajan") el mar \(cm) cm"
+        if cm < 3 { return L("surge.flat") }
+        return L(m > 0 ? "surge.up" : "surge.down", "\(cm)")
+    }
+}
+
+extension Surf {
+    static func windLabel(_ wt: WindType) -> String { L("wind.\(["off", "cross", "on"].contains(wt.key) ? wt.key : "calm")") }
+
+    /// Día abreviado en el idioma de la app: "Lun 5" / "Mon 5".
+    static func dayLabel(_ ms: Double, _ tz: String) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: L10n.isEnglish ? "en_GB" : "es_ES")
+        f.timeZone = TimeZone(identifier: tz)
+        f.setLocalizedDateFormatFromTemplate("EEE d")
+        let s = f.string(from: Date(ms: ms)).replacingOccurrences(of: ".", with: "").replacingOccurrences(of: ",", with: "")
+        return s.prefix(1).uppercased() + s.dropFirst()
+    }
+
+    /// Potencia del oleaje en aguas profundas (kW por metro de frente de ola): 0,49 · H² · T.
+    static func power(_ h: Double?, _ T: Double?) -> Double? {
+        guard let h, let T else { return nil }
+        return 0.49 * h * h * T
+    }
+
+    static func powerLabel(_ p: Double) -> String {
+        L(p < 5 ? "energy.low" : p < 15 ? "energy.moderate" : p < 40 ? "energy.strong" : "energy.veryStrong")
+    }
+
+    static func trendArrow(_ key: String) -> String { ["up": "↗", "down": "↘", "steady": "→"][key] ?? "" }
+
+    /// Cambio con signo: "+0,4", "−0,2", "0,0".
+    static func signed(_ x: Double) -> String {
+        let r = (x * 10).rounded() / 10
+        return "\(r > 0 ? "+" : r < 0 ? "−" : "")\(fmt(abs(r)))"
+    }
+
+    /// Cuánto se ha desviado la previsión de lo medido por la boya en las últimas 24 h.
+    static func fitText(_ f: ForecastFit) -> String {
+        if f.bias >= 0.15 { return L("hist.fitLow", fmt(f.bias)) }
+        if f.bias <= -0.15 { return L("hist.fitHigh", fmt(-f.bias)) }
+        return L(f.mae < 0.25 ? "hist.fitGood" : "hist.fitMixed", fmt(f.mae))
     }
 }
 

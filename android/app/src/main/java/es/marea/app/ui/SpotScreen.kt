@@ -1,5 +1,11 @@
 package es.marea.app.ui
 
+import androidx.compose.foundation.layout.offset
+
+import es.marea.app.R
+
+import es.marea.app.data.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -82,7 +88,7 @@ fun SpotScreen(app: AppState, id: String, onBack: () -> Unit) {
         try {
             result = app.api.spot(id, force); error = null
         } catch (e: Exception) {
-            if (result == null) error = e.message ?: "Error"
+            if (result == null) error = e.message ?: tr(R.string.error_connect)
         } finally {
             loading = false
         }
@@ -94,10 +100,10 @@ fun SpotScreen(app: AppState, id: String, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
         Row(Modifier.statusBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconCircleButton(Icons.back, "Volver a la lista", onClick = onBack)
+            IconCircleButton(Icons.back, tr(R.string.back), onClick = onBack)
             Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
                 Text(meta?.name ?: "", style = Type.heading(21.sp), color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("${meta?.region ?: ""} · playa orientada al ${Surf.cardinal(meta?.facing)}", style = Type.body(13.sp), color = c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(tr(R.string.detail_facing, meta?.region ?: "", Surf.cardinal(meta?.facing)), style = Type.body(13.sp), color = c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             FavButton(id in app.favs) { app.toggleFav(id) }
         }
@@ -123,41 +129,45 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
     item { Hero(s) }
     item { AlertButton(app, id) }
     item { BuoyPanel(s) }
+    s.buoy?.let { b -> if (b.historySeries.size >= 6 || b.modelSeries.isNotEmpty()) item { HistoryPanel(b) } }
     item {
+        val p = Surf.power(n.h, n.period)
         val tiles: List<@Composable () -> Unit> = listOf(
-            { Tile("Mar de fondo", "${Surf.fmt(n.sh)} m · ${Surf.fmt(n.swellPeriod, 0)} s") { DirArrow(n.sDir, 13.dp); SubText(Surf.cardinal(n.sDir)) } },
-            { Tile("Viento", "${Surf.fmt(n.wind, 0)} kn", n.windDir) { SubText("${n.gust?.let { "Rachas ${Surf.fmt(it, 0)} kn · " } ?: ""}${Surf.cardinal(n.windDir)}") } },
-            { Tile("Marea", t.h?.let { "${Surf.fmt(it)} m ${if (t.rising == true) "↗" else "↘"}" } ?: "–") { SubText("${t.next?.let { "${it.word} ${Surf.hhmm(it.t, tz)}" } ?: ""}${t.coef?.let { " · Coef. $it" } ?: ""}") } },
-            { Tile("Marea ideal", Surf.tidePrefLabel(s.tidePref).replaceFirstChar { it.uppercase() }) { SubText(Surf.idealTideText(s.tidePref, s.tideDay.ext, System.currentTimeMillis().toDouble(), s.tideDay.to, tz)) } },
-            { Tile("Agua", "${Surf.fmt(water)} °C") { SubText(Surf.wetsuit(water)) } },
-            { Tile("Aire", "${Surf.fmt(s.meteo?.air?.air ?: n.air, 0)} °C") { SubText(if (s.meteo?.air != null) "Medida en una estación cercana" else "Previsión") } },
-            { Tile("Índice UV", s.uv?.now?.let { "${it.roundToInt()} · ${Surf.uvLabel(it)}" } ?: "–") {
-                SubText(s.uv?.let { "Máx. ${it.max.roundToInt()} a las ${Surf.hour(it.maxT, tz)}h · ${Surf.uvAdvice(it.max)}" } ?: "Sin previsión ahora mismo")
+            { Tile(tr(R.string.tile_swell), "${Surf.fmt(n.sh)} m · ${Surf.fmt(n.swellPeriod, 0)} s", help = "swell") { DirArrow(n.sDir, 13.dp); SubText(Surf.cardinal(n.sDir)) } },
+            { Tile(tr(R.string.tile_wind), "${Surf.fmt(n.wind, 0)} kn", n.windDir, help = "wind") { SubText("${n.gust?.let { tr(R.string.gusts, Surf.fmt(it, 0)) + " · " } ?: ""}${Surf.cardinal(n.windDir)}") } },
+            { Tile(tr(R.string.tile_tide), t.h?.let { "${Surf.fmt(it)} m ${if (t.rising == true) "↗" else "↘"}" } ?: "–", help = "tide") { SubText("${t.next?.let { "${it.word} ${Surf.hhmm(it.t, tz)}" } ?: ""}${t.coef?.let { " · " + tr(R.string.coef, it) } ?: ""}") } },
+            { Tile(tr(R.string.tile_idealTide), Surf.tidePrefLabel(s.tidePref)) { SubText(Surf.idealTideText(s.tidePref, s.tideDay.ext, System.currentTimeMillis().toDouble(), s.tideDay.to, tz)) } },
+            { Tile(tr(R.string.tile_energy), p?.let { "${Surf.fmt(it, if (it < 10) 1 else 0)} kW/m" } ?: "–", help = "energy") { SubText(p?.let(Surf::powerLabel) ?: "") } },
+            { Tile(tr(R.string.tile_water), "${Surf.fmt(water)} °C") { SubText(Surf.wetsuit(water)) } },
+            { Tile(tr(R.string.tile_air), "${Surf.fmt(s.meteo?.air?.air ?: n.air, 0)} °C") { SubText(tr(if (s.meteo?.air != null) R.string.air_measured else R.string.air_forecast)) } },
+            { Tile(tr(R.string.tile_uv), s.uv?.now?.let { "${it.roundToInt()} · ${Surf.uvLabel(it)}" } ?: "–") {
+                SubText(s.uv?.let { tr(R.string.uv_max, it.max.roundToInt(), Surf.hour(it.maxT, tz), Surf.uvAdvice(it.max)) } ?: tr(R.string.uv_none))
             } },
-            { Tile("Primera luz", s.sun?.let { Surf.hhmm(it.rise, tz) } ?: "–") { SubText(s.sun?.let { "Puesta ${Surf.hhmm(it.set, tz)}" } ?: "") } },
         )
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             tiles.chunked(2).forEach { pair ->
                 // Misma altura para las dos fichas de cada fila.
                 Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) { pair.forEach { Box(Modifier.weight(1f).fillMaxHeight()) { it() } } }
             }
+            Tile(tr(R.string.tile_firstLight), s.sun?.let { Surf.hhmm(it.rise, tz) } ?: "–") { SubText(s.sun?.let { tr(R.string.sunset, Surf.hhmm(it.set, tz)) } ?: "") }
         }
     }
     item {
         Panel {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) { PanelTitle("Marea de hoy") }
-                Text("Desliza sobre la curva", style = Type.body(12.sp), color = LocalColors.current.muted)
+                Box(Modifier.weight(1f)) { PanelTitle(tr(R.string.tide_today)) }
+                Text(tr(R.string.tide_slide), style = Type.body(12.sp), color = LocalColors.current.muted)
             }
             if (s.tideDay.series.size >= 4) TideChart(s.tideDay, s.sun, tz)
-            else Text("Sin datos de marea para hoy.", color = LocalColors.current.muted)
+            else Text(tr(R.string.tide_none), color = LocalColors.current.muted)
             Text(tideNote(s), style = Type.body(13.sp), color = LocalColors.current.muted)
         }
     }
     item {
         Panel {
-            PanelTitle("Próximas 24 horas")
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.semantics { contentDescription = "Previsión por horas" }) {
+            PanelTitle(tr(R.string.hours_title))
+            val aria = tr(R.string.hours_aria)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.semantics { contentDescription = aria }) {
                 items(s.hours, key = { it.t }) { HourCell(it, tz) }
             }
         }
@@ -165,8 +175,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
     item {
         val c = LocalColors.current
         Panel {
-            PanelTitle("${s.days.size} días")
-            Text("Cada bloque es una hora de luz, coloreado según la calidad. Las horas que ya han pasado hoy aparecen atenuadas. A la derecha, la ola máxima del día y su mejor hora.", style = Type.body(13.sp), color = c.muted)
+            PanelTitle(tr(R.string.week_title, s.days.size))
+            Text(tr(R.string.week_help), style = Type.body(13.sp), color = c.muted)
             WeekChart(s.days, tz, s.tideDay.from)
             // En una sola línea repartida a lo ancho: a 12 sp cabe incluso en un móvil de 360 dp.
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -178,25 +188,26 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
             }
         }
     }
+    item { Glossary() }
     item { LocationPanel(s.name, s.lat, s.lon) }
     item {
-        Text("Actualizado ${Surf.ago(s.updatedAt)}.", style = Type.body(13.sp), color = LocalColors.current.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+        Text(tr(R.string.updated, Surf.ago(s.updatedAt)), style = Type.body(13.sp), color = LocalColors.current.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
     }
     item { Footer(app.api::legalUrl) }
 }
 
 private fun tideNote(s: SpotDetail): String {
-    if (s.tide.reason == "no-port") return "El Instituto Hidrográfico de la Marina no publica mareas de esta zona (en el Mediterráneo la marea es de pocos centímetros). Es una estimación del modelo de Open-Meteo."
+    if (s.tide.reason == "no-port") return tr(R.string.tide_note_noPort)
     val port = s.tide.port
-    if (s.tide.source != "ihm" || port == null) return "Estimación del modelo de Open-Meteo: el servicio oficial de mareas no responde ahora mismo y puede desviarse."
-    val sb = StringBuilder("Predicción oficial del Instituto Hidrográfico de la Marina para ${port.name} (a ${port.distKm.toInt()} km), alturas sobre el cero hidrográfico del puerto.")
-    s.tideDay.surge?.let { sb.append(" Efecto del viento y la presión en el nivel del mar: previsión de Puertos del Estado para ${it.beach}.") }
+    if (s.tide.source != "ihm" || port == null) return tr(R.string.tide_note_down)
+    val sb = StringBuilder(tr(R.string.tide_note_ihm, port.name, port.distKm.toInt()))
+    s.tideDay.surge?.let { sb.append(tr(R.string.tide_note_surge, it.beach)) }
     s.tideDay.observed?.let { o ->
-        sb.append(" Nivel medido por el mareógrafo de ${o.gauge}")
-        if (o.samePort != true) sb.append(", en un puerto vecino a ${(o.distKm ?: 0.0).toInt()} km (la marea es prácticamente la misma)")
+        sb.append(tr(R.string.tide_note_gauge, o.gauge))
+        if (o.samePort != true) sb.append(tr(R.string.tide_note_neighbour, (o.distKm ?: 0.0).toInt()))
         sb.append(".")
     }
-    return sb.append(" El coeficiente es una estimación a partir de la carrera de cada marea.").toString()
+    return sb.append(tr(R.string.tide_note_coef)).toString()
 }
 
 @Composable
@@ -207,19 +218,23 @@ private fun Hero(s: SpotDetail) {
     val c = LocalColors.current
     val n = s.now; val r = Rating.of(s.score); val q = c.q(r)
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.ink).padding(18.dp).semantics(mergeDescendants = true) {},
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(c.ink).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Eyebrow("Previsión ahora · ${Surf.hhmm(System.currentTimeMillis().toDouble(), s.tz)}", mix(c.bg, 0.65f, c.ink))
+        Eyebrow(tr(R.string.hero_now, Surf.hhmm(System.currentTimeMillis().toDouble(), s.tz)), mix(c.bg, 0.65f, c.ink))
         Row(verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Mismo tamaño para todas las valoraciones: 26 sp es lo que cabe con "Muy bueno", la más larga,
                 // en un móvil de 360 dp. Solo si aun así no cabe (olas de dos cifras) se reduce.
                 val labelColor = mix(q, c.heroMix, c.bg)
-                BasicText(
-                    r.label, style = Type.display(26.sp), color = { labelColor }, maxLines = 1, softWrap = false,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 21.sp, maxFontSize = 26.sp),
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    BasicText(
+                        r.label, style = Type.display(26.sp), color = { labelColor }, maxLines = 1, softWrap = false,
+                        autoSize = TextAutoSize.StepBased(minFontSize = 21.sp, maxFontSize = 26.sp),
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    HelpButton("rating", c.bg)
+                }
                 ScoreBar(s.score, track = mix(c.bg, 0.22f, c.ink))
             }
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -227,7 +242,7 @@ private fun Hero(s: SpotDetail) {
                 Text("m", style = Type.body(16.sp), color = c.bg.copy(alpha = 0.7f), modifier = Modifier.padding(bottom = 8.dp))
             }
         }
-        Text("${Surf.fmt(n.period, 0)} s del ${Surf.cardinal(n.dir)} · ${Surf.windPhrase(n.windType, n.wind)}", style = Type.body(15.sp), color = mix(c.bg, 0.8f, c.ink))
+        Text(tr(R.string.hero_line, Surf.fmt(n.period, 0), Surf.cardinal(n.dir), Surf.windPhrase(n.windType, n.wind)), style = Type.body(15.sp), color = mix(c.bg, 0.8f, c.ink))
     }
 }
 
@@ -247,9 +262,9 @@ private fun AlertButton(app: AppState, id: String) {
                     scope.launch {
                         try {
                             app.alerts.toggle(id)
-                            app.show(if (id in app.alerts.state.spots) "Te avisaremos cuando tus spots estén en buenas condiciones" else "Avisos desactivados para este spot")
+                            app.show(tr(if (id in app.alerts.state.spots) R.string.toast_alertOn else R.string.toast_alertOffSpot))
                         } catch (e: Exception) {
-                            app.show(e.message ?: "Error")
+                            app.show(e.message ?: tr(R.string.error_connect))
                         }
                         busy = false
                     }
@@ -261,19 +276,23 @@ private fun AlertButton(app: AppState, id: String) {
     ) {
         val color = (if (on) c.accentText else c.ink).copy(alpha = if (busy) 0.6f else 1f)
         Icon(if (on) Icons.bellOn else Icons.bell, null, tint = color, modifier = Modifier.size(20.dp))
-        Text(if (on) "Avisos activados" else "Activar avisos", style = Type.bodySemibold(), color = color)
+        Text(tr(if (on) R.string.alert_on else R.string.alert_off), style = Type.bodySemibold(), color = color)
     }
 }
 
 @Composable
-private fun Tile(label: String, value: String, arrow: Double? = null, sub: @Composable () -> Unit) {
+private fun Tile(label: String, value: String, arrow: Double? = null, help: String? = null, sub: @Composable () -> Unit) {
     val c = LocalColors.current
     Column(
         Modifier.fillMaxWidth().fillMaxHeight().heightIn(min = 86.dp).clip(RoundedCornerShape(16.dp)).background(c.surface).padding(horizontal = 14.dp, vertical = 12.dp)
-            .semantics(mergeDescendants = true) {},
+            .semantics(mergeDescendants = help == null) {},
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Eyebrow(label)
+        // Misma altura con o sin botón de ayuda.
+        Row(Modifier.height(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) { Eyebrow(label) }
+            if (help != null) Box(Modifier.offset(x = 12.dp)) { HelpButton(help) }
+        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(value, style = Type.mono(17.sp), color = c.ink, maxLines = 1)
             DirArrow(arrow)
@@ -288,7 +307,7 @@ private fun HourCell(h: Hour, tz: String) {
     val r = Rating.of(h.score)
     Column(
         Modifier.width(52.dp).clip(RoundedCornerShape(12.dp)).background(c.bg).padding(vertical = 8.dp, horizontal = 4.dp)
-            .clearAndSetSemantics { contentDescription = "${Surf.hhmm(h.t, tz)}: ${r.label}, ${Surf.fmt(h.h)} metros, ${Surf.fmt(h.period, 0)} segundos, viento ${Surf.fmt(h.wind, 0)} nudos" },
+            .clearAndSetSemantics { contentDescription = tr(R.string.hour_a11y, Surf.hhmm(h.t, tz), r.label, Surf.fmt(h.h), Surf.fmt(h.period, 0), Surf.fmt(h.wind, 0)) },
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Text("${Surf.hour(h.t, tz)}h", style = Type.body(12.5.sp), color = c.muted)
@@ -322,8 +341,8 @@ private fun WeekChart(days: List<Day>, tz: String, todayFrom: Double) {
                     }
                 }
             }
-            Text("Ola máx.", style = Type.body(11.sp), color = c.muted, modifier = Modifier.width(52.dp))
-            Text("Mejor", style = Type.body(11.sp), color = c.muted, textAlign = TextAlign.End, modifier = Modifier.width(30.dp))
+            Text(tr(R.string.week_max), style = Type.body(11.sp), color = c.muted, maxLines = 1, modifier = Modifier.width(52.dp))
+            Text(tr(R.string.week_best), maxLines = 1, style = Type.body(11.sp), color = c.muted, textAlign = TextAlign.End, modifier = Modifier.width(30.dp))
         }
         days.forEachIndexed { i, d -> WeekRow(d, i == 0 && d.rise < todayFrom + 86_400_000, tz, cols, now) }
     }
@@ -332,9 +351,9 @@ private fun WeekChart(days: List<Day>, tz: String, todayFrom: Double) {
 @Composable
 private fun WeekRow(d: Day, isToday: Boolean, tz: String, cols: List<Int>, now: Double) {
     val c = LocalColors.current
-    val name = if (isToday) "Hoy" else d.label
+    val name = if (isToday) tr(R.string.today) else Surf.dayLabel(d.rise, tz)
     Row(
-        Modifier.clearAndSetSemantics { contentDescription = "$name: ola máxima ${Surf.fmt(d.maxH)} metros${if (d.best.score >= 1) ", mejor hora ${Surf.hhmm(d.best.t, tz)}" else ""}" },
+        Modifier.clearAndSetSemantics { contentDescription = tr(R.string.week_a11y, name, Surf.fmt(d.maxH)) + (if (d.best.score >= 1) tr(R.string.week_a11yBest, Surf.hhmm(d.best.t, tz)) else "") },
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(name, style = Type.bodySemibold(14.sp), color = c.ink, modifier = Modifier.width(52.dp))
@@ -359,45 +378,49 @@ private fun BuoyPanel(s: SpotDetail) {
     val b = s.buoy; val m = s.meteo
     Panel {
         if (b == null && m == null) {
-            PanelTitle("Medido en el mar")
-            Text("No hay boyas ni estaciones de Puertos del Estado operativas cerca de este spot. Se muestra solo la previsión.", style = Type.body(13.sp), color = c.muted)
+            PanelTitle(tr(R.string.buoy_title))
+            Text(tr(R.string.buoy_none), style = Type.body(13.sp), color = c.muted)
             return@Panel
         }
         val latest = listOfNotNull(b?.t, m?.wind?.t, m?.air?.t, m?.pressure?.t).maxOrNull() ?: 0.0
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { PanelTitle("Medido en el mar") }
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { PanelTitle(tr(R.string.buoy_title)); HelpButton("buoy") }
             LiveDot(b?.buoy?.fallback == true)
             Text("  ${Surf.hhmm(latest, s.tz)}", style = Type.mono(12.sp), color = c.muted)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp), maxItemsInEachRow = 3) {
             val cell = Modifier.weight(1f)
             if (b != null) {
-                Measure("Ola", cell) { Big("${Surf.fmt(b.h)} m") }
-                Measure("Periodo pico", cell) { Big("${Surf.fmt(b.tp, 0)} s") }
-                Measure("Dirección", cell) {
+                Measure(tr(R.string.buoy_wave), cell) { Big("${Surf.fmt(b.h)} m") }
+                Measure(tr(R.string.buoy_peak), cell) { Big("${Surf.fmt(b.tp, 0)} s") }
+                Measure(tr(R.string.buoy_dir), cell) {
                     if (b.dir != null) { DirArrow(b.dir); Big(Surf.cardinal(b.dir)) }
-                    else Box(Modifier.semantics { contentDescription = "Esta boya no mide dirección" }) { Big("-") }
+                    else { val noDir = tr(R.string.buoy_noDir); Box(Modifier.semantics { contentDescription = noDir }) { Big("-") } }
                 }
-                b.water?.let { w -> Measure("Agua", cell) { Big("${Surf.fmt(w)} °C") } }
+                b.trend?.let { tr0 ->
+                    Measure(tr(R.string.buoy_trend), cell, tr(R.string.trend_detail, Surf.signed(tr0.delta), tr0.hours.toInt())) {
+                        Text("${Surf.trendArrow(tr0.key)} ${Surf.trendLabel(tr0.key)}", style = Type.mono(17.sp), color = trendColor(tr0.key), maxLines = 1)
+                    }
+                }
+                b.water?.let { w -> Measure(tr(R.string.buoy_water), cell) { Big("${Surf.fmt(w)} °C") } }
             }
-            m?.wind?.let { w -> Measure("Viento", cell, w.gust?.let { "Rachas ${Surf.fmt(it, 0)} kn" }) { Big("${Surf.fmt(w.wind, 0)} kn"); DirArrow(w.windDir) } }
-            m?.air?.let { a -> Measure("Aire", cell) { Big("${Surf.fmt(a.air)} °C") } }
-            m?.pressure?.let { p -> Measure("Presión", cell) { Big("${Surf.fmt(p.pressure, 0)} hPa") } }
+            m?.wind?.let { w -> Measure(tr(R.string.buoy_wind), cell, w.gust?.let { tr(R.string.gusts, Surf.fmt(it, 0)) }) { Big("${Surf.fmt(w.wind, 0)} kn"); DirArrow(w.windDir) } }
+            m?.air?.let { a -> Measure(tr(R.string.buoy_air), cell) { Big("${Surf.fmt(a.air)} °C") } }
+            m?.pressure?.let { p -> Measure(tr(R.string.buoy_pressure), cell) { Big("${Surf.fmt(p.pressure, 0)} hPa") } }
         }
         if (b != null && b.buoy.far == true) {
-            Note("No hay ninguna boya a menos de 100 km. Esta es la de aguas profundas más cercana, a ${b.buoy.distKm.toInt()} km: indica el mar de fondo que llega a la zona, no el oleaje en la playa.")
+            Note(tr(R.string.buoy_far, b.buoy.distKm.toInt()))
         } else if (b != null && b.buoy.fallback == true) {
-            val closest = b.buoy.closest?.let { "La boya más cercana a esta playa, ${it.name} (a ${it.distKm.toInt()} km), no envía datos ahora." }
-                ?: "La boya más cercana a esta playa no envía datos ahora."
-            Note("$closest Se muestra la siguiente, ${b.buoy.name} (a ${b.buoy.distKm.toInt()} km): puede no reflejar bien las condiciones de esta playa.")
+            val closest = b.buoy.closest?.let { tr(R.string.buoy_closestDown, it.name, it.distKm.toInt()) } ?: tr(R.string.buoy_closestDownAnon)
+            Note(closest + tr(R.string.buoy_next, b.buoy.name, b.buoy.distKm.toInt()))
         }
         val parts = mutableListOf<String>()
-        b?.let { parts += "boya ${it.buoy.name} (${it.buoy.distKm.toInt()} km)" }
+        b?.let { parts += tr(R.string.buoy_src_buoy, it.buoy.name, it.buoy.distKm.toInt()) }
         val st = m?.air?.station ?: m?.pressure?.station
-        if (m?.wind != null) parts += "viento en ${m.wind.station.name} (${m.wind.station.distKm.toInt()} km)"
-        else if (st != null) parts += "estación ${st.name} (${st.distKm.toInt()} km)"
-        var sources = "Datos de Puertos del Estado: ${parts.joinToString(", ")}."
-        if (b?.buoy?.deep == true && b.buoy.far != true) sources += " La boya está en aguas profundas: en la orilla las olas suelen llegar más pequeñas."
+        if (m?.wind != null) parts += tr(R.string.buoy_src_wind, m.wind.station.name, m.wind.station.distKm.toInt())
+        else if (st != null) parts += tr(R.string.buoy_src_station, st.name, st.distKm.toInt())
+        var sources = tr(R.string.buoy_sources, parts.joinToString(", "))
+        if (b?.buoy?.deep == true && b.buoy.far != true) sources += tr(R.string.buoy_deep)
         Text(sources, style = Type.body(13.sp), color = c.muted)
         if (b != null) {
             HorizontalDivider(color = c.line)
@@ -405,12 +428,12 @@ private fun BuoyPanel(s: SpotDetail) {
             if (p != null) {
                 val diff = b.h - p.h
                 Text(
-                    if (kotlin.math.abs(diff) < 0.2) "La boya mide lo mismo que preveía el modelo (${Surf.fmt(p.h)} m)."
-                    else "La boya mide ${Surf.fmt(kotlin.math.abs(diff))} m ${if (diff > 0) "más" else "menos"} de lo que preveía el modelo (${Surf.fmt(p.h)} m).",
+                    if (kotlin.math.abs(diff) < 0.2) tr(R.string.buoy_same, Surf.fmt(p.h))
+                    else tr(if (diff > 0) R.string.buoy_more else R.string.buoy_less, Surf.fmt(kotlin.math.abs(diff)), Surf.fmt(p.h)),
                     style = Type.bodySemibold(13.sp), color = c.ink,
                 )
             } else {
-                Text("Puertos del Estado no publica predicción para esta boya.", style = Type.body(13.sp), color = c.muted)
+                Text(tr(R.string.buoy_noPred), style = Type.body(13.sp), color = c.muted)
             }
         }
     }

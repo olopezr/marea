@@ -42,7 +42,7 @@ data class Port(val name: String, val distKm: Double)
 
 @Serializable
 data class TideExtreme(val t: Double, val h: Double, val type: String, val coef: Int? = null) {
-    val word: String get() = if (type == "high") "Pleamar" else "Bajamar"
+    val word: String get() = tr(if (type == "high") es.marea.app.R.string.tide_high else es.marea.app.R.string.tide_low)
 }
 
 @Serializable
@@ -122,6 +122,8 @@ data class ClosestBuoy(val name: String, val distKm: Double)
 @Serializable
 data class BuoyMeta(
     val name: String,
+    val lat: Double? = null,
+    val lon: Double? = null,
     val distKm: Double,
     val deep: Boolean? = null,
     val far: Boolean? = null,
@@ -132,6 +134,14 @@ data class BuoyMeta(
 @Serializable
 data class BuoyPrediction(val h: Double, @SerialName("Tp") val tp: Double? = null, val dir: Double? = null)
 
+/** Tendencia del oleaje medido: "up", "down" o "steady", con el cambio en metros en `hours` horas. */
+@Serializable
+data class BuoyTrend(val key: String, val delta: Double, val hours: Double)
+
+/** Desviación de la previsión frente a la boya en las últimas 24 h (`bias` > 0: la boya mide más). */
+@Serializable
+data class ForecastFit(val bias: Double, val mae: Double, val n: Int)
+
 @Serializable
 data class BuoyReading(
     val buoy: BuoyMeta,
@@ -141,7 +151,15 @@ data class BuoyReading(
     val dir: Double? = null,
     val water: Double? = null,
     val predicted: BuoyPrediction? = null,
-)
+    val trend: BuoyTrend? = null,
+    /** Últimas 48 h medidas y previsión en la posición de la boya (de −48 h a +24 h). Solo en el detalle. */
+    val history: List<List<Double?>> = emptyList(),
+    val model: List<List<Double?>> = emptyList(),
+    val fit: ForecastFit? = null,
+) {
+    val historySeries by lazy { history.toSeries() }
+    val modelSeries by lazy { model.toSeries() }
+}
 
 @Serializable
 data class BuoyResponse(val buoy: BuoyReading? = null)

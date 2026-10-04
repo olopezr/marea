@@ -44,7 +44,7 @@ struct SpotDetailView: View {
     private var header: some View {
         VStack(spacing: 1) {
             Text(meta?.name ?? "").font(Theme.heading(18, relativeTo: .headline)).foregroundStyle(Theme.ink).lineLimit(1)
-            Text("\(meta?.region ?? "") · playa orientada al \(Surf.cardinal(meta?.facing))").font(Theme.body(12, relativeTo: .caption)).foregroundStyle(Theme.muted).lineLimit(1)
+            Text(L("detail.facing", meta?.region ?? "", Surf.cardinal(meta?.facing))).font(Theme.body(12, relativeTo: .caption)).foregroundStyle(Theme.muted).lineLimit(1)
         }
         .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
     }
@@ -68,94 +68,99 @@ struct SpotDetailView: View {
         Hero(spot: s)
         alertButton
         BuoyPanel(spot: s)
+        if let b = s.buoy, (b.history?.count ?? 0) >= 6 || !(b.model ?? []).isEmpty { HistoryPanel(buoy: b) }
 
         // Grid (no perezoso) para que las dos fichas de cada fila tengan la misma altura.
         Grid(horizontalSpacing: 10, verticalSpacing: 10) {
             GridRow {
-                Tile(label: "Mar de fondo", value: Text("\(Surf.fmt(n.sh)) m · \(Surf.fmt(n.sT, 0)) s")) {
+                Tile(label: L("tile.swell"), value: Text("\(Surf.fmt(n.sh)) m · \(Surf.fmt(n.sT, 0)) s"), help: "swell") {
                     DirArrow(deg: n.sDir, size: 13); Text(Surf.cardinal(n.sDir))
                 }
-                Tile(label: "Viento", value: Text("\(Surf.fmt(n.wind, 0)) kn"), arrow: n.windDir) {
-                    Text("\(n.gust.map { "Rachas \(Surf.fmt($0, 0)) kn · " } ?? "")\(Surf.cardinal(n.windDir))")
+                Tile(label: L("tile.wind"), value: Text("\(Surf.fmt(n.wind, 0)) kn"), arrow: n.windDir, help: "wind") {
+                    Text("\(n.gust.map { L("gusts", Surf.fmt($0, 0)) + " · " } ?? "")\(Surf.cardinal(n.windDir))")
                 }
             }
             GridRow {
-                Tile(label: "Marea", value: Text(t.h.map { "\(Surf.fmt($0)) m \(t.rising == true ? "↗" : "↘")" } ?? "–")) {
-                    Text("\(t.next.map { "\($0.word) \(Surf.hhmm($0.t, tz))" } ?? "")\(t.coef.map { " · Coef. \($0)" } ?? "")")
+                Tile(label: L("tile.tide"), value: Text(t.h.map { "\(Surf.fmt($0)) m \(t.rising == true ? "↗" : "↘")" } ?? "–"), help: "tide") {
+                    Text("\(t.next.map { "\($0.word) \(Surf.hhmm($0.t, tz))" } ?? "")\(t.coef.map { " · " + L("coef", "\($0)") } ?? "")")
                 }
-                Tile(label: "Marea ideal", value: Text(Surf.tidePrefLabel(s.tidePref).capitalizedFirst)) {
+                Tile(label: L("tile.idealTide"), value: Text(Surf.tidePrefLabel(s.tidePref))) {
                     Text(Surf.idealTideText(s.tidePref, ext: s.tideDay.ext, now: Date.now.ms, dayEnd: s.tideDay.to, tz: tz))
                 }
             }
             GridRow {
-                Tile(label: "Agua", value: Text("\(Surf.fmt(water)) °C")) { Text(Surf.wetsuit(water)) }
-                Tile(label: "Aire", value: Text("\(Surf.fmt(s.meteo?.air?.air ?? n.air, 0)) °C")) {
-                    Text(s.meteo?.air != nil ? "Medida en una estación cercana" : "Previsión")
+                let p = Surf.power(n.h, n.T)
+                Tile(label: L("tile.energy"), value: Text(p.map { "\(Surf.fmt($0, $0 < 10 ? 1 : 0)) kW/m" } ?? "–"), help: "energy") {
+                    Text(p.map(Surf.powerLabel) ?? "")
+                }
+                Tile(label: L("tile.water"), value: Text("\(Surf.fmt(water)) °C")) { Text(Surf.wetsuit(water)) }
+            }
+            GridRow {
+                Tile(label: L("tile.air"), value: Text("\(Surf.fmt(s.meteo?.air?.air ?? n.air, 0)) °C")) {
+                    Text(L(s.meteo?.air != nil ? "air.measured" : "air.forecast"))
+                }
+                Tile(label: L("tile.uv"), value: Text(s.uv?.now.map { "\(Int($0.rounded())) · \(Surf.uvLabel($0))" } ?? "–")) {
+                    Text(s.uv.map { L("uv.max", "\(Int($0.max.rounded()))", Surf.hour($0.maxT, tz), Surf.uvAdvice($0.max)) } ?? L("uv.none"))
                 }
             }
             GridRow {
-                Tile(label: "Índice UV", value: Text(s.uv?.now.map { "\(Int($0.rounded())) · \(Surf.uvLabel($0))" } ?? "–")) {
-                    Text(s.uv.map { "Máx. \(Int($0.max.rounded())) a las \(Surf.hour($0.maxT, tz))h · \(Surf.uvAdvice($0.max))" } ?? "Sin previsión ahora mismo")
+                Tile(label: L("tile.firstLight"), value: Text(s.sun.map { Surf.hhmm($0.rise, tz) } ?? "–")) {
+                    Text(s.sun.map { L("sunset", Surf.hhmm($0.set, tz)) } ?? "")
                 }
-                Tile(label: "Primera luz", value: Text(s.sun.map { Surf.hhmm($0.rise, tz) } ?? "–")) {
-                    Text(s.sun.map { "Puesta \(Surf.hhmm($0.set, tz))" } ?? "")
-                }
+                .gridCellColumns(2)
             }
         }
 
         Panel {
             HStack {
-                PanelTitle(text: "Marea de hoy")
+                PanelTitle(text: L("tide.today"))
                 Spacer()
-                Text("Desliza sobre la curva").font(Theme.body(12)).foregroundStyle(Theme.muted)
+                Text(L("tide.slide")).font(Theme.body(12)).foregroundStyle(Theme.muted)
             }
             if s.tideDay.points.count >= 4 {
                 TideChartView(day: s.tideDay, sun: s.sun, tz: tz)
             } else {
-                Text("Sin datos de marea para hoy.").foregroundStyle(Theme.muted)
+                Text(L("tide.none")).foregroundStyle(Theme.muted)
             }
             Text(tideNote(s)).font(Theme.body(13)).foregroundStyle(Theme.muted)
         }
 
         Panel {
-            PanelTitle(text: "Próximas 24 horas")
+            PanelTitle(text: L("hours.title"))
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 6) { ForEach(s.hours, id: \.t) { HourCell(hour: $0, tz: tz) } }
                     .scrollTargetLayout()
             }
             .scrollTargetBehavior(.viewAligned)
-            .accessibilityLabel("Previsión por horas")
+            .accessibilityLabel(L("hours.aria"))
         }
 
         Panel {
-            PanelTitle(text: "\(s.days.count) días")
-            Text("Cada bloque es una hora de luz, coloreado según la calidad. Las horas que ya han pasado hoy aparecen atenuadas. A la derecha, la ola máxima del día y su mejor hora.")
+            PanelTitle(text: L("week.title", "\(s.days.count)"))
+            Text(L("week.help"))
                 .font(Theme.body(13)).foregroundStyle(Theme.muted)
             WeekChart(days: s.days, tz: tz, todayFrom: s.tideDay.from)
             Legend()
         }
 
+        Glossary()
         LocationPanel(name: s.name, lat: s.lat, lon: s.lon)
 
-        Text("Actualizado \(Surf.ago(s.updatedAt)).").font(Theme.body(13)).foregroundStyle(Theme.muted)
+        Text(L("updated", Surf.ago(s.updatedAt))).font(Theme.body(13)).foregroundStyle(Theme.muted)
         Footer()
     }
 
     private func tideNote(_ s: SpotDetail) -> String {
-        if s.tide.reason == "no-port" {
-            return "El Instituto Hidrográfico de la Marina no publica mareas de esta zona (en el Mediterráneo la marea es de pocos centímetros). Es una estimación del modelo de Open-Meteo."
-        }
-        guard s.tide.source == "ihm", let port = s.tide.port else {
-            return "Estimación del modelo de Open-Meteo: el servicio oficial de mareas no responde ahora mismo y puede desviarse."
-        }
-        var out = "Predicción oficial del Instituto Hidrográfico de la Marina para \(port.name) (a \(Int(port.distKm)) km), alturas sobre el cero hidrográfico del puerto."
-        if let surge = s.tideDay.surge { out += " Efecto del viento y la presión en el nivel del mar: previsión de Puertos del Estado para \(surge.beach)." }
+        if s.tide.reason == "no-port" { return L("tide.note.noPort") }
+        guard s.tide.source == "ihm", let port = s.tide.port else { return L("tide.note.down") }
+        var out = L("tide.note.ihm", port.name, "\(Int(port.distKm))")
+        if let surge = s.tideDay.surge { out += L("tide.note.surge", surge.beach) }
         if let o = s.tideDay.observed {
-            out += " Nivel medido por el mareógrafo de \(o.gauge)"
-            if o.samePort != true { out += ", en un puerto vecino a \(Int(o.distKm ?? 0)) km (la marea es prácticamente la misma)" }
+            out += L("tide.note.gauge", o.gauge)
+            if o.samePort != true { out += L("tide.note.neighbour", "\(Int(o.distKm ?? 0))") }
             out += "."
         }
-        return out + " El coeficiente es una estimación a partir de la carrera de cada marea."
+        return out + L("tide.note.coef")
     }
 
     // ---------- Botón de avisos ----------
@@ -167,7 +172,7 @@ struct SpotDetailView: View {
             Task {
                 do {
                     try await app.alerts.toggle(id)
-                    app.show(app.alerts.state.spots.contains(id) ? "Te avisaremos cuando tus spots estén en buenas condiciones" : "Avisos desactivados para este spot")
+                    app.show(L(app.alerts.state.spots.contains(id) ? "toast.alertOn" : "toast.alertOffSpot"))
                 } catch {
                     app.show(error.localizedDescription)
                 }
@@ -176,7 +181,7 @@ struct SpotDetailView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: on ? "bell.fill" : "bell")
-                Text(on ? "Avisos activados" : "Activar avisos")
+                Text(L(on ? "alert.on" : "alert.off"))
             }
             .font(Theme.bodySemibold()).foregroundStyle(on ? Theme.accentText : Theme.ink)
             .frame(maxWidth: .infinity).padding(.vertical, 13).padding(.horizontal, 16)
@@ -195,13 +200,16 @@ struct Hero: View {
     var body: some View {
         let s = spot, n = s.now, r = Rating(score: s.score)
         VStack(alignment: .leading, spacing: 10) {
-            Eyebrow(text: "Previsión ahora · \(Surf.hhmm(Date.now.ms, s.tz))", color: Theme.mix(Theme.bg, 0.65, Theme.ink))
+            Eyebrow(text: L("hero.now", Surf.hhmm(Date.now.ms, s.tz)), color: Theme.mix(Theme.bg, 0.65, Theme.ink))
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 8) {
                     // Mismo tamaño para todas las valoraciones: 26 pt es lo que cabe con "Muy bueno", la más larga,
                     // en un iPhone de 375 pt. Solo si aun así no cabe (olas de dos cifras) se reduce.
-                    Text(r.label).font(Theme.display(26)).foregroundStyle(Theme.heroLabel(r))
-                        .lineLimit(1).minimumScaleFactor(0.8)
+                    HStack(spacing: 4) {
+                        Text(r.label).font(Theme.display(26)).foregroundStyle(Theme.heroLabel(r))
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                        HelpButton(topic: "rating", color: Theme.bg)
+                    }
                     ScoreBar(score: s.score, track: Theme.mix(Theme.bg, 0.22, Theme.ink))
                 }
                 Spacer()
@@ -211,12 +219,12 @@ struct Hero: View {
                 }
                 .foregroundStyle(Theme.bg)
             }
-            Text("\(Surf.fmt(n.T, 0)) s del \(Surf.cardinal(n.dir)) · \(Surf.windPhrase(n.windType, n.wind))")
+            Text(L("hero.line", Surf.fmt(n.T, 0), Surf.cardinal(n.dir), Surf.windPhrase(n.windType, n.wind)))
                 .font(Theme.body(15)).foregroundStyle(Theme.mix(Theme.bg, 0.8, Theme.ink))
         }
         .padding(18).frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.ink, in: RoundedRectangle(cornerRadius: 22))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -224,10 +232,16 @@ struct Tile<Sub: View>: View {
     let label: String
     let value: Text
     var arrow: Double? = nil
+    var help: String? = nil
     @ViewBuilder var sub: Sub
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Eyebrow(text: label)
+            HStack(spacing: 0) {
+                Eyebrow(text: label)
+                Spacer(minLength: 4)
+                if let help { HelpButton(topic: help).padding(.vertical, -14).padding(.trailing, -10) }
+            }
+            .frame(height: 16) // misma altura con o sin botón de ayuda
             HStack(spacing: 4) {
                 value.font(Theme.mono(17.5)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.7)
                 DirArrow(deg: arrow)
@@ -236,7 +250,7 @@ struct Tile<Sub: View>: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 12).frame(maxWidth: .infinity, minHeight: 86, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: help == nil ? .combine : .contain)
     }
 }
 
@@ -258,7 +272,7 @@ struct HourCell: View {
         .padding(.vertical, 8).padding(.horizontal, 4).frame(width: 52)
         .background(Theme.bg, in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Surf.hhmm(hour.t, tz)): \(r.label), \(Surf.fmt(hour.h)) metros, \(Surf.fmt(hour.T, 0)) segundos, viento \(Surf.fmt(hour.wind, 0)) nudos")
+        .accessibilityLabel(L("hour.a11y", Surf.hhmm(hour.t, tz), r.label, Surf.fmt(hour.h), Surf.fmt(hour.T, 0), Surf.fmt(hour.wind, 0)))
     }
 }
 
@@ -290,8 +304,8 @@ struct WeekChart: View {
                             .fixedSize().frame(maxWidth: .infinity)
                     }
                 }
-                Text("Ola máx.").frame(width: 52, alignment: .leading)
-                Text("Mejor").frame(width: 30, alignment: .trailing)
+                Text(L("week.max")).frame(width: 52, alignment: .leading).lineLimit(1).minimumScaleFactor(0.8)
+                Text(L("week.best")).frame(width: 30, alignment: .trailing).lineLimit(1).minimumScaleFactor(0.8)
             }
             .font(Theme.body(11)).foregroundStyle(Theme.muted)
             .accessibilityHidden(true)
@@ -310,7 +324,7 @@ struct WeekRow: View {
     let now: Double
     var body: some View {
         HStack(spacing: 10) {
-            Text(isToday ? "Hoy" : day.label).font(Theme.bodySemibold(14)).foregroundStyle(Theme.ink).frame(width: 52, alignment: .leading)
+            Text(isToday ? L("today") : Surf.dayLabel(day.rise, tz)).font(Theme.bodySemibold(14)).foregroundStyle(Theme.ink).frame(width: 52, alignment: .leading)
             HStack(spacing: 2) {
                 ForEach(columns, id: \.self) { h in
                     if let c = day.cells.first(where: { Int(Surf.hour($0.t, tz)) == h }) {
@@ -326,7 +340,7 @@ struct WeekRow: View {
                 .frame(width: 30, alignment: .trailing)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(isToday ? "Hoy" : day.label): ola máxima \(Surf.fmt(day.maxH)) metros\(day.best.score >= 1 ? ", mejor hora \(Surf.hhmm(day.best.t, tz))" : "")")
+        .accessibilityLabel(L("week.a11y", isToday ? L("today") : Surf.dayLabel(day.rise, tz), Surf.fmt(day.maxH)) + (day.best.score >= 1 ? L("week.a11yBest", Surf.hhmm(day.best.t, tz)) : ""))
     }
 }
 

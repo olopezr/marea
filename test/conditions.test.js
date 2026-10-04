@@ -39,7 +39,8 @@ test("las fuentes se piden una vez y se reutilizan desde la caché", async () =>
   const before = calls.length;
   await overview();
   assert.equal(calls.length, before, "una segunda llamada no debe tocar la red");
-  assert.equal(calls.filter(u => u.includes("open-meteo")).length, 2, "una petición por API para todos los spots");
+  // Las peticiones de un solo punto son la previsión en la posición de la boya (detalle).
+  assert.equal(calls.filter(u => u.includes("open-meteo") && new URL(u).searchParams.get("latitude").includes(",")).length, 2, "una petición por API para todos los spots");
 });
 
 test("detail devuelve curva del día, 24 h y 7 días ordenados", async () => {
@@ -151,4 +152,25 @@ test("solo se usan boyas en la ventana de oleaje de la playa", async () => {
   assert.equal(inSwellWindow(confital, { lat: 28.05, lon: -15.39, distKm: 13 }), false, "Las Palmas Este, en la otra costa");
   const salinas = { lat: 43.578, lon: -5.958, facing: 340 };
   assert.equal(inSwellWindow(salinas, { lat: 43.75, lon: -6.18, distKm: 26 }), true, "Cabo de Peñas, mar abierto");
+});
+
+test("la boya trae sus últimas 48 h, la tendencia y la previsión en su posición", async () => {
+  const b = (await detail(spotById.somo)).buoy;
+  assert.ok(b.history.length >= 40, "lecturas horarias de dos días");
+  assert.ok(b.history.every(([t], i) => i === 0 || t > b.history[i - 1][0]), "ordenadas");
+  assert.equal(b.trend.key, "up", "de 2 a 2,5 m en 6 h es subir");
+  assert.ok(b.model.length > 48, "previsión de hace 48 h a dentro de 24 h");
+  // Previsión simulada constante de 1,8 m frente a una boya entre 1,5 y 2,5 m: hay error medio.
+  assert.ok(b.fit && b.fit.n >= 6);
+  assert.equal(typeof b.fit.bias, "number");
+  assert.ok(b.fit.mae > 0.2);
+});
+
+test("tendencia del oleaje", async () => {
+  const { trend } = await import("../server/sources/portus.js");
+  const now = Date.now(), H = 3600e3;
+  const rows = hs => hs.map((h, i) => ({ t: now - (hs.length - 1 - i) * H, h }));
+  assert.equal(trend(rows([1, 1, 1, 1, 1, 1, 1.1, 1.1])).key, "steady");
+  assert.equal(trend(rows([2, 2, 2, 2, 2, 2, 1.5, 1.5])).key, "down");
+  assert.equal(trend(rows([1])), null, "sin lecturas de hace 6 h no hay tendencia");
 });

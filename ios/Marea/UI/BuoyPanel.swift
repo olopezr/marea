@@ -8,8 +8,8 @@ struct BuoyPanel: View {
         let b = spot.buoy, m = spot.meteo
         Panel {
             if b == nil && m == nil {
-                PanelTitle(text: "Medido en el mar")
-                Text("No hay boyas ni estaciones de Puertos del Estado operativas cerca de este spot. Se muestra solo la previsión.")
+                PanelTitle(text: L("buoy.title"))
+                Text(L("buoy.none"))
                     .font(Theme.body(13)).foregroundStyle(Theme.muted)
             } else {
                 content(b, m)
@@ -21,7 +21,8 @@ struct BuoyPanel: View {
     private func content(_ b: BuoyReading?, _ m: Meteo?) -> some View {
         let latest = [b?.t, m?.wind?.t, m?.air?.t, m?.pressure?.t].compactMap { $0 }.max() ?? 0
         HStack {
-            PanelTitle(text: "Medido en el mar")
+            PanelTitle(text: L("buoy.title"))
+            HelpButton(topic: "buoy").padding(.vertical, -12)
             Spacer()
             HStack(spacing: 6) {
                 LiveDot(off: b?.buoy.fallback == true)
@@ -30,28 +31,33 @@ struct BuoyPanel: View {
         }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 10, alignment: .topLeading)], alignment: .leading, spacing: 10) {
             if let b {
-                cell("Ola") { Text("\(Surf.fmt(b.h)) m") }
-                cell("Periodo pico") { Text("\(Surf.fmt(b.Tp, 0)) s") }
-                cell("Dirección") {
+                cell(L("buoy.wave")) { Text("\(Surf.fmt(b.h)) m") }
+                cell(L("buoy.peak")) { Text("\(Surf.fmt(b.Tp, 0)) s") }
+                cell(L("buoy.dir")) {
                     if let d = b.dir { DirArrow(deg: d); Text(Surf.cardinal(d)) }
-                    else { Text("-").accessibilityLabel("Esta boya no mide dirección") }
+                    else { Text("-").accessibilityLabel(L("buoy.noDir")) }
                 }
-                if let w = b.water { cell("Agua") { Text("\(Surf.fmt(w)) °C") } }
+                if let tr = b.trend {
+                    cell(L("buoy.trend"), sub: L("trend.detail", Surf.signed(tr.delta), "\(Int(tr.hours))")) {
+                        Text("\(Surf.trendArrow(tr.key)) \(L("trend.\(tr.key)"))").foregroundStyle(Theme.trend(tr.key))
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                    }
+                }
+                if let w = b.water { cell(L("buoy.water")) { Text("\(Surf.fmt(w)) °C") } }
             }
             if let w = m?.wind {
-                cell("Viento", sub: w.gust.map { "Rachas \(Surf.fmt($0, 0)) kn" }) {
+                cell(L("buoy.wind"), sub: w.gust.map { L("gusts", Surf.fmt($0, 0)) }) {
                     Text("\(Surf.fmt(w.wind, 0)) kn"); DirArrow(deg: w.windDir)
                 }
             }
-            if let a = m?.air { cell("Aire") { Text("\(Surf.fmt(a.air)) °C") } }
-            if let p = m?.pressure { cell("Presión") { Text("\(Surf.fmt(p.pressure, 0)) hPa") } }
+            if let a = m?.air { cell(L("buoy.air")) { Text("\(Surf.fmt(a.air)) °C") } }
+            if let p = m?.pressure { cell(L("buoy.pressure")) { Text("\(Surf.fmt(p.pressure, 0)) hPa") } }
         }
         if let b, b.buoy.far == true {
-            note("No hay ninguna boya a menos de 100 km. Esta es la de aguas profundas más cercana, a \(Int(b.buoy.distKm)) km: indica el mar de fondo que llega a la zona, no el oleaje en la playa.")
+            note(L("buoy.far", "\(Int(b.buoy.distKm))"))
         } else if let b, b.buoy.fallback == true {
-            let closest = b.buoy.closest.map { "La boya más cercana a esta playa, \($0.name) (a \(Int($0.distKm)) km), no envía datos ahora." }
-                ?? "La boya más cercana a esta playa no envía datos ahora."
-            note("\(closest) Se muestra la siguiente, \(b.buoy.name) (a \(Int(b.buoy.distKm)) km): puede no reflejar bien las condiciones de esta playa.")
+            let closest = b.buoy.closest.map { L("buoy.closestDown", $0.name, "\(Int($0.distKm))") } ?? L("buoy.closestDownAnon")
+            note(closest + L("buoy.next", b.buoy.name, "\(Int(b.buoy.distKm))"))
         }
         Text(sources(b, m)).font(Theme.body(13)).foregroundStyle(Theme.muted)
         if let b {
@@ -59,22 +65,22 @@ struct BuoyPanel: View {
             if let p = b.predicted {
                 let diff = b.h - p.h
                 Text(abs(diff) < 0.2
-                     ? "La boya mide lo mismo que preveía el modelo (\(Surf.fmt(p.h)) m)."
-                     : "La boya mide \(Surf.fmt(abs(diff))) m \(diff > 0 ? "más" : "menos") de lo que preveía el modelo (\(Surf.fmt(p.h)) m).")
+                     ? L("buoy.same", Surf.fmt(p.h))
+                     : L(diff > 0 ? "buoy.more" : "buoy.less", Surf.fmt(abs(diff)), Surf.fmt(p.h)))
                     .font(Theme.bodySemibold(13)).foregroundStyle(Theme.ink)
             } else {
-                Text("Puertos del Estado no publica predicción para esta boya.").font(Theme.body(13)).foregroundStyle(Theme.muted)
+                Text(L("buoy.noPred")).font(Theme.body(13)).foregroundStyle(Theme.muted)
             }
         }
     }
 
     private func sources(_ b: BuoyReading?, _ m: Meteo?) -> String {
         var parts: [String] = []
-        if let b { parts.append("boya \(b.buoy.name) (\(Int(b.buoy.distKm)) km)") }
-        if let w = m?.wind { parts.append("viento en \(w.station.name) (\(Int(w.station.distKm)) km)") }
-        else if let st = m?.air?.station ?? m?.pressure?.station { parts.append("estación \(st.name) (\(Int(st.distKm)) km)") }
-        var out = "Datos de Puertos del Estado: \(parts.joined(separator: ", "))."
-        if let b, b.buoy.deep == true, b.buoy.far != true { out += " La boya está en aguas profundas: en la orilla las olas suelen llegar más pequeñas." }
+        if let b { parts.append(L("buoy.src.buoy", b.buoy.name, "\(Int(b.buoy.distKm))")) }
+        if let w = m?.wind { parts.append(L("buoy.src.wind", w.station.name, "\(Int(w.station.distKm))")) }
+        else if let st = m?.air?.station ?? m?.pressure?.station { parts.append(L("buoy.src.station", st.name, "\(Int(st.distKm))")) }
+        var out = L("buoy.sources", parts.joined(separator: ", "))
+        if let b, b.buoy.deep == true, b.buoy.far != true { out += L("buoy.deep") }
         return out
     }
 

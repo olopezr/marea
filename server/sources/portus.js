@@ -87,6 +87,37 @@ function reading(buoy) {
   }, { staleMs: MAX_AGE });
 }
 
+// ---------- Últimas 48 h de una boya ----------
+// PORTUS publica las lecturas horarias de los dos últimos días. Sirven para ver la tendencia del oleaje
+// y para comparar lo medido con la previsión. Se descartan los valores averiados o imposibles.
+export function history(buoyId) {
+  return cached(`portus:history:${buoyId}`, 30 * 60e3, async () => {
+    const params = await cached(`portus:params:wave:${buoyId}`, 7 * 24 * 3600e3, () => post(`parametros/${buoyId}?locale=es`, ["WAVE"]));
+    const rows = await post(`RTData/station/${buoyId}?locale=es`, params.map(p => p.id));
+    return rows
+      .map(r => {
+        const v = Object.fromEntries(r.datos.map(x => [x.nombreColumna, x.valor == null || x.averia ? null : +x.valor / x.factor]));
+        return { t: parseDate(r.fecha), h: v.hm0 ?? null, Tp: v.tp ?? null };
+      })
+      .filter(r => r.h > 0 && r.h < 20 && Date.now() - r.t <= 49 * 3600e3)
+      .sort((a, b) => a.t - b.t);
+  }, { staleMs: 3 * 3600e3 });
+}
+
+// Tendencia: media de las dos últimas lecturas frente a la de hace unas 6 h. Cuenta como cambio si la
+// diferencia supera 0,2 m o el 15 % de la altura (lo que sea mayor); si no, el oleaje está estable.
+export function trend(rows, now = Date.now()) {
+  const recent = rows.filter(r => now - r.t <= 3 * 3600e3).slice(-2);
+  if (!recent.length) return null;
+  const tRef = recent.at(-1).t - 6 * 3600e3;
+  const before = rows.filter(r => Math.abs(r.t - tRef) <= 3600e3 * 1.5);
+  if (!before.length) return null;
+  const avg = xs => xs.reduce((a, r) => a + r.h, 0) / xs.length;
+  const delta = Math.round((avg(recent) - avg(before)) * 100) / 100;
+  const threshold = Math.max(0.2, 0.15 * avg(recent));
+  return { key: delta >= threshold ? "up" : delta <= -threshold ? "down" : "steady", delta, hours: 6 };
+}
+
 // ---------- Predicción de oleaje en la posición de cada boya (modelo de Puertos del Estado) ----------
 // PORTUS tiene un punto de su modelo de oleaje asociado a cada boya (`codigoEstacion`), con 72 h de
 // predicción horaria. El modelo da la dirección hacia la que va el oleaje: se le suman 180° para
@@ -171,7 +202,11 @@ export async function nearestReading(spot) {
         const series = await buoyForecast(b.id).catch(() => null);
         const p = forecastAt(series, r.t);
         const predicted = p && Math.abs(p.t - r.t) <= 90 * 60e3 ? { h: p.h, Tp: p.Tp, dir: p.dir } : null;
-        return { buoy: { id: b.id, name: b.name, distKm: Math.round(b.distKm), deep: b.deep, far }, ...r, predicted };
+        const past = await history(b.id).catch(() => []);
+        return {
+          buoy: { id: b.id, name: b.name, lat: b.lat, lon: b.lon, distKm: Math.round(b.distKm), deep: b.deep, far }, ...r, predicted,
+          trend: trend(past), history: past.map(x => [x.t, x.h]),
+        };
       }
     }
     return null;

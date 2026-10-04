@@ -23,7 +23,7 @@ actor APIClient {
         return URL(string: raw.isEmpty ? "https://marea.onrender.com" : raw)!
     }()
 
-    private static let cacheVersion = "api-v4"
+    private static let cacheVersion = "api-v5"
     private let freshMs: Double = 5 * 60_000
     private let session: URLSession
     private let cacheDir: URL
@@ -34,7 +34,7 @@ actor APIClient {
         cfg.timeoutIntervalForRequest = 60
         cfg.requestCachePolicy = .reloadIgnoringLocalCacheData
         session = URLSession(configuration: cfg)
-        // Sube la versión cuando cambien las respuestas de la API (v4: índice UV) para no mostrar
+        // Sube la versión cuando cambien las respuestas de la API (v5: historial de la boya) para no mostrar
         // datos guardados que no traen los campos nuevos. Las cachés anteriores se borran.
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         cacheDir = caches.appendingPathComponent(Self.cacheVersion, isDirectory: true)
@@ -82,6 +82,8 @@ actor APIClient {
         var req = URLRequest(url: Self.baseURL.appending(path: path))
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Accept")
+        // Los mensajes de error del servidor llegan en el idioma de la app.
+        req.setValue(L10n.lang, forHTTPHeaderField: "Accept-Language")
         if let body {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONEncoder().encode(body)
@@ -89,11 +91,11 @@ actor APIClient {
         let data: Data, res: URLResponse
         do { (data, res) = try await session.data(for: req) }
         catch let e as URLError where Self.isOffline(e) { throw e }
-        catch { throw APIError(message: "No se pudo conectar con el servidor") }
+        catch { throw APIError(message: L("error.connect")) }
         let status = (res as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
             let msg = (try? JSONDecoder().decode([String: String].self, from: data))?["error"]
-            throw APIError(message: msg ?? "Error \(status)")
+            throw APIError(message: msg ?? L("error.status", "\(status)"))
         }
         return try JSONDecoder().decode(T.self, from: data)
     }
@@ -101,7 +103,7 @@ actor APIClient {
     // ---------- Avisos ----------
 
     private struct Device: Encodable { let platform = "ios"; let token: String }
-    private struct Subscribe: Encodable { let device: Device; let spots: [String]; let minScore: Double }
+    private struct Subscribe: Encodable { let device: Device; let spots: [String]; let minScore: Double; let lang = L10n.lang }
     private struct Endpoint: Encodable { let endpoint: String }
     struct OK: Decodable { let ok: Bool? }
 

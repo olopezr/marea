@@ -41,7 +41,7 @@ struct TideChartView: View {
             .aspectRatio(Self.W / Self.H, contentMode: .fit)
             .sensoryFeedback(.selection, trigger: Int(current / Self.step))
             .accessibilityElement()
-            .accessibilityLabel("Curva de marea de hoy")
+            .accessibilityLabel(L("chart.ariaShort"))
             .accessibilityValue(accessibilityValue)
             .accessibilityAdjustableAction { dir in
                 switch dir {
@@ -114,7 +114,7 @@ struct TideChartView: View {
             ctx.draw(label, at: CGPoint(x: lx, y: e.type == "high" ? c.y - 13 : c.y + 13), anchor: .center)
         }
         if let first = obs.first(where: { $0.t >= day.from + 20 * 60_000 }) {
-            let label = Text("medido").font(.custom("JetBrainsMono-SemiBold", fixedSize: 9)).foregroundColor(Theme.accentText)
+            let label = Text(L("chart.measuredLabel")).font(.custom("JetBrainsMono-SemiBold", fixedSize: 9)).foregroundColor(Theme.accentText)
             ctx.draw(label, at: CGPoint(x: x(first.t) + 4, y: max(12, y(first.v) - 8)), anchor: .bottomLeading)
         }
         // Ahora
@@ -158,21 +158,21 @@ struct TideChartView: View {
             FlowLayout(spacing: 14, lineSpacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                     Text(Surf.hhmm(current, tz)).font(Theme.monoBold(20))
-                    if isNow { Text("AHORA").font(Theme.mono(10)).tracking(0.8).foregroundStyle(Theme.accentText) }
+                    if isNow { Text(L("chart.now")).font(Theme.mono(10)).tracking(0.8).foregroundStyle(Theme.accentText) }
                 }
                 if let at {
-                    (Text(Surf.fmt(at.h, 2)).font(Theme.monoBold(17)) + Text(" m \(at.rising ? "↗ subiendo" : "↘ bajando")").font(Theme.body(15)))
+                    (Text(Surf.fmt(at.h, 2)).font(Theme.monoBold(17)) + Text(" m \(at.rising ? "↗" : "↘") \(L(at.rising ? "chart.rising" : "chart.falling"))").font(Theme.body(15)))
                 }
                 if let coef {
-                    (Text("Coef. ").font(Theme.body(15)) + Text("\(coef)").font(Theme.monoBold(17)) + Text(" \(Surf.coefLabel(coef))").font(Theme.body(15)).foregroundColor(Theme.muted))
+                    (Text(L("chart.coef") + " ").font(Theme.body(15)) + Text("\(coef)").font(Theme.monoBold(17)) + Text(" \(Surf.coefLabel(coef))").font(Theme.body(15)).foregroundColor(Theme.muted))
                 }
             }
             .foregroundStyle(Theme.ink)
             // Una línea por dato, y siempre las mismas para el día: así el recuadro no cambia de alto al deslizar.
             VStack(alignment: .leading, spacing: 2) {
-                if let next { Text("\(next.word) en \(Surf.duration(next.t - current)) (\(Surf.hhmm(next.t, tz)), \(Surf.fmt(next.h)) m)") }
+                if let next { Text(L("chart.next", next.word, Surf.duration(next.t - current), Surf.hhmm(next.t, tz), Surf.fmt(next.h))) }
                 if day.surge != nil { Text(Surf.surgeText(residual)) }
-                if day.observed?.points.isEmpty == false { Text(measured.map { "Medido: \(Surf.fmt($0, 2)) m" } ?? "Medido: sin dato a esta hora") }
+                if day.observed?.points.isEmpty == false { Text(measured.map { L("chart.measured", Surf.fmt($0, 2)) } ?? L("chart.measuredNone")) }
             }
             .font(Theme.body(13)).foregroundStyle(Theme.muted)
         }
@@ -183,19 +183,19 @@ struct TideChartView: View {
 
     private var accessibilityValue: String {
         guard let at = Surf.tideAt(day.points, current) else { return Surf.hhmm(current, tz) }
-        return "\(Surf.hhmm(current, tz)), \(Surf.fmt(at.h)) metros, \(at.rising ? "subiendo" : "bajando")"
+        return L("chart.value", Surf.hhmm(current, tz), Surf.fmt(at.h), L(at.rising ? "chart.rising" : "chart.falling"))
     }
 
     private var legend: some View {
         let coefs = extremes.filter { $0.coef != nil }
         return FlowLayout(spacing: 14, lineSpacing: 4) {
-            swatch(Theme.sea, dash: nil, width: 2.4, label: "Predicción")
+            swatch(Theme.sea, dash: nil, width: 2.4, label: L("legend.prediction"))
             if let o = day.observed, !o.points.isEmpty {
-                swatch(Theme.accent, dash: [1, 3], width: 2, label: "Medido en \(o.gauge)\(o.samePort == false ? " (a \(Int(o.distKm ?? 0)) km)" : "")")
+                swatch(Theme.accent, dash: [1, 3], width: 2, label: L("legend.measuredAt", o.gauge) + (o.samePort == false ? L("legend.away", "\(Int(o.distKm ?? 0))") : ""))
             }
-            swatch(Theme.accent, dash: [3, 3], width: 1.5, label: "Ahora")
+            swatch(Theme.accent, dash: [3, 3], width: 1.5, label: L("legend.now"))
             if !coefs.isEmpty {
-                Text("Coeficientes: " + coefs.map { "\($0.coef!) (\(Surf.hhmm($0.t, tz)))" }.joined(separator: " · "))
+                Text(L("legend.coefs", coefs.map { "\($0.coef!) (\(Surf.hhmm($0.t, tz)))" }.joined(separator: " · ")))
             }
         }
         .font(Theme.body(13)).foregroundStyle(Theme.muted)

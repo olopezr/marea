@@ -54,7 +54,7 @@ struct TideExtreme: Codable, Sendable, Hashable {
     let type: String
     let coef: Int?
 
-    var word: String { type == "high" ? "Pleamar" : "Bajamar" }
+    var word: String { L(type == "high" ? "tide.high" : "tide.low") }
 }
 
 struct TideNow: Codable, Sendable, Hashable {
@@ -179,6 +179,8 @@ struct ClosestBuoy: Codable, Sendable, Hashable {
 
 struct BuoyMeta: Codable, Sendable, Hashable {
     let name: String
+    let lat: Double?
+    let lon: Double?
     let distKm: Double
     let deep: Bool?
     let far: Bool?
@@ -192,6 +194,20 @@ struct BuoyPrediction: Codable, Sendable, Hashable {
     let dir: Double?
 }
 
+/// Tendencia del oleaje medido: "up", "down" o "steady", con el cambio en metros en `hours` horas.
+struct BuoyTrend: Codable, Sendable, Hashable {
+    let key: String
+    let delta: Double
+    let hours: Double
+}
+
+/// Desviación de la previsión frente a la boya en las últimas 24 h (`bias` > 0: la boya mide más).
+struct ForecastFit: Codable, Sendable, Hashable {
+    let bias: Double
+    let mae: Double
+    let n: Int
+}
+
 struct BuoyReading: Codable, Sendable, Hashable {
     let buoy: BuoyMeta
     let t: Double
@@ -200,6 +216,27 @@ struct BuoyReading: Codable, Sendable, Hashable {
     let dir: Double?
     let water: Double?
     let predicted: BuoyPrediction?
+    let trend: BuoyTrend?
+    /// Últimas 48 h medidas y previsión en la posición de la boya (de −48 h a +24 h). Solo en el detalle.
+    let history: [SeriesPoint]?
+    let model: [SeriesPoint]?
+    let fit: ForecastFit?
+
+    enum CodingKeys: String, CodingKey { case buoy, t, h, Tp, dir, water, predicted, trend, history, model, fit }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        buoy = try c.decode(BuoyMeta.self, forKey: .buoy)
+        t = try c.decode(Double.self, forKey: .t)
+        h = try c.decode(Double.self, forKey: .h)
+        Tp = try c.decodeIfPresent(Double.self, forKey: .Tp)
+        dir = try c.decodeIfPresent(Double.self, forKey: .dir)
+        water = try c.decodeIfPresent(Double.self, forKey: .water)
+        predicted = try c.decodeIfPresent(BuoyPrediction.self, forKey: .predicted)
+        trend = try c.decodeIfPresent(BuoyTrend.self, forKey: .trend)
+        history = try c.decodeIfPresent([SeriesPoint].self, forKey: .history)?.filter { !$0.v.isNaN }
+        model = try c.decodeIfPresent([SeriesPoint].self, forKey: .model)?.filter { !$0.v.isNaN }
+        fit = try c.decodeIfPresent(ForecastFit.self, forKey: .fit)
+    }
 }
 
 struct BuoyResponse: Codable, Sendable {

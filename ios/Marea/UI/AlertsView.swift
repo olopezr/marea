@@ -12,25 +12,25 @@ struct AlertsView: View {
             VStack(spacing: 12) {
                 if app.alerts.permissionDenied {
                     Button { UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!) } label: {
-                        Banner(text: "Las notificaciones están bloqueadas para Marea. Actívalas en Ajustes para recibir avisos.")
+                        Banner(text: L("alerts.blockedApp"))
                     }
                     .buttonStyle(.plain)
                 }
                 Panel {
-                    PanelTitle(text: "Avisar a partir de")
-                    Picker("Calidad mínima", selection: Binding(get: { st.minScore }, set: { v in
-                        run(st.spots.isEmpty ? nil : "Umbral guardado") { try await app.alerts.setMinScore(v) }
+                    PanelTitle(text: L("alerts.from"))
+                    Picker(L("alerts.minQuality"), selection: Binding(get: { st.minScore }, set: { v in
+                        run(st.spots.isEmpty ? nil : L("toast.threshold")) { try await app.alerts.setMinScore(v) }
                     })) {
-                        Text("Aceptable").tag(2.0)
-                        Text("Bueno").tag(3.0)
-                        Text("Muy bueno").tag(4.0)
+                        Text(Rating.fair.label).tag(2.0)
+                        Text(Rating.good.label).tag(3.0)
+                        Text(Rating.epic.label).tag(4.0)
                     }
                     .pickerStyle(.segmented)
-                    Text("Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana.")
+                    Text(L("alerts.help"))
                         .font(Theme.body(13)).foregroundStyle(Theme.muted)
                 }
                 Panel {
-                    PanelTitle(text: "Spots")
+                    PanelTitle(text: L("alerts.spots"))
                     VStack(spacing: 0) {
                         // Agrupados por zona, con un título al empezar cada una.
                         ForEach(Array(Spot.all.enumerated()), id: \.element.id) { i, sp in
@@ -41,7 +41,7 @@ struct AlertsView: View {
                                 Divider().overlay(Theme.line)
                             }
                             Toggle(isOn: Binding(get: { st.spots.contains(sp.id) }, set: { on in
-                                run(on ? "Avisos activados para \(sp.name)" : "Avisos desactivados para ese spot") { try await app.alerts.toggle(sp.id) }
+                                run(on ? L("toast.spotOn", sp.name) : L("toast.spotOff")) { try await app.alerts.toggle(sp.id) }
                             })) {
                                 Text(sp.name).font(Theme.body()).foregroundStyle(Theme.ink)
                             }
@@ -51,9 +51,9 @@ struct AlertsView: View {
                 }
                 .disabled(busy)
                 VStack(spacing: 10) {
-                    Button("Enviar un aviso de prueba") { run("Aviso de prueba enviado") { try await app.alerts.sendTest() } }
+                    Button(L("alerts.test")) { run(L("toast.testSent")) { try await app.alerts.sendTest() } }
                         .buttonStyle(PrimaryButtonStyle())
-                    Button("Desactivar todos los avisos") { run("Avisos desactivados") { try await app.alerts.disableAll() } }
+                    Button(L("alerts.off")) { run(L("toast.allOff")) { try await app.alerts.disableAll() } }
                         .buttonStyle(GhostButtonStyle()).opacity(st.spots.isEmpty ? 0.45 : 1)
                 }
                 .disabled(st.spots.isEmpty || busy)
@@ -66,8 +66,8 @@ struct AlertsView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 1) {
-                    Text("Avisos").font(Theme.heading(18, relativeTo: .headline)).foregroundStyle(Theme.ink)
-                    Text("Te avisamos cuando tus spots se ponen buenos").font(Theme.body(12, relativeTo: .caption)).foregroundStyle(Theme.muted)
+                    Text(L("alerts")).font(Theme.heading(18, relativeTo: .headline)).foregroundStyle(Theme.ink)
+                    Text(L("alerts.subtitle")).font(Theme.body(12, relativeTo: .caption)).foregroundStyle(Theme.muted)
                 }
                 .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
             }

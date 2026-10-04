@@ -1,5 +1,11 @@
 package es.marea.app.ui
 
+import es.marea.app.data.Rating
+
+import es.marea.app.R
+
+import es.marea.app.data.tr
+
 import android.Manifest
 import android.content.Intent
 import android.os.Build
@@ -82,7 +88,7 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
         busy = true
         val go = {
             scope.launch {
-                try { work(); ok?.let(app::show) } catch (e: Exception) { app.show(e.message ?: "Error") }
+                try { work(); ok?.let(app::show) } catch (e: Exception) { app.show(e.message ?: tr(R.string.error_connect)) }
                 allowed = app.alerts.notificationsAllowed()
                 busy = false
             }
@@ -93,30 +99,30 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize().background(c.bg)) {
         Row(Modifier.statusBarsPadding().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            IconCircleButton(Icons.back, "Volver a la lista", onClick = onBack)
+            IconCircleButton(Icons.back, tr(R.string.back), onClick = onBack)
             Column(Modifier.semantics(mergeDescendants = true) { heading() }) {
-                Text("Avisos", style = Type.heading(21.sp), color = c.ink)
-                Text("Te avisamos cuando tus spots se ponen buenos", style = Type.body(13.sp), color = c.muted)
+                Text(tr(R.string.alerts), style = Type.heading(21.sp), color = c.ink)
+                Text(tr(R.string.alerts_subtitle), style = Type.body(13.sp), color = c.muted)
             }
         }
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!app.alerts.available) item {
-                Banner("Los avisos no están disponibles en esta versión de la app.")
+                Banner(tr(R.string.err_alertsUnavailable))
             }
             if (!allowed && st.spots.isNotEmpty()) item {
-                Banner("Las notificaciones están bloqueadas para Marea. Toca aquí para activarlas en los ajustes del móvil.") {
+                Banner(tr(R.string.alerts_blockedAndroid)) {
                     context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
                 }
             }
             item {
                 Panel {
-                    PanelTitle("Avisar a partir de")
-                    val options = listOf(2.0 to "Aceptable", 3.0 to "Bueno", 4.0 to "Muy bueno")
+                    PanelTitle(tr(R.string.alerts_from))
+                    val options = listOf(2.0 to Rating.Fair.label, 3.0 to Rating.Good.label, 4.0 to Rating.Epic.label)
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         options.forEachIndexed { i, (v, label) ->
                             SegmentedButton(
                                 selected = st.minScore == v,
-                                onClick = { run(if (st.spots.isEmpty()) null else "Umbral guardado") { app.alerts.setMinScore(v) } },
+                                onClick = { run(if (st.spots.isEmpty()) null else tr(R.string.toast_threshold)) { app.alerts.setMinScore(v) } },
                                 shape = SegmentedButtonDefaults.itemShape(i, options.size), icon = {}, enabled = !busy,
                                 colors = SegmentedButtonDefaults.colors(
                                     activeContainerColor = c.surface, activeContentColor = c.ink, inactiveContainerColor = c.surface2,
@@ -126,14 +132,14 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
                         }
                     }
                     Text(
-                        "Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana.",
+                        tr(R.string.alerts_help),
                         style = Type.body(13.sp), color = c.muted,
                     )
                 }
             }
             item {
                 Panel {
-                    PanelTitle("Spots")
+                    PanelTitle(tr(R.string.alerts_spots))
                     Column {
                         // Agrupados por zona, con un título al empezar cada una.
                         val spots = app.api.spots
@@ -146,7 +152,7 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
                             val on = sp.id in st.spots
                             Row(
                                 Modifier.fillMaxWidth().toggleable(on, enabled = !busy, role = Role.Switch) { now ->
-                                    run(if (now) "Avisos activados para ${sp.name}" else "Avisos desactivados para ese spot", needsPermission = now) { app.alerts.toggle(sp.id) }
+                                    run(if (now) tr(R.string.toast_spotOn, sp.name) else tr(R.string.toast_spotOff), needsPermission = now) { app.alerts.toggle(sp.id) }
                                 }.padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -162,8 +168,8 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    PrimaryButton("Enviar un aviso de prueba", enabled = st.spots.isNotEmpty() && !busy) { run("Aviso de prueba enviado") { app.alerts.sendTest() } }
-                    GhostButton("Desactivar todos los avisos", enabled = st.spots.isNotEmpty() && !busy) { run("Avisos desactivados") { app.alerts.disableAll() } }
+                    PrimaryButton(tr(R.string.alerts_test), enabled = st.spots.isNotEmpty() && !busy) { run(tr(R.string.toast_testSent)) { app.alerts.sendTest() } }
+                    GhostButton(tr(R.string.alerts_off), enabled = st.spots.isNotEmpty() && !busy) { run(tr(R.string.toast_allOff)) { app.alerts.disableAll() } }
                 }
             }
             item { Footer(app.api::legalUrl) }

@@ -1,5 +1,6 @@
 // Suscripción a avisos push en el navegador.
 import { push } from "./api.js";
+import { t, lang } from "./i18n.js";
 
 export const supported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 
@@ -17,7 +18,7 @@ const b64ToBytes = b64 => {
 // resuelve nunca: se espera como mucho 4 s para no dejar la pantalla de avisos cargando para siempre.
 const swReady = () => Promise.race([
   navigator.serviceWorker.ready,
-  new Promise((_, reject) => setTimeout(() => reject(new Error("Este navegador no permite activar avisos ahora mismo.")), 4000)),
+  new Promise((_, reject) => setTimeout(() => reject(new Error(t("err.webPushUnavailable"))), 4000)),
 ]);
 
 async function currentSubscription() {
@@ -40,7 +41,7 @@ async function ensureSubscription() {
   const existing = await currentSubscription();
   if (existing) return existing;
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") throw new Error("Para recibir avisos, permite las notificaciones de Marea en los ajustes del navegador.");
+  if (permission !== "granted") throw new Error(t("err.permissionWeb"));
   const { publicKey } = await push.key();
   const reg = await swReady();
   return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(publicKey) });
@@ -49,7 +50,7 @@ async function ensureSubscription() {
 export async function save(spots, minScore = state.minScore) {
   if (!spots.length) return disableAll();
   const sub = await ensureSubscription();
-  state = await push.subscribe({ subscription: sub.toJSON(), spots, minScore });
+  state = await push.subscribe({ subscription: sub.toJSON(), spots, minScore, lang });
   return state;
 }
 
@@ -76,6 +77,6 @@ export async function disableAll() {
 
 export async function sendTest() {
   const sub = await currentSubscription();
-  if (!sub) throw new Error("Activa antes los avisos de algún spot.");
+  if (!sub) throw new Error(t("err.noSpots"));
   return push.test(sub.endpoint);
 }

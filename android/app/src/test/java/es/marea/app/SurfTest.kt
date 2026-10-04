@@ -14,6 +14,32 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SurfTest {
+    @org.junit.Before fun espanol() {
+        es.marea.app.data.L10n.setEnglishForTests(false)
+        // Textos en español generados en res/values/strings.xml, buscados por su id de R.string.
+        val xml = java.io.File("src/main/res/values/strings.xml").readText()
+        val byName = Regex("""<string name="(\w+)"[^>]*>(.*?)</string>""").findAll(xml)
+            .associate { it.groupValues[1] to it.groupValues[2].removeSurrounding("\"").replace("\\'", "'").replace("&amp;", "&") }
+        val byId = es.marea.app.R.string::class.java.fields.associate { it.getInt(null) to byName[it.name] }
+        es.marea.app.data.L10n.testLookup = { id, args -> String.format(java.util.Locale.ROOT, byId[id]!!, *args) }
+    }
+
+    @Test fun inglesUsaPuntoYWest() {
+        es.marea.app.data.L10n.setEnglishForTests(true)
+        assertEquals("1.3", Surf.fmt(1.25))
+        assertEquals("NW", Surf.cardinal(315.0))
+        assertEquals("43.4590° N · 3.7350° W", Surf.coords(43.459, -3.735))
+        es.marea.app.data.L10n.setEnglishForTests(false)
+    }
+
+    @Test fun energiaYTendencia() {
+        assertEquals(6.86, Surf.power(1.0, 14.0)!!, 0.01)
+        assertTrue("1 m a 14 s lleva más energía que 1,4 m a 6 s", Surf.power(1.0, 14.0)!! > Surf.power(1.4, 6.0)!!)
+        assertEquals("+0,4", Surf.signed(0.42))
+        assertEquals("−0,2", Surf.signed(-0.2))
+        assertEquals("0,0", Surf.signed(0.03))
+    }
+
     @Test fun fmtUsaComaYRedondeaComoJavaScript() {
         assertEquals("1,3", Surf.fmt(1.25))
         assertEquals("1,1", Surf.fmt(1.15))

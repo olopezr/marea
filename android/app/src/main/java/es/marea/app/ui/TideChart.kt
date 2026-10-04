@@ -1,5 +1,9 @@
 package es.marea.app.ui
 
+import es.marea.app.R
+
+import es.marea.app.data.tr
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -105,8 +109,8 @@ fun TideChart(day: TideDay, sun: Sun?, tz: String, now: Double = System.currentT
                     }
                 }
                 .semantics {
-                    contentDescription = "Curva de marea de hoy"
-                    stateDescription = at?.let { "${Surf.hhmm(current, tz)}, ${Surf.fmt(it.h)} metros, ${if (it.rising) "subiendo" else "bajando"}" } ?: Surf.hhmm(current, tz)
+                    contentDescription = tr(R.string.chart_ariaShort)
+                    stateDescription = at?.let { tr(R.string.chart_value, Surf.hhmm(current, tz), Surf.fmt(it.h), tr(if (it.rising) R.string.chart_rising else R.string.chart_falling)) } ?: Surf.hhmm(current, tz)
                     progressBarRangeInfo = ProgressBarRangeInfo(((current - day.from) / (day.to - day.from)).toFloat(), 0f..1f, steps = 95)
                     setProgress { v -> move(day.from + v * (day.to - day.from)); true }
                 },
@@ -139,7 +143,7 @@ fun TideChart(day: TideDay, sun: Sun?, tz: String, now: Double = System.currentT
                     label(measurer, "${Surf.hhmm(e.t, tz)} · ${Surf.fmt(e.h)}", TextStyle(fontFamily = Fonts.mono, fontSize = 10.sp, color = c.ink), p.x, if (e.type == "high") p.y - 13 else p.y + 13, center = true)
                 }
                 obs.firstOrNull { it.t >= day.from + 20 * 60_000 }?.let {
-                    label(measurer, "medido", TextStyle(fontFamily = Fonts.mono, fontSize = 9.sp, color = c.accentText), x(it.t) + 4, maxOf(12f, y(it.v) - 8) - 6, center = false)
+                    label(measurer, tr(R.string.chart_measuredLabel), TextStyle(fontFamily = Fonts.mono, fontSize = 9.sp, color = c.accentText), x(it.t) + 4, maxOf(12f, y(it.v) - 8) - 6, center = false)
                 }
                 // Ahora
                 if (inDay) drawLine(c.accent, Offset(x(now), TOP - 10), Offset(x(now), H - BOTTOM), 1.5f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f, 3f)))
@@ -197,20 +201,20 @@ private fun Readout(day: TideDay, tz: String, current: Double, now: Double) {
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(fontFamily = Fonts.monoBold, fontSize = 20.sp)) { append(Surf.hhmm(current, tz)) }
-                    if (isNow) withStyle(SpanStyle(fontFamily = Fonts.mono, fontSize = 10.sp, color = c.accentText, letterSpacing = 0.8.sp)) { append(" AHORA") }
+                    if (isNow) withStyle(SpanStyle(fontFamily = Fonts.mono, fontSize = 10.sp, color = c.accentText, letterSpacing = 0.8.sp)) { append(" " + tr(R.string.chart_now)) }
                 },
                 color = c.ink,
             )
             if (at != null) Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(fontFamily = Fonts.monoBold, fontSize = 17.sp)) { append(Surf.fmt(at.h, 2)) }
-                    append(" m ${if (at.rising) "↗ subiendo" else "↘ bajando"}")
+                    append(" m ${if (at.rising) "↗" else "↘"} ${tr(if (at.rising) R.string.chart_rising else R.string.chart_falling)}")
                 },
                 style = Type.body(15.sp), color = c.ink, modifier = Modifier.padding(top = 3.dp),
             )
             if (coef != null) Text(
                 buildAnnotatedString {
-                    append("Coef. ")
+                    append(tr(R.string.chart_coef) + " ")
                     withStyle(SpanStyle(fontFamily = Fonts.monoBold, fontSize = 17.sp)) { append("$coef") }
                     withStyle(SpanStyle(color = c.muted)) { append(" ${Surf.coefLabel(coef)}") }
                 },
@@ -220,9 +224,9 @@ private fun Readout(day: TideDay, tz: String, current: Double, now: Double) {
         // Una línea por dato, y siempre las mismas para el día: así el recuadro no cambia de alto al deslizar.
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             val sub = Type.body(13.sp)
-            next?.let { Text("${it.word} en ${Surf.duration(it.t - current)} (${Surf.hhmm(it.t, tz)}, ${Surf.fmt(it.h)} m)", style = sub, color = c.muted) }
+            next?.let { Text(tr(R.string.chart_next, it.word, Surf.duration(it.t - current), Surf.hhmm(it.t, tz), Surf.fmt(it.h)), style = sub, color = c.muted) }
             if (day.surge != null) Text(Surf.surgeText(residual), style = sub, color = c.muted)
-            if (day.observed?.series?.isNotEmpty() == true) Text(measured?.let { "Medido: ${Surf.fmt(it, 2)} m" } ?: "Medido: sin dato a esta hora", style = sub, color = c.muted)
+            if (day.observed?.series?.isNotEmpty() == true) Text(measured?.let { tr(R.string.chart_measured, Surf.fmt(it, 2)) } ?: tr(R.string.chart_measuredNone), style = sub, color = c.muted)
         }
     }
 }
@@ -232,12 +236,12 @@ private fun Readout(day: TideDay, tz: String, current: Double, now: Double) {
 private fun Legend(day: TideDay, coefs: List<String>) {
     val c = LocalColors.current
     FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Swatch(c.sea, null, 2.4f, "Predicción")
+        Swatch(c.sea, null, 2.4f, tr(R.string.legend_prediction))
         day.observed?.takeIf { it.series.isNotEmpty() }?.let { o ->
-            Swatch(c.accent, floatArrayOf(1f, 3f), 2f, "Medido en ${o.gauge}${if (o.samePort == false) " (a ${(o.distKm ?: 0.0).toInt()} km)" else ""}")
+            Swatch(c.accent, floatArrayOf(1f, 3f), 2f, tr(R.string.legend_measuredAt, o.gauge) + (if (o.samePort == false) tr(R.string.legend_away, (o.distKm ?: 0.0).toInt()) else ""))
         }
-        Swatch(c.accent, floatArrayOf(3f, 3f), 1.5f, "Ahora")
-        if (coefs.isNotEmpty()) Text("Coeficientes: ${coefs.joinToString(" · ")}", style = Type.body(13.sp), color = c.muted)
+        Swatch(c.accent, floatArrayOf(3f, 3f), 1.5f, tr(R.string.legend_now))
+        if (coefs.isNotEmpty()) Text(tr(R.string.legend_coefs, coefs.joinToString(" · ")), style = Type.body(13.sp), color = c.muted)
     }
 }
 

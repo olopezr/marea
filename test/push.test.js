@@ -100,3 +100,11 @@ test("unsubscribe borra la suscripción", () => {
   push.unsubscribe("https://push.example/a");
   assert.deepEqual(push.status("https://push.example/a"), { subscribed: false, spots: [], minScore: 3 });
 });
+
+test("los avisos llegan en el idioma del dispositivo", async () => {
+  const sub = { endpoint: "https://push.example/en-1", keys: { p256dh: "k", auth: "a" } };
+  push.subscribe({ subscription: sub, spots: ["somo"], minScore: 2, lang: "en" });
+  await push.sendTest(sub.endpoint);
+  assert.equal(sent.at(-1).title, "Marea alerts are on");
+  push.unsubscribe(sub.endpoint);
+});

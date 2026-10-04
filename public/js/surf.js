@@ -6,8 +6,19 @@ export const angDiff = (a, b) => {
   return d > 180 ? 360 - d : d;
 };
 
-const CARDINALS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"];
+let CARDINALS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"];
 export const cardinal = deg => deg == null ? "–" : CARDINALS[Math.round((((deg % 360) + 360) % 360) / 22.5) % 16];
+
+// Idioma de los textos con formato (la web lo cambia a inglés; el servidor siempre usa español):
+// coma o punto decimal, Oeste (O) o West (W) y nombres de los días.
+let DECIMAL = ",", LOCALE = "es-ES";
+export function setLanguage(lang) {
+  const en = lang === "en";
+  DECIMAL = en ? "." : ",";
+  LOCALE = en ? "en-GB" : "es-ES";
+  CARDINALS = CARDINALS.map(c => (en ? c.replace(/O/g, "W") : c.replace(/W/g, "O")));
+  fmtCache.clear();
+}
 
 // Rumbo inicial (0–360°) para ir de a hacia b.
 export function bearing(a, b) {
@@ -154,14 +165,17 @@ export function tideNorm(times, levels, t) {
 const fmtCache = new Map();
 function dtf(tz, opts) {
   const k = tz + JSON.stringify(opts);
-  if (!fmtCache.has(k)) fmtCache.set(k, new Intl.DateTimeFormat("es-ES", { timeZone: tz, ...opts }));
+  if (!fmtCache.has(k)) fmtCache.set(k, new Intl.DateTimeFormat(LOCALE, { timeZone: tz, ...opts }));
   return fmtCache.get(k);
 }
 export const hhmm = (ms, tz) => dtf(tz, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(ms);
 export const hourOf = (ms, tz) => +dtf(tz, { hour: "numeric", hourCycle: "h23" }).format(ms);
-export const dayKey = (ms, tz) => dtf(tz, { year: "numeric", month: "2-digit", day: "2-digit" }).format(ms);
+export const dayKey = (ms, tz) => {
+  const p = Object.fromEntries(dtf(tz, { year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(ms).map(x => [x.type, x.value]));
+  return `${p.day}/${p.month}/${p.year}`;
+};
 export const dayLabel = (ms, tz) => {
-  const s = dtf(tz, { weekday: "short", day: "numeric" }).format(ms).replace(".", "");
+  const s = dtf(tz, { weekday: "short", day: "numeric" }).format(ms).replace(".", "").replace(",", "");
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
@@ -186,7 +200,7 @@ export function startOfLocalDay(ms, tz) {
   return localToUtc(`${y}-${m}-${d}`, "00:00", tz);
 }
 
-export const fmt = (n, d = 1) => n == null || Number.isNaN(n) ? "–" : n.toFixed(d).replace(".", ",");
+export const fmt = (n, d = 1) => n == null || Number.isNaN(n) ? "–" : n.toFixed(d).replace(".", DECIMAL);
 
 // Salida y puesta de sol (ecuación del amanecer, precisión de ~1 min) para el día UTC que contiene `ms`.
 export function sunTimes(ms, lat, lon) {

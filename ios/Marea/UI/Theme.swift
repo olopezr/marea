@@ -46,6 +46,9 @@ enum Theme {
     }
 
     /// Valoración grande del recuadro superior: en oscuro el recuadro es claro y el color se oscurece más.
+    /// Color de la tendencia de la boya: verde si sube, acento si baja.
+    static func trend(_ key: String) -> Color { key == "up" ? greenText : key == "down" ? accentText : ink }
+
     static func heroLabel(_ r: Rating) -> Color {
         let q = UIColor(Theme.q(r)), bg = UIColor(Theme.bg)
         return Color(uiColor: UIColor { traits in
@@ -244,8 +247,8 @@ struct ErrorBox: View {
     let message: String
     var body: some View {
         VStack(spacing: 6) {
-            Text("No se pudieron cargar los datos.").font(Theme.body())
-            Text("\(message). Comprueba la conexión y desliza hacia abajo para actualizar.")
+            Text(L("error.title")).font(Theme.body())
+            Text(L("error.hint", message))
                 .font(Theme.body(13)).foregroundStyle(Theme.muted)
         }
         .multilineTextAlignment(.center).padding(.vertical, 48).padding(.horizontal, 16).frame(maxWidth: .infinity)
@@ -260,12 +263,10 @@ struct DataBanners: View {
     let forecastSource: String?
     var body: some View {
         if stale {
-            Banner(text: offline
-                   ? "Sin conexión. Mostrando los datos guardados \(Surf.ago(ts))."
-                   : "No se han podido actualizar los datos ahora mismo. Mostrando los guardados \(Surf.ago(ts)).")
+            Banner(text: L(offline ? "banner.offline" : "banner.stale", Surf.ago(ts)))
         }
         if forecastSource == "portus" {
-            Banner(text: "Open-Meteo no responde ahora mismo: la previsión es la del modelo de Puertos del Estado, que llega a 3 días.")
+            Banner(text: L("banner.portus"))
         }
     }
 }
@@ -274,11 +275,11 @@ struct Footer: View {
     @State private var legal: URL?
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Previsión: Open-Meteo, Puertos del Estado y MET Norway. Mareas: Instituto Hidrográfico de la Marina. Boyas y mareógrafos: Puertos del Estado. No usar para navegación.")
+            Text(L("footer.sources"))
             HStack(spacing: 16) {
-                link("Fuentes de datos", "/legal/fuentes.html")
-                link("Privacidad", "/legal/privacidad.html")
-                link("Aviso legal", "/legal/aviso-legal.html")
+                link(L("footer.dataSources"), "/legal/fuentes.html")
+                link(L("footer.privacy"), "/legal/privacidad.html")
+                link(L("footer.legal"), "/legal/aviso-legal.html")
             }
         }
         .font(Theme.body(12, relativeTo: .caption)).foregroundStyle(Theme.muted)
@@ -327,7 +328,7 @@ struct FavButton: View {
             Image(systemName: on ? "star.fill" : "star").font(.system(size: 20, weight: .medium))
                 .foregroundStyle(on ? Theme.accent : Theme.muted).frame(width: 44, height: 44).contentShape(Rectangle())
         }
-        .buttonStyle(.plain).accessibilityLabel("Favorito").accessibilityAddTraits(on ? .isSelected : [])
+        .buttonStyle(.plain).accessibilityLabel(L("favorite")).accessibilityAddTraits(on ? .isSelected : [])
         .sensoryFeedback(.selection, trigger: on)
     }
 }
