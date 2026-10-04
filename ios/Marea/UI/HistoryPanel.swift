@@ -5,6 +5,7 @@ import SwiftUI
 struct HistoryPanel: View {
     let buoy: BuoyReading
     var now = Date.now.ms
+    @State private var isExpanded = false
 
     private static let W: CGFloat = 340, H: CGFloat = 150, LEFT: CGFloat = 30, RIGHT: CGFloat = 6, TOP: CGFloat = 10, BOTTOM: CGFloat = 24
     private var from: Double { now - 48 * 3_600_000 }
@@ -18,25 +19,43 @@ struct HistoryPanel: View {
 
     var body: some View {
         Panel {
-            PanelTitle(text: L("hist.title"))
-            Canvas { ctx, size in
-                let scale = size.width / Self.W
-                ctx.scaleBy(x: scale, y: scale)
-                draw(&ctx)
+            Button {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    PanelTitle(text: L("hist.title"))
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.muted)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+                .contentShape(Rectangle())
             }
-            .aspectRatio(Self.W / Self.H, contentMode: .fit)
-            .accessibilityElement()
-            .accessibilityLabel(L("hist.aria"))
-            .accessibilityValue(buoy.fit.map(Surf.fitText) ?? "")
-            HStack(spacing: 14) {
-                swatch(Theme.accent, L("hist.measured"))
-                swatch(Theme.sea, L("hist.forecast"))
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                Canvas { ctx, size in
+                    let scale = size.width / Self.W
+                    ctx.scaleBy(x: scale, y: scale)
+                    draw(&ctx)
+                }
+                .aspectRatio(Self.W / Self.H, contentMode: .fit)
+                .accessibilityElement()
+                .accessibilityLabel(L("hist.aria"))
+                .accessibilityValue(buoy.fit.map(Surf.fitText) ?? "")
+                HStack(spacing: 14) {
+                    swatch(Theme.accent, L("hist.measured"))
+                    swatch(Theme.sea, L("hist.forecast"))
+                }
+                .font(Theme.body(13)).foregroundStyle(Theme.muted)
+                if let fit = buoy.fit {
+                    Text(Surf.fitText(fit)).font(Theme.bodySemibold(13)).foregroundStyle(Theme.ink)
+                }
+                Text(L("hist.place", buoy.buoy.name)).font(Theme.body(13)).foregroundStyle(Theme.muted)
             }
-            .font(Theme.body(13)).foregroundStyle(Theme.muted)
-            if let fit = buoy.fit {
-                Text(Surf.fitText(fit)).font(Theme.bodySemibold(13)).foregroundStyle(Theme.ink)
-            }
-            Text(L("hist.place", buoy.buoy.name)).font(Theme.body(13)).foregroundStyle(Theme.muted)
         }
     }
 

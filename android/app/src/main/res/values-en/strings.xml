@@ -124,7 +124,7 @@
     <string name="uv_adviceMid">sunscreen and a cap</string>
     <string name="uv_adviceHigh">avoid the midday sun</string>
     <string name="uv_none">No forecast right now</string>
-    <string name="tile_firstLight">First light</string>
+    <string name="tile_firstLight">Sunlight</string>
     <string name="sunset">Sunset %1$s</string>
     <string name="sun_rise">Sunrise</string>
     <string name="sun_set">Sunset</string>

@@ -183,7 +183,6 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
         }
     }
     item { BuoyPanel(s) }
-    s.buoy?.let { b -> if (b.historySeries.size >= 6 || b.modelSeries.isNotEmpty()) item { HistoryPanel(b) } }
     item {
         val meta = app.api.spotById[id]
         val p = Surf.power(n.h, n.period)
@@ -227,6 +226,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
             Text(tideNote(s), style = Type.body(13.sp), color = LocalColors.current.muted)
         }
     }
+    s.buoy?.let { b -> if (b.historySeries.size >= 6 || b.modelSeries.isNotEmpty()) item { HistoryPanel(b) } }
     item {
         Panel {
             PanelTitle(tr(R.string.hours_title))
@@ -527,7 +527,7 @@ private fun Note(text: String) {
     }
 }
 
-/** Ficha "Primera luz": barra de 0 a 24 h con la noche, el día entre el amanecer y el atardecer y la hora actual. */
+/** Ficha "Luz solar": barra de 0 a 24 h con la noche, el día entre el amanecer y el atardecer y la hora actual. */
 @Composable
 private fun DaylightTile(sun: Sun?, from: Double, to: Double, tz: String) {
     val c = LocalColors.current

@@ -121,7 +121,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,3 m",
     port: "Malpica",
-    webcam: null,
+    webcam: "https://www.camaramar.com/webcam/galicia_a-coruna_razo",
   },
   {
     id: "doninos",
@@ -145,7 +145,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,6 m",
     port: "Ferrol",
-    webcam: null,
+    webcam: "https://www.camaramar.com/webcam/galicia_a-coruna_doninos",
   },
   {
     id: "pantin",
@@ -169,7 +169,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,5 m",
     port: "Cedeira",
-    webcam: null,
+    webcam: "https://www.camaramar.com/webcam/galicia_a-coruna_pantin",
   },
   {
     id: "frouxeira",
@@ -433,7 +433,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,9 m",
     port: "Avilés (San Juan de Nieva)",
-    webcam: null,
+    webcam: "https://www.webcamsdeasturias.com/asturias/comarca-de-aviles/castrillon/salinas/playa-de-salinas-hd/26/",
   },
   {
     id: "rodiles",
@@ -457,7 +457,8 @@ window.MAREA_SPOTS = [
     windTag: "tag-terral",
     tideState: "Bajando 2,8 m",
     port: "Gijón",
-    webcam: null,
+    webcam:
+      "https://www.webcamsdeasturias.com/asturias/comarca-de-la-sidra/villaviciosa/rodiles/surf-barra-de-playa-de-rodiles-hd/44/",
   },
   {
     id: "penarronda",
@@ -769,7 +770,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,9 m",
     port: "Santander",
-    webcam: "https://playasdecantabria.es/camara-de-playa/playa-de-somo/",
+    webcam: "https://www.camaramar.com/webcam/somo-playa-de-somo",
   },
   {
     id: "berria",
@@ -1009,7 +1010,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,7 m",
     port: "Bermeo",
-    webcam: null,
+    webcam: "https://www.camaramar.com/webcam/mundaka-mundaka",
   },
   {
     id: "laarena",
@@ -1153,7 +1154,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,9 m",
     port: "Pasajes",
-    webcam: null,
+    webcam: "https://www.camaramar.com/webcam/euskadi_gipuzkoa_zarautz",
   },
   {
     id: "zurriola",
@@ -1177,7 +1178,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 2,9 m",
     port: "Pasajes",
-    webcam: null,
+    webcam: "https://www.camaramar.com/webcam/euskadi_gipuzkoa_zurriola",
   },
   {
     id: "deba",
@@ -1393,7 +1394,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 1,9 m",
     port: "Cádiz",
-    webcam: null,
+    webcam: "https://www.camaramar.com/webcam/vejer-de-la-frontera-playa-del-palmar",
   },
   {
     id: "barrosa",
@@ -1633,7 +1634,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 1,4 m",
     port: "Arrecife (Lanzarote)",
-    webcam: null,
+    webcam: "https://camsecure.uk/httpswebcam/redstarsurf/redstarsurf.html",
   },
   {
     id: "quemao",
@@ -1825,7 +1826,7 @@ window.MAREA_SPOTS = [
     windTag: "tag-neutral",
     tideState: "Bajando 1,2 m",
     port: "Puerto de la Luz (Gran Canaria)",
-    webcam: null,
+    webcam: "https://www.oceansidegrancanaria.com/es/webcam-directo-playa-de-las-canteras-la-cicer-or-oceanside",
   },
   {
     id: "bocabarranco",

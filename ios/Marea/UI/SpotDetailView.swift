@@ -115,7 +115,6 @@ struct SpotDetailView: View {
             }
         }
         BuoyPanel(spot: s)
-        if let b = s.buoy, (b.history?.count ?? 0) >= 6 || !(b.model ?? []).isEmpty { HistoryPanel(buoy: b) }
 
         // Grid (no perezoso) para que las dos fichas de cada fila tengan la misma altura.
         Grid(horizontalSpacing: 10, verticalSpacing: 10) {
@@ -183,6 +182,8 @@ struct SpotDetailView: View {
             }
             Text(tideNote(s)).font(Theme.body(13)).foregroundStyle(Theme.muted)
         }
+
+        if let b = s.buoy, (b.history?.count ?? 0) >= 6 || !(b.model ?? []).isEmpty { HistoryPanel(buoy: b) }
 
         Panel {
             PanelTitle(text: L("hours.title"))
@@ -458,7 +459,7 @@ struct FlowLayout: Layout {
     }
 }
 
-/// Ficha "Primera luz": barra de 0 a 24 h con la noche, el día entre el amanecer y el atardecer y la hora actual.
+/// Ficha "Luz solar": barra de 0 a 24 h con la noche, el día entre el amanecer y el atardecer y la hora actual.
 struct DaylightTile: View {
     let sun: Sun?
     let from: Double

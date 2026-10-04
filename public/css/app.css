@@ -1317,6 +1317,41 @@ dialog.help form {
 }
 
 /* ---------- Boya frente a previsión ---------- */
+details.history summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  user-select: none;
+}
+details.history summary::-webkit-details-marker {
+  display: none;
+}
+details.history summary h3 {
+  margin: 0;
+}
+details.history summary .chevron {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+details.history summary .chevron svg {
+  width: 18px;
+  height: 18px;
+}
+details.history[open] summary .chevron {
+  transform: rotate(180deg);
+}
+details.history .history-body {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
 .hist-chart {
   width: 100%;
   height: auto;
@@ -1373,7 +1408,7 @@ dialog.help form {
   background: var(--surface-2);
 }
 
-/* ---------- Horas de luz (ficha "Primera luz") ---------- */
+/* ---------- Horas de luz (ficha "Luz solar") ---------- */
 .daylight {
   display: grid;
   gap: 6px;

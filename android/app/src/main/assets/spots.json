@@ -47,7 +47,8 @@
   "lon": -8.702,
   "facing": 315,
   "tide": "all",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.camaramar.com/webcam/galicia_a-coruna_razo"
  },
  {
   "id": "doninos",
@@ -57,7 +58,8 @@
   "lon": -8.32,
   "facing": 280,
   "tide": "all",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.camaramar.com/webcam/galicia_a-coruna_doninos"
  },
  {
   "id": "pantin",
@@ -67,7 +69,8 @@
   "lon": -8.114,
   "facing": 315,
   "tide": "mid",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.camaramar.com/webcam/galicia_a-coruna_pantin"
  },
  {
   "id": "frouxeira",
@@ -177,7 +180,8 @@
   "lon": -5.954,
   "facing": 340,
   "tide": "mid",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.webcamsdeasturias.com/asturias/comarca-de-aviles/castrillon/salinas/playa-de-salinas-hd/26/"
  },
  {
   "id": "rodiles",
@@ -187,7 +191,8 @@
   "lon": -5.38,
   "facing": 0,
   "tide": "mid",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.webcamsdeasturias.com/asturias/comarca-de-la-sidra/villaviciosa/rodiles/surf-barra-de-playa-de-rodiles-hd/44/"
  },
  {
   "id": "penarronda",
@@ -318,7 +323,7 @@
   "facing": 345,
   "tide": "low",
   "tz": "Europe/Madrid",
-  "webcam": "https://playasdecantabria.es/camara-de-playa/playa-de-somo/"
+  "webcam": "https://www.camaramar.com/webcam/somo-playa-de-somo"
  },
  {
   "id": "berria",
@@ -418,7 +423,8 @@
   "lon": -2.694,
   "facing": 330,
   "tide": "low",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.camaramar.com/webcam/mundaka-mundaka"
  },
  {
   "id": "laarena",
@@ -478,7 +484,8 @@
   "lon": -2.166,
   "facing": 0,
   "tide": "all",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.camaramar.com/webcam/euskadi_gipuzkoa_zarautz"
  },
  {
   "id": "zurriola",
@@ -488,7 +495,8 @@
   "lon": -1.976,
   "facing": 0,
   "tide": "mid",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.camaramar.com/webcam/euskadi_gipuzkoa_zurriola"
  },
  {
   "id": "deba",
@@ -548,7 +556,8 @@
   "lon": -6.066,
   "facing": 225,
   "tide": "mid",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://www.camaramar.com/webcam/vejer-de-la-frontera-playa-del-palmar"
  },
  {
   "id": "canos",
@@ -678,7 +687,8 @@
   "lon": -13.554,
   "facing": 315,
   "tide": "mid",
-  "tz": "Atlantic/Canary"
+  "tz": "Atlantic/Canary",
+  "webcam": "https://camsecure.uk/httpswebcam/redstarsurf/redstarsurf.html"
  },
  {
   "id": "quemao",
@@ -758,7 +768,8 @@
   "lon": -15.448,
   "facing": 290,
   "tide": "mid",
-  "tz": "Atlantic/Canary"
+  "tz": "Atlantic/Canary",
+  "webcam": "https://www.oceansidegrancanaria.com/es/webcam-directo-playa-de-las-canteras-la-cicer-or-oceanside"
  },
  {
   "id": "bocabarranco",

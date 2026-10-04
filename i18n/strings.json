@@ -156,7 +156,7 @@
   "uv.adviceMid": ["crema solar y gorra", "sunscreen and a cap"],
   "uv.adviceHigh": ["evita el sol de mediodía", "avoid the midday sun"],
   "uv.none": ["Sin previsión ahora mismo", "No forecast right now"],
-  "tile.firstLight": ["Primera luz", "First light"],
+  "tile.firstLight": ["Luz solar", "Sunlight"],
   "sunset": ["Puesta {0}", "Sunset {0}"],
   "sun.rise": ["Amanecer", "Sunrise"],
   "sun.set": ["Atardecer", "Sunset"],

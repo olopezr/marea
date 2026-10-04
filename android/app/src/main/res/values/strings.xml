@@ -125,7 +125,7 @@
     <string name="uv_adviceMid">crema solar y gorra</string>
     <string name="uv_adviceHigh">evita el sol de mediodía</string>
     <string name="uv_none">Sin previsión ahora mismo</string>
-    <string name="tile_firstLight">Primera luz</string>
+    <string name="tile_firstLight">Luz solar</string>
     <string name="sunset">Puesta %1$s</string>
     <string name="sun_rise">Amanecer</string>
     <string name="sun_set">Atardecer</string>

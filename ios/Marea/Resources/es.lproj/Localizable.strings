@@ -122,7 +122,7 @@
 "uv.adviceMid" = "crema solar y gorra";
 "uv.adviceHigh" = "evita el sol de mediodía";
 "uv.none" = "Sin previsión ahora mismo";
-"tile.firstLight" = "Primera luz";
+"tile.firstLight" = "Luz solar";
 "sunset" = "Puesta %1$@";
 "sun.rise" = "Amanecer";
 "sun.set" = "Atardecer";

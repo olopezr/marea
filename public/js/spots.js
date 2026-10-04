@@ -38,6 +38,7 @@ export const SPOTS = [
     facing: 315,
     tide: "all",
     tz: PEN,
+    webcam: "https://www.camaramar.com/webcam/galicia_a-coruna_razo",
   },
   {
     id: "doninos",
@@ -48,6 +49,7 @@ export const SPOTS = [
     facing: 280,
     tide: "all",
     tz: PEN,
+    webcam: "https://www.camaramar.com/webcam/galicia_a-coruna_doninos",
   },
   {
     id: "pantin",
@@ -58,6 +60,7 @@ export const SPOTS = [
     facing: 315,
     tide: "mid",
     tz: PEN,
+    webcam: "https://www.camaramar.com/webcam/galicia_a-coruna_pantin",
   },
   {
     id: "frouxeira",
@@ -106,6 +109,7 @@ export const SPOTS = [
     facing: 340,
     tide: "mid",
     tz: PEN,
+    webcam: "https://www.webcamsdeasturias.com/asturias/comarca-de-aviles/castrillon/salinas/playa-de-salinas-hd/26/",
   },
   {
     id: "rodiles",
@@ -116,6 +120,8 @@ export const SPOTS = [
     facing: 0,
     tide: "mid",
     tz: PEN,
+    webcam:
+      "https://www.webcamsdeasturias.com/asturias/comarca-de-la-sidra/villaviciosa/rodiles/surf-barra-de-playa-de-rodiles-hd/44/",
   },
   {
     id: "penarronda",
@@ -202,8 +208,7 @@ export const SPOTS = [
     facing: 345,
     tide: "low",
     tz: PEN,
-    // Cámara comprobada el 2026-10-04. Añade solo enlaces verificados: el botón promete imagen en directo.
-    webcam: "https://playasdecantabria.es/camara-de-playa/playa-de-somo/",
+    webcam: "https://www.camaramar.com/webcam/somo-playa-de-somo",
   },
   { id: "berria", name: "Berria", region: "Cantabria", lat: 43.465, lon: -3.465, facing: 350, tide: "all", tz: PEN },
   { id: "meron", name: "Merón", region: "Cantabria", lat: 43.395, lon: -4.368, facing: 0, tide: "mid", tz: PEN },
@@ -242,6 +247,7 @@ export const SPOTS = [
     facing: 330,
     tide: "low",
     tz: PEN,
+    webcam: "https://www.camaramar.com/webcam/mundaka-mundaka",
   },
   { id: "laarena", name: "La Arena", region: "Bizkaia", lat: 43.349, lon: -3.117, facing: 320, tide: "mid", tz: PEN },
   { id: "azkorri", name: "Azkorri", region: "Bizkaia", lat: 43.38, lon: -3.017, facing: 315, tide: "mid", tz: PEN },
@@ -266,6 +272,7 @@ export const SPOTS = [
     facing: 0,
     tide: "all",
     tz: PEN,
+    webcam: "https://www.camaramar.com/webcam/euskadi_gipuzkoa_zarautz",
   },
   {
     id: "zurriola",
@@ -276,6 +283,7 @@ export const SPOTS = [
     facing: 0,
     tide: "mid",
     tz: PEN,
+    webcam: "https://www.camaramar.com/webcam/euskadi_gipuzkoa_zurriola",
   },
   { id: "deba", name: "Deba", region: "Gipuzkoa", lat: 43.298, lon: -2.353, facing: 0, tide: "mid", tz: PEN },
   {
@@ -319,6 +327,7 @@ export const SPOTS = [
     facing: 225,
     tide: "mid",
     tz: PEN,
+    webcam: "https://www.camaramar.com/webcam/vejer-de-la-frontera-playa-del-palmar",
   },
   {
     id: "canos",
@@ -406,6 +415,7 @@ export const SPOTS = [
     facing: 315,
     tide: "mid",
     tz: CAN,
+    webcam: "https://camsecure.uk/httpswebcam/redstarsurf/redstarsurf.html",
   },
   {
     id: "quemao",
@@ -486,6 +496,7 @@ export const SPOTS = [
     facing: 290,
     tide: "mid",
     tz: CAN,
+    webcam: "https://www.oceansidegrancanaria.com/es/webcam-directo-playa-de-las-canteras-la-cicer-or-oceanside",
   },
   {
     id: "bocabarranco",

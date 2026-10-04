@@ -43,11 +43,6 @@ const arrow = (deg) =>
     ? ""
     : `<svg class="arrow" viewBox="0 0 24 24" style="transform:rotate(${deg + 180}deg)" aria-hidden="true"><path d="M12 3l6 9h-4v9h-4v-9H6z"/></svg>`;
 
-const isApple =
-  typeof navigator !== "undefined" &&
-  (/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent || "") ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
-
 const icon = {
   star: (on) =>
     `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.8z" fill="${on ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>`,
@@ -58,9 +53,7 @@ const icon = {
   back: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   map: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6zM9 4v14M15 6v14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
   help: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2.9-1.2 1.8v.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/></svg>`,
-  share: isApple
-    ? `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>`
-    : `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" stroke-width="2"/></svg>`,
+  share: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke="currentColor" stroke-width="2"/></svg>`,
   video: `<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
   logo: `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" class="logo-bg"/><path d="M4 19c3-4 6-4 8 0s5 4 8 0 6-4 8 0" fill="none" class="logo-wave" stroke-width="2.6" stroke-linecap="round"/></svg>`,
 };
@@ -93,10 +86,6 @@ function idealTideText(pref, ext, now, dayEnd, tz) {
   const e = ext.find((x) => x.type === pref && x.t > now);
   return e ? t(pref === "low" ? "ideal.low" : "ideal.high", tomorrow(e.t), hhmm(e.t, tz)) : t("ideal.noData");
 }
-
-// Tamaño de la marea según el coeficiente oficial (manda sobre la estimación por la fase lunar).
-const coefWord = (c) =>
-  t(c >= 95 ? "coef.springStrong" : c >= 70 ? "coef.spring" : c >= 45 ? "coef.mean" : "coef.neap");
 
 // Índice UV en la escala de la OMS.
 const uvLabel = (uv) => {
@@ -415,24 +404,26 @@ function locate() {
 }
 
 // ---------- Mapa de spots ----------
-// MapLibre (public/vendor/maplibre) con el mapa de OpenFreeMap: libre, sin claves ni límites y con uso
-// comercial permitido (las teselas de openstreetmap.org no admiten apps con tráfico). Se carga al usarlo.
-const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-let maplibre = null;
-function loadMapLibre() {
-  if (!maplibre) {
+// Leaflet (public/vendor/leaflet) se carga solo al abrir el mapa.
+let leaflet = null;
+function loadLeaflet() {
+  if (window.L) return Promise.resolve(window.L);
+  leaflet ??= new Promise((resolve, reject) => {
     const css = document.createElement("link");
     css.rel = "stylesheet";
-    css.href = "/vendor/maplibre/maplibre-gl.css";
+    css.href = "/vendor/leaflet/leaflet.css";
     document.head.append(css);
-    maplibre = import("/vendor/maplibre/maplibre-gl.mjs").catch((err) => {
-      maplibre = null;
-      throw new Error(t("error.connect"), { cause: err });
-    });
-  }
-  return maplibre;
+    const js = document.createElement("script");
+    js.src = "/vendor/leaflet/leaflet.js";
+    js.onload = () => resolve(window.L);
+    js.onerror = () => {
+      leaflet = null;
+      reject(new Error(t("error.connect")));
+    };
+    document.head.append(js);
+  });
+  return leaflet;
 }
-const qColor = (key) => getComputedStyle(document.documentElement).getPropertyValue(`--q-${key}`).trim();
 
 async function renderMap() {
   document.title = `${t("map.title")} · Marea`;
@@ -444,99 +435,36 @@ async function renderMap() {
   <main id="map-view"><div class="spots-map" id="spots-map"></div>
     <div class="legend small">${RATINGS.map((x) => `<span><i class="q q-${x.key}"></i>${ratingLabel(x.key)}</span>`).join("")}</div>
   </main>`;
-  let res, ml;
+  let res, L;
   try {
-    [res, ml] = await Promise.all([getOverview(false), loadMapLibre()]);
+    [res, L] = await Promise.all([getOverview(false), loadLeaflet()]);
   } catch (err) {
     app.querySelector("#map-view").innerHTML = errorBox(err.message);
     return;
   }
   const el = app.querySelector("#spots-map");
   if (!el) return; // se ha cambiado de pantalla mientras cargaba
+  const map = L.map(el, { zoomControl: true, attributionControl: true });
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+  }).addTo(map);
+  const color = (key) => getComputedStyle(document.documentElement).getPropertyValue(`--q-${key}`).trim();
   const spots = res.data.spots;
+  for (const s of [...spots].sort((a, b) => a.score - b.score)) {
+    // los mejores, encima
+    const r = rating(s.score);
+    L.circleMarker([s.lat, s.lon], { radius: 9, color: "#fff", weight: 2, fillColor: color(r.key), fillOpacity: 1 })
+      .addTo(map)
+      .bindTooltip(t("map.marker", s.name, ratingLabel(r.key), fmt(s.now.h)), { direction: "top", offset: [0, -8] })
+      .bindPopup(
+        `<b>${esc(s.name)}</b><br>${esc(ratingLabel(r.key))} · ${fmt(s.now.h)} m · ${fmt(s.now.T, 0)} s<br><a href="#/spot/${s.id}">${t("card.open", esc(s.name))}</a>`,
+      );
+  }
   // Se abre sobre la Península y Baleares; Canarias queda a un desplazamiento.
   const main = spots.filter((s) => s.lat > 34);
-  const box = (main.length ? main : spots).reduce(
-    (b, s) => [Math.min(b[0], s.lon), Math.min(b[1], s.lat), Math.max(b[2], s.lon), Math.max(b[3], s.lat)],
-    [180, 90, -180, -90],
-  );
-  const map = new ml.Map({
-    container: el,
-    style: MAP_STYLE,
-    bounds: box,
-    fitBoundsOptions: { padding: 24 },
-    attributionControl: { compact: true },
-  });
-  map.addControl(new ml.NavigationControl({ showCompass: false }));
-  const features = [...spots]
-    .sort((a, b) => a.score - b.score) // los mejores, encima
-    .map((s) => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [s.lon, s.lat] },
-      properties: { id: s.id, q: rating(s.score).key },
-    }));
-  map.on("load", () => {
-    map.addSource("spots", { type: "geojson", data: { type: "FeatureCollection", features } });
-    map.addLayer({
-      id: "spots",
-      type: "circle",
-      source: "spots",
-      paint: {
-        "circle-radius": 8,
-        "circle-stroke-width": 2,
-        "circle-stroke-color": "#ffffff",
-        "circle-color": ["match", ["get", "q"], ...RATINGS.flatMap((r) => [r.key, qColor(r.key)]), "#888888"],
-      },
-    });
-  });
-  map.on("mouseenter", "spots", () => (map.getCanvas().style.cursor = "pointer"));
-  map.on("mouseleave", "spots", () => (map.getCanvas().style.cursor = ""));
-  map.on("click", "spots", (e) => {
-    const s = spots.find((x) => x.id === e.features[0].properties.id);
-    if (!s) return;
-    const r = rating(s.score);
-    new ml.Popup({ offset: 12 })
-      .setLngLat([s.lon, s.lat])
-      .setHTML(
-        `<b>${esc(s.name)}</b><br>${esc(ratingLabel(r.key))} · ${fmt(s.now.h)} m · ${fmt(s.now.T, 0)} s<br><a href="#/spot/${s.id}">${esc(t("card.open", s.name))}</a>`,
-      )
-      .addTo(map);
-  });
-}
-
-// Mapa pequeño de la ubicación (sin interacción: un toque abre la ruta). Se crea al verse en pantalla.
-function bindLocationMap(s) {
-  const el = app.querySelector(".location .map");
-  if (!el) return;
-  const create = async () => {
-    try {
-      const ml = await loadMapLibre();
-      if (!el.isConnected) return;
-      new ml.Map({
-        container: el,
-        style: MAP_STYLE,
-        center: [s.lon, s.lat],
-        zoom: 13.5,
-        interactive: false,
-        attributionControl: { compact: true },
-      }).on("load", function () {
-        new ml.Marker({ color: qColor("epic") }).setLngLat([s.lon, s.lat]).addTo(this);
-      });
-    } catch {
-      el.classList.add("map-off");
-    }
-  };
-  if (!("IntersectionObserver" in window)) return create();
-  const io = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((e) => e.isIntersecting)) {
-        io.disconnect();
-        create();
-      }
-    },
-    { rootMargin: "300px 0px" },
-  );
-  io.observe(el);
+  map.fitBounds(L.latLngBounds((main.length ? main : spots).map((s) => [s.lat, s.lon])), { padding: [24, 24] });
 }
 
 // ---------- Detalle de un spot ----------
@@ -588,15 +516,18 @@ function weekRows(days, tz, todayFrom) {
   );
 }
 
-// Dónde está la playa: mapa (OpenFreeMap) y coordenadas.
+// Dónde está la playa: mapa de OpenStreetMap y coordenadas.
 const coords = (lat, lon) =>
   `${fmt(Math.abs(lat), 4)}° ${lat >= 0 ? "N" : "S"} · ${fmt(Math.abs(lon), 4)}° ${lon >= 0 ? "E" : lang === "en" ? "W" : "O"}`;
 function locationPanel(s) {
+  const d = 0.02,
+    bbox = [s.lon - d * 1.4, s.lat - d, s.lon + d * 1.4, s.lat + d].map((x) => x.toFixed(4)).join(",");
   // Ruta hasta la playa (abre Google Maps o su app en el móvil).
   const link = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
   return `<section class="panel location">
     <h3>${t("loc.title")}</h3>
-    <a class="map" href="${link}" target="_blank" rel="noopener" aria-label="${esc(t("loc.map", s.name))}. ${esc(t("loc.hint"))}"></a>
+    <iframe class="map" title="${esc(t("loc.map", s.name))}" loading="lazy" referrerpolicy="no-referrer"
+      src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik&amp;marker=${s.lat},${s.lon}"></iframe>
     <div class="location-row"><span class="coords">${coords(s.lat, s.lon)}</span><a href="${link}" target="_blank" rel="noopener">${t("loc.directions")}</a></div>
   </section>`;
 }
@@ -857,7 +788,7 @@ async function renderSpot(id, force = false) {
       ${tile(t("tile.tide"), tide.h != null ? `${fmt(tide.h)} m ${tide.rising ? "↗" : "↘"}` : "–", `${tide.next ? `${tideWord(tide.next)} ${hhmm(tide.next.t, tz)}` : ""}${tide.coef != null ? ` · ${t("coef", tide.coef)}` : ""}`, "tide")}
       ${tile(t("tile.idealTide"), t(`tidePref.${s.tidePref}`), idealTideText(s.tidePref, s.tideDay.ext, now, s.tideDay.to, tz))}
       ${tile(t("tile.energy"), p == null ? "–" : `${fmt(p, p < 10 ? 1 : 0)} kW/m`, p == null ? "" : powerLabel(p), "energy")}
-      ${tile(t("tile.moon"), `${moon.emoji} ${t(`moon.${moon.key}`)}`, `${moon.illumination}% · ${tide.coef != null ? capitalize(coefWord(tide.coef)) : t(`moon.${moon.tideType}`)}`)}
+      ${tile(t("tile.moon"), `${moon.emoji} ${t(`moon.${moon.key}`)}`, `${moon.illumination}% · ${t(`moon.${moon.tideType}`)}`)}
       ${tile(t("tile.water"), `${fmt(water)} °C`, wetsuit(water))}
       ${tile(t("tile.air"), `${fmt(s.meteo?.air?.air ?? n.air, 0)} °C`, t(s.meteo?.air ? "air.measured" : "air.forecast"))}
       ${tile(
@@ -907,7 +838,6 @@ async function renderSpot(id, force = false) {
   bindHourStrip();
   const tidePanel = app.querySelector(".tide-panel");
   if (tidePanel && s.tideDay.points.length >= 4) bindTideChart(tidePanel, s.tideDay, tz, now);
-  bindLocationMap(s);
 }
 
 // Botones ◀ ▶ y degradado de la tira horaria según la posición del scroll.
@@ -1045,8 +975,8 @@ app.addEventListener("click", async (e) => {
         windPhrase(n.windType, n.wind),
         tideStr,
         ratingLabel(r.key),
-        navigator.share ? "" : url, // con navigator.share la URL va aparte; no repetirla en el texto
-      ).trim();
+        url,
+      );
     }
     const shareData = {
       title: t("share.title", meta.name),
@@ -1063,7 +993,7 @@ app.addEventListener("click", async (e) => {
         })
         .catch(() => {});
     } else {
-      toast(url); // sin compartir ni portapapeles: se muestra el enlace para copiarlo a mano
+      toast(t("toast.linkCopied"));
     }
     return;
   }
