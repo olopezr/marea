@@ -60,3 +60,32 @@ jobs:
           context: .
           push: false
           tags: marea:latest
+
+  android:
+    name: Android (compila, tests y lint)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar, tests unitarios y lint
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug testDebugUnitTest lintDebug
+
+  ios:
+    name: iOS (compila la app y el widget)
+    # Los minutos de macOS cuentan diez veces: solo en la rama principal y en pull requests.
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    runs-on: macos-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generar el proyecto
+        run: brew install xcodegen && cd ios && xcodegen generate
+      - name: Compilar para el simulador
+        working-directory: ios
+        run: xcodebuild -project Marea.xcodeproj -scheme Marea -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build

@@ -1,6 +1,5 @@
 package es.marea.app.ui
 
-import android.graphics.drawable.GradientDrawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -42,10 +41,17 @@ import es.marea.app.data.Overview
 import es.marea.app.data.Rating
 import es.marea.app.data.Surf
 import es.marea.app.data.tr
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.BoundingBox
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
+import org.maplibre.android.camera.CameraUpdateFactory
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.geometry.LatLngBounds
+import org.maplibre.android.maps.Style
+import org.maplibre.android.style.expressions.Expression
+import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Feature
+import org.maplibre.geojson.FeatureCollection
+import org.maplibre.geojson.Point
 
 // Mapa de todos los spots, coloreados según la valoración de ahora (renderMap en public/js/app.js).
 // Al tocar un spot se muestra su resumen y desde ahí se abre la previsión.
@@ -71,37 +77,46 @@ fun MapScreen(app: AppState, openSpot: (String) -> Unit, onBack: () -> Unit) {
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (spots.isNotEmpty()) {
+                val mapView = rememberMapView()
+                val colors = Rating.entries.associate { it.name to c.q(it).toArgb() }
                 AndroidView(
-                    factory = { ctx ->
-                        MapView(ctx).apply {
-                            setTileSource(TileSourceFactory.MAPNIK)
-                            setMultiTouchControls(true)
-                            zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT)
-                            // Los mejores, encima.
-                            spots.sortedBy { it.score }.forEach { s ->
-                                overlays.add(Marker(this).apply {
-                                    position = org.osmdroid.util.GeoPoint(s.lat, s.lon)
-                                    icon = GradientDrawable().apply {
-                                        shape = GradientDrawable.OVAL
-                                        setColor(c.q(Rating.of(s.score)).toArgb())
-                                        setStroke((2 * density).toInt(), android.graphics.Color.WHITE)
-                                        setSize((18 * density).toInt(), (18 * density).toInt())
+                    factory = {
+                        mapView.apply {
+                            getMapAsync { map ->
+                                // Se abre sobre la Península y Baleares; Canarias queda a un desplazamiento.
+                                val main = spots.filter { it.lat > 34 }.ifEmpty { spots }
+                                val bounds = LatLngBounds.Builder().includes(main.map { LatLng(it.lat, it.lon) }).build()
+                                map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, (24 * density).toInt()))
+                                // Los mejores, encima.
+                                val features = spots.sortedBy { it.score }.map { s ->
+                                    Feature.fromGeometry(Point.fromLngLat(s.lon, s.lat)).apply {
+                                        addStringProperty("id", s.id)
+                                        addStringProperty("q", Rating.of(s.score).name)
                                     }
-                                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                                    title = tr(R.string.map_marker, s.name, Rating.of(s.score).label, Surf.fmt(s.now.h))
-                                    setOnMarkerClickListener { _, _ -> selected = s.id; true }
-                                })
+                                }
+                                map.setStyle(Style.Builder().fromUri(MAP_STYLE)) { style ->
+                                    style.addSource(GeoJsonSource("spots", FeatureCollection.fromFeatures(features)))
+                                    val stops = colors.flatMap { (k, v) -> listOf(Expression.literal(k), Expression.color(v)) }.toTypedArray()
+                                    style.addLayer(
+                                        CircleLayer("spots", "spots").withProperties(
+                                            PropertyFactory.circleRadius(8f),
+                                            PropertyFactory.circleStrokeWidth(2f),
+                                            PropertyFactory.circleStrokeColor(android.graphics.Color.WHITE),
+                                            // match(entrada, etiqueta1, color1, …, color por defecto)
+                                            PropertyFactory.circleColor(Expression.match(Expression.get("q"), *stops, Expression.color(android.graphics.Color.GRAY))),
+                                        ),
+                                    )
+                                }
+                                map.addOnMapClickListener { point ->
+                                    val hit = map.queryRenderedFeatures(map.projection.toScreenLocation(point), "spots").firstOrNull()
+                                    selected = hit?.getStringProperty("id")
+                                    hit != null
+                                }
                             }
-                            // Se abre sobre la Península y Baleares; Canarias queda a un desplazamiento.
-                            val main = spots.filter { it.lat > 34 }.ifEmpty { spots }
-                            val box = BoundingBox(main.maxOf { it.lat }, main.maxOf { it.lon }, main.minOf { it.lat }, main.minOf { it.lon })
-                            addOnFirstLayoutListener { _, _, _, _, _ -> zoomToBoundingBox(box, false, (24 * density).toInt()) }
                         }
                     },
-                    onRelease = { it.onDetach() },
                     modifier = Modifier.fillMaxSize(),
                 )
-                Text("© OpenStreetMap", style = Type.body(10.sp), color = c.muted, modifier = Modifier.align(Alignment.TopEnd).background(c.surface.copy(alpha = 0.8f)).padding(horizontal = 4.dp, vertical = 2.dp))
             } else if (error != null) {
                 Box(Modifier.padding(16.dp)) { ErrorBox(error!!) }
             }

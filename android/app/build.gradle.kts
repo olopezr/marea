@@ -62,7 +62,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
     implementation("androidx.browser:browser:1.10.0")
     // Mapa de la ubicación con teselas de OpenStreetMap (no necesita clave de Google).
-    implementation("org.osmdroid:osmdroid-android:6.1.20")
+    // Mapas: MapLibre con el estilo de OpenFreeMap (libre, sin claves, uso comercial permitido).
+    implementation("org.maplibre.gl:android-sdk:11.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-messaging")

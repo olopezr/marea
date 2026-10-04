@@ -31,12 +31,16 @@ import androidx.compose.ui.viewinterop.AndroidView
 import android.net.Uri
 import androidx.core.net.toUri
 import es.marea.app.data.Surf
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
+import androidx.compose.ui.graphics.toArgb
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Point
 
-// Dónde está la playa: mapa de OpenStreetMap y coordenadas. Al tocar se abre la ruta hasta la playa
+// Dónde está la playa: mapa (OpenFreeMap) y coordenadas. Al tocar se abre la ruta hasta la playa
 // (Google Maps, o la app de mapas que haya si no está instalado).
 @Composable
 fun LocationPanel(name: String, lat: Double, lon: Double) {
@@ -51,22 +55,28 @@ fun LocationPanel(name: String, lat: Double, lon: Double) {
     Panel {
         PanelTitle(tr(R.string.loc_title))
         Box(Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp))) {
+            val mapView = rememberMapView()
+            val pin = c.accent.toArgb()
             AndroidView(
-                factory = { ctx ->
-                    MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
-                        setMultiTouchControls(false)
-                        zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
-                        controller.setZoom(14.5)
-                        controller.setCenter(GeoPoint(lat, lon))
-                        overlays.add(Marker(this).apply {
-                            position = GeoPoint(lat, lon)
-                            title = name
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                        })
+                factory = {
+                    mapView.apply {
+                        getMapAsync { map ->
+                            map.uiSettings.setAllGesturesEnabled(false)
+                            map.cameraPosition = CameraPosition.Builder().target(LatLng(lat, lon)).zoom(13.5).build()
+                            map.setStyle(Style.Builder().fromUri(MAP_STYLE)) { style ->
+                                style.addSource(GeoJsonSource("spot", Point.fromLngLat(lon, lat)))
+                                style.addLayer(
+                                    CircleLayer("spot", "spot").withProperties(
+                                        PropertyFactory.circleRadius(8f),
+                                        PropertyFactory.circleColor(pin),
+                                        PropertyFactory.circleStrokeWidth(2.5f),
+                                        PropertyFactory.circleStrokeColor(android.graphics.Color.WHITE),
+                                    ),
+                                )
+                            }
+                        }
                     }
                 },
-                onRelease = { it.onDetach() },
                 modifier = Modifier.matchParentSize(),
             )
             // Capa encima del mapa: el mapa no roba el desplazamiento de la pantalla y un toque lo abre.
@@ -74,7 +84,6 @@ fun LocationPanel(name: String, lat: Double, lon: Double) {
                 Modifier.matchParentSize().clickable(role = Role.Button, onClickLabel = tr(R.string.loc_directions), onClick = open)
                     .semantics { contentDescription = tr(R.string.loc_map, name) },
             )
-            Text("© OpenStreetMap", style = Type.body(10.sp), color = c.muted, modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SelectionContainer { Text(Surf.coords(lat, lon), style = Type.mono(13.sp), color = c.ink) }

@@ -14,8 +14,6 @@ class MareaApp : Application() {
     override fun onCreate() {
         super.onCreate()
         L10n.init(resources)
-        // OpenStreetMap pide identificar la app que descarga sus teselas.
-        org.osmdroid.config.Configuration.getInstance().userAgentValue = "$packageName/${BuildConfig.VERSION_NAME}"
         state = AppState(this, Api(this))
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, getString(R.string.notif_channel), NotificationManager.IMPORTANCE_HIGH).apply {

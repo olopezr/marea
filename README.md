@@ -40,6 +40,7 @@ npm run check            # verificación completa (lint + format + test)
 | `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY`, `APNS_BUNDLE_ID` | Para avisos en la app de iOS          | Clave `.p8` de Apple Push Notifications (`APNS_KEY` es su contenido). `APNS_SANDBOX=true` para compilaciones de Xcode  |
 | `FCM_SERVICE_ACCOUNT`                                       | Para avisos en la app de Android      | JSON de una cuenta de servicio del proyecto de Firebase                                                                |
 | `KEEP_AWAKE_URL`                                            | No (en Render, `RENDER_EXTERNAL_URL`) | URL pública que el servidor visita cada 10 min para que el plan gratuito de Render no lo duerma                        |
+| `CORS_ORIGINS`                                              | No (`https://olopezr.github.io`)      | Orígenes, separados por comas, que pueden leer la API desde otra web (la landing)                                      |
 | `ENABLE_SCHEDULER`                                          | No (true)                             | Inicia el programador de avisos en el servidor web. Pon `false` si ejecutas un worker independiente                    |
 | `WORKER_RUN_ON_START`                                       | No (false)                            | Si es `true`, el worker ejecuta una revisión de avisos al arrancar                                                     |
 
@@ -165,7 +166,13 @@ cd android
 - **Avisos**: crea un proyecto de Firebase con la app `es.marea.app`, descarga `google-services.json` a `android/app/` (no se sube al repositorio) y define `FCM_SERVICE_ACCOUNT` en el servidor. Sin ese archivo la app compila igual; en Debug usa un token de prueba y en Release los avisos quedan desactivados.
 - **Automatización (Fastlane)**: `cd android && bundle exec fastlane test` para tests o `bundle exec fastlane beta` para publicar en el canal interno de Google Play.
 
+## Mapas
+
+La web y la app de Android usan [MapLibre](https://maplibre.org) con el estilo de [OpenFreeMap](https://openfreemap.org): libre, sin claves, sin límite de visitas y con uso comercial permitido (las teselas de openstreetmap.org no admiten apps con tráfico). La atribución la muestra MapLibre. La app de iOS usa Apple Maps. MapLibre GL JS está en `public/vendor/maplibre` (licencia BSD-3).
+
 ## Notas sobre los datos
+
+- **Boyas tapadas por tierra**: `server/data/buoy-sight.json` lista, para cada playa, las boyas cuya línea hasta el mar de la playa cruza tierra (un cabo, una isla); esas boyas no se usan para ella. Se genera con `node scripts/buoy-sight.mjs` (consulta el modelo de elevación de Open-Meteo) y hay que repetirlo al añadir playas o al cambiar sus coordenadas.
 
 - **Mareas**: la API del IHM da las horas en **UTC** y las alturas sobre el cero hidrográfico del puerto. Se comprobó con el mareógrafo de Santander de Puertos del Estado: bajamar del 1/10/2026 predicha a las 12:12 con 0,93 m y medida a las 12:13 UTC con 0,89 m. La marea del modelo de Open-Meteo se adelantaba unos 30 minutos en el Cantábrico; solo se usa si el IHM no responde.
 - **Coeficiente de marea**: estimado como `70 × carrera de la marea / carrera media del puerto` (la carrera media se calcula con tres meses de predicciones del IHM). En Santander da 69 y 58 para las dos mareas del 2/10/2026, frente a 64 de media diaria en una tabla pública de referencia. Los coeficientes oficiales franceses y españoles se calculan respecto a Brest, así que puede haber unas unidades de diferencia.

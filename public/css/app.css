@@ -1189,6 +1189,18 @@ input[role="switch"]:checked::after {
   border-radius: 12px;
   display: block;
   background: var(--surface-2);
+  overflow: hidden;
+  position: relative;
+}
+.location .map .maplibregl-canvas {
+  cursor: pointer;
+}
+.spots-map .maplibregl-popup-content {
+  color: #12262c;
+}
+.spots-map .maplibregl-popup-content a {
+  color: var(--accent);
+  font-weight: 600;
 }
 .location-row {
   display: flex;
@@ -1359,10 +1371,6 @@ dialog.help form {
   border-radius: 18px;
   overflow: hidden;
   background: var(--surface-2);
-}
-.spots-map .leaflet-popup-content a {
-  color: var(--accent);
-  font-weight: 600;
 }
 
 /* ---------- Horas de luz (ficha "Primera luz") ---------- */
