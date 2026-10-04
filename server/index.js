@@ -148,6 +148,15 @@ if (process.env.NODE_ENV !== "test") {
   setInterval(warm, 10 * 60e3).unref();
 }
 
+// El plan gratuito de Render duerme el servicio tras 15 min sin visitas externas. Visitarse a sí mismo
+// por la URL pública (pasa por el proxy de Render, así que cuenta) lo mantiene despierto.
+const selfUrl = process.env.KEEP_AWAKE_URL ?? process.env.RENDER_EXTERNAL_URL;
+if (selfUrl && process.env.NODE_ENV !== "test") {
+  const ping = () => fetch(new URL("/api/health", selfUrl), { signal: AbortSignal.timeout(30e3) })
+    .catch(err => console.warn("[despierto]", err.message));
+  setInterval(ping, 10 * 60e3).unref();
+}
+
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, () => { clearInterval(scheduler); server.close(() => process.exit(0)); setTimeout(() => process.exit(0), 3000).unref(); });
 }

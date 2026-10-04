@@ -33,6 +33,7 @@ npm test                 # tests sin red
 | `OPEN_METEO_API_KEY` | Sí, si el uso es comercial | Clave del plan de pago de Open-Meteo |
 | `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY`, `APNS_BUNDLE_ID` | Para avisos en la app de iOS | Clave `.p8` de Apple Push Notifications (`APNS_KEY` es su contenido). `APNS_SANDBOX=true` para compilaciones de Xcode |
 | `FCM_SERVICE_ACCOUNT` | Para avisos en la app de Android | JSON de una cuenta de servicio del proyecto de Firebase |
+| `KEEP_AWAKE_URL` | No (en Render, `RENDER_EXTERNAL_URL`) | URL pública que el servidor visita cada 10 min para que el plan gratuito de Render no lo duerma |
 
 Sin claves VAPID, el servidor genera unas y las guarda en `DATA_DIR/vapid.json` (válido para desarrollo).
 
