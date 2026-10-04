@@ -204,7 +204,7 @@
   "name": "Frejulfe",
   "region": "Asturias",
   "lat": 43.56,
-  "lon": -6.76,
+  "lon": -6.677,
   "facing": 0,
   "tide": "mid",
   "tz": "Europe/Madrid"
@@ -373,8 +373,8 @@
   "id": "trengandin",
   "name": "Trengandín",
   "region": "Cantabria",
-  "lat": 43.489,
-  "lon": -3.519,
+  "lat": 43.478,
+  "lon": -3.511,
   "facing": 20,
   "tide": "mid",
   "tz": "Europe/Madrid"
@@ -723,8 +723,8 @@
   "id": "cotillo",
   "name": "El Cotillo",
   "region": "Fuerteventura",
-  "lat": 28.684,
-  "lon": -14.011,
+  "lat": 28.673,
+  "lon": -14.01,
   "facing": 280,
   "tide": "mid",
   "tz": "Atlantic/Canary"
@@ -813,8 +813,8 @@
   "id": "almaciga",
   "name": "Almáciga",
   "region": "Tenerife",
-  "lat": 28.571,
-  "lon": -16.208,
+  "lat": 28.572,
+  "lon": -16.193,
   "facing": 0,
   "tide": "mid",
   "tz": "Atlantic/Canary"

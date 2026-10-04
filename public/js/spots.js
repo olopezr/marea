@@ -27,7 +27,7 @@ export const SPOTS = [
   { id: "salinas",       name: "Salinas",                 region: "Asturias",      lat: 43.584,  lon: -5.954,   facing: 340,  tide: "mid",  tz: PEN },
   { id: "rodiles",       name: "Rodiles",                 region: "Asturias",      lat: 43.534,  lon: -5.380,   facing: 0,    tide: "mid",  tz: PEN },
   { id: "penarronda",    name: "Peñarronda",              region: "Asturias",      lat: 43.553,  lon: -6.997,   facing: 350,  tide: "mid",  tz: PEN },
-  { id: "frejulfe",      name: "Frejulfe",                region: "Asturias",      lat: 43.560,  lon: -6.760,   facing: 0,    tide: "mid",  tz: PEN },
+  { id: "frejulfe",      name: "Frejulfe",                region: "Asturias",      lat: 43.560,  lon: -6.677,   facing: 0,    tide: "mid",  tz: PEN },
   { id: "otur",          name: "Otur",                    region: "Asturias",      lat: 43.553,  lon: -6.597,   facing: 0,    tide: "mid",  tz: PEN },
   { id: "quebrantos",    name: "Los Quebrantos",          region: "Asturias",      lat: 43.565,  lon: -6.069,   facing: 0,    tide: "mid",  tz: PEN },
   { id: "verdicio",      name: "Verdicio",                region: "Asturias",      lat: 43.626,  lon: -5.877,   facing: 330,  tide: "mid",  tz: PEN },
@@ -45,7 +45,7 @@ export const SPOTS = [
   { id: "oyambre",       name: "Oyambre",                 region: "Cantabria",     lat: 43.394,  lon: -4.330,   facing: 30,   tide: "mid",  tz: PEN },
   { id: "sardinero",     name: "El Sardinero",            region: "Cantabria",     lat: 43.477,  lon: -3.786,   facing: 60,   tide: "mid",  tz: PEN },
   { id: "langre",        name: "Langre",                  region: "Cantabria",     lat: 43.476,  lon: -3.690,   facing: 0,    tide: "mid",  tz: PEN },
-  { id: "trengandin",    name: "Trengandín",              region: "Cantabria",     lat: 43.489,  lon: -3.519,   facing: 20,   tide: "mid",  tz: PEN },
+  { id: "trengandin",    name: "Trengandín",              region: "Cantabria",     lat: 43.478,  lon: -3.511,   facing: 20,   tide: "mid",  tz: PEN },
   { id: "orinon",        name: "Oriñón",                  region: "Cantabria",     lat: 43.401,  lon: -3.322,   facing: 0,    tide: "mid",  tz: PEN },
   // País Vasco
   { id: "sopelana",      name: "Sopelana",                region: "Bizkaia",       lat: 43.390,  lon: -2.993,   facing: 315,  tide: "mid",  tz: PEN },
@@ -84,7 +84,7 @@ export const SPOTS = [
   { id: "caballo",       name: "Caleta de Caballo",       region: "Lanzarote",     lat: 29.117,  lon: -13.640,  facing: 340,  tide: "mid",  tz: CAN },
   { id: "majanicho",     name: "Majanicho",               region: "Fuerteventura", lat: 28.739,  lon: -13.937,  facing: 0,    tide: "mid",  tz: CAN },
   { id: "rockypoint",    name: "Rocky Point (Corralejo)", region: "Fuerteventura", lat: 28.750,  lon: -13.880,  facing: 20,   tide: "mid",  tz: CAN },
-  { id: "cotillo",       name: "El Cotillo",              region: "Fuerteventura", lat: 28.684,  lon: -14.011,  facing: 280,  tide: "mid",  tz: CAN },
+  { id: "cotillo",       name: "El Cotillo",              region: "Fuerteventura", lat: 28.673,  lon: -14.010,  facing: 280,  tide: "mid",  tz: CAN },
   { id: "lapared",       name: "La Pared",                region: "Fuerteventura", lat: 28.218,  lon: -14.221,  facing: 300,  tide: "mid",  tz: CAN },
   { id: "confital",      name: "El Confital",             region: "Gran Canaria",  lat: 28.158,  lon: -15.436,  facing: 330,  tide: "high", tz: CAN },
   { id: "cicer",         name: "La Cícer",                region: "Gran Canaria",  lat: 28.128,  lon: -15.448,  facing: 290,  tide: "mid",  tz: CAN },
@@ -93,7 +93,7 @@ export const SPOTS = [
   { id: "americas",      name: "Las Américas",            region: "Tenerife",      lat: 28.062,  lon: -16.734,  facing: 225,  tide: "mid",  tz: CAN },
   { id: "socorro",       name: "El Socorro",              region: "Tenerife",      lat: 28.394,  lon: -16.603,  facing: 330,  tide: "mid",  tz: CAN },
   { id: "martianez",     name: "Martiánez",               region: "Tenerife",      lat: 28.418,  lon: -16.541,  facing: 0,    tide: "mid",  tz: CAN },
-  { id: "almaciga",      name: "Almáciga",                region: "Tenerife",      lat: 28.571,  lon: -16.208,  facing: 0,    tide: "mid",  tz: CAN },
+  { id: "almaciga",      name: "Almáciga",                region: "Tenerife",      lat: 28.572,  lon: -16.193,  facing: 0,    tide: "mid",  tz: CAN },
   { id: "medano",        name: "El Médano",               region: "Tenerife",      lat: 28.044,  lon: -16.539,  facing: 130,  tide: "all",  tz: CAN },
 ];
 
