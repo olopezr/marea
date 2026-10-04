@@ -1,3 +1,4 @@
+import LinkPresentation
 import SafariServices
 import SwiftUI
 import UIKit
@@ -320,13 +321,113 @@ struct IconCircleButton: View {
     }
 }
 
+final class ShareActivityItemSource: NSObject, UIActivityItemSource, @unchecked Sendable {
+    let subject: String
+    let message: String
+    let url: URL
+
+    init(subject: String, message: String, url: URL) {
+        self.subject = subject
+        self.message = message
+        self.url = url
+        super.init()
+    }
+
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        url
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        if activityType == .copyToPasteboard || activityType == .airDrop || activityType?.rawValue.contains("Safari") == true {
+            return url
+        }
+        return message
+    }
+
+    func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
+        subject
+    }
+
+    func activityViewControllerLinkMetadata(_ activityViewController: UIActivityViewController) -> LPLinkMetadata? {
+        let meta = LPLinkMetadata()
+        meta.title = subject
+        meta.originalURL = url
+        meta.url = url
+        return meta
+    }
+}
+
+@MainActor
+enum SharePresenter {
+    static func present(url: URL, subject: String, message: String) {
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+            let window = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first,
+            var topVC = window.rootViewController else {
+            return
+        }
+        while let presented = topVC.presentedViewController, !presented.isBeingDismissed {
+            topVC = presented
+        }
+        if topVC is UIActivityViewController || topVC.presentedViewController is UIActivityViewController {
+            return
+        }
+
+        let itemSource = ShareActivityItemSource(subject: subject, message: message, url: url)
+        let activityVC = UIActivityViewController(activityItems: [itemSource], applicationActivities: nil)
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = topVC.view
+            popover.sourceRect = CGRect(x: topVC.view.bounds.maxX - 60, y: 60, width: 0, height: 0)
+            popover.permittedArrowDirections = [.up]
+        }
+        topVC.present(activityVC, animated: true)
+    }
+}
+
+struct ShareButton: View {
+    let url: URL
+    let subject: String
+    let message: String
+
+    var body: some View {
+        Button {
+            SharePresenter.present(url: url, subject: subject, message: message)
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Theme.ink)
+                .offset(y: -1.5)
+                .frame(width: 40, height: 40)
+                .background(Theme.surface, in: Circle())
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L("detail.share"))
+    }
+}
+
 struct FavButton: View {
     let on: Bool
+    var circular: Bool = false
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            Image(systemName: on ? "star.fill" : "star").font(.system(size: 20, weight: .medium))
-                .foregroundStyle(on ? Theme.accent : Theme.muted).frame(width: 44, height: 44).contentShape(Rectangle())
+            if circular {
+                Image(systemName: on ? "star.fill" : "star")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(on ? Theme.accent : Theme.ink)
+                    .frame(width: 40, height: 40)
+                    .background(Theme.surface, in: Circle())
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            } else {
+                Image(systemName: on ? "star.fill" : "star")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(on ? Theme.accent : Theme.muted)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
         }
         .buttonStyle(.plain).accessibilityLabel(L("favorite")).accessibilityAddTraits(on ? .isSelected : [])
         .sensoryFeedback(.selection, trigger: on)

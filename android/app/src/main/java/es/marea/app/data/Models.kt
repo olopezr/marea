@@ -16,6 +16,7 @@ data class Spot(
     val facing: Double,
     val tide: String,
     val tz: String,
+    val webcam: String? = null,
 )
 
 @Serializable
@@ -110,7 +111,7 @@ data class TideDay(
 }
 
 @Serializable
-data class Sun(val rise: Double, val set: Double)
+data class Sun(val rise: Double, val set: Double, val dawn: Double? = null, val dusk: Double? = null)
 
 /** Índice UV de hoy: el de la hora en curso y el máximo del día con su hora. */
 @Serializable
@@ -194,7 +195,14 @@ data class Hour(
 data class DayCell(val t: Double, val score: Double)
 
 @Serializable
-data class BestHour(val t: Double, val score: Double)
+data class BestHour(
+    val t: Double,
+    val score: Double,
+    val h: Double? = null,
+    val T: Double? = null,
+    val wind: Double? = null,
+    val windType: String? = null,
+)
 
 @Serializable
 data class Day(

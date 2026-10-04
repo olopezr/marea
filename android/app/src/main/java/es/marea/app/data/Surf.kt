@@ -79,6 +79,56 @@ object Surf {
     fun windPhrase(wt: WindType, kn: Double?) =
         if (wt.key == "calm") tr(R.string.windPhrase_calm) else tr(R.string.windPhrase, windLabel(wt.key).lowercase(), fmt(kn, 0))
 
+    fun angDiff(a: Double, b: Double): Double {
+        val d = abs((((a - b) % 360) + 360) % 360)
+        return if (d > 180) 360 - d else d
+    }
+
+    fun windType(speed: Double?, dir: Double?, facing: Double): WindType {
+        if (speed == null || dir == null) return WindType("na", "–")
+        if (speed < 5) return WindType("calm", windLabel("calm"))
+        val d = angDiff(dir, facing)
+        val key = when {
+            d >= 135 -> "off"
+            d >= 60 -> "cross"
+            else -> "on"
+        }
+        return WindType(key, windLabel(key))
+    }
+
+    data class BestSessionInfo(
+        val t: Double,
+        val score: Double,
+        val h: Double?,
+        val T: Double?,
+        val wind: Double?,
+        val windType: String?,
+        val isTomorrow: Boolean,
+    )
+
+    fun bestSession(s: SpotDetail, now: Double = System.currentTimeMillis().toDouble(), facing: Double = 0.0): BestSessionInfo? {
+        if (s.days.isEmpty()) return null
+        if (s.sun?.set != null && now > s.sun.set && s.days.size > 1) {
+            val b = s.days[1].best
+            return BestSessionInfo(b.t, b.score, b.h, b.T, b.wind, b.windType, isTomorrow = true)
+        }
+        val todayBest = s.days[0].best
+        if (todayBest.t >= now - 45 * 60_000) {
+            return BestSessionInfo(todayBest.t, todayBest.score, todayBest.h, todayBest.T, todayBest.wind, todayBest.windType, isTomorrow = false)
+        }
+        val remaining = s.hours.filter { it.t >= now - 30 * 60_000 && (s.sun?.set == null || it.t <= s.sun.set) }
+        if (remaining.isNotEmpty()) {
+            val bestRem = remaining.maxByOrNull { it.score } ?: remaining.first()
+            val wt = windType(bestRem.wind, bestRem.windDir, facing).key
+            return BestSessionInfo(bestRem.t, bestRem.score, bestRem.h, bestRem.period, bestRem.wind, wt, isTomorrow = false)
+        }
+        if (s.days.size > 1) {
+            val b = s.days[1].best
+            return BestSessionInfo(b.t, b.score, b.h, b.T, b.wind, b.windType, isTomorrow = true)
+        }
+        return BestSessionInfo(todayBest.t, todayBest.score, todayBest.h, todayBest.T, todayBest.wind, todayBest.windType, isTomorrow = false)
+    }
+
     fun wetsuit(c: Double?) = when {
         c == null -> ""
         c < 15 -> tr(R.string.wetsuit_54)
@@ -212,5 +262,47 @@ object Surf {
         f.bias <= -0.15 -> tr(R.string.hist_fitHigh, fmt(-f.bias))
         f.mae < 0.25 -> tr(R.string.hist_fitGood, fmt(f.mae))
         else -> tr(R.string.hist_fitMixed, fmt(f.mae))
+    }
+
+    data class Moon(
+        val key: String,
+        val emoji: String,
+        val illumination: Int,
+        val isSpringTide: Boolean,
+        val isNeapTide: Boolean,
+        val tideTypeRes: Int,
+        val nameRes: Int
+    )
+
+    fun moonPhase(ms: Double): Moon {
+        val lunarMonth = 29.53058770576
+        val newMoonRef = 947182440000.0 // 2000-01-06 18:14 UTC
+        val daysSince = (ms - newMoonRef) / 86400e3
+        var cycle = (daysSince % lunarMonth) / lunarMonth
+        if (cycle < 0) cycle += 1.0
+        val illumination = (((1 - cos(cycle * 2 * Math.PI)) / 2) * 100).roundToInt()
+
+        val (key, emoji, nameRes) = when {
+            cycle < 0.03 || cycle >= 0.97 -> Triple("new", "🌑", R.string.moon_new)
+            cycle < 0.22 -> Triple("waxingCrescent", "🌒", R.string.moon_waxingCrescent)
+            cycle < 0.28 -> Triple("firstQuarter", "🌓", R.string.moon_firstQuarter)
+            cycle < 0.47 -> Triple("waxingGibbous", "🌔", R.string.moon_waxingGibbous)
+            cycle < 0.53 -> Triple("full", "🌕", R.string.moon_full)
+            cycle < 0.72 -> Triple("waningGibbous", "🌖", R.string.moon_waningGibbous)
+            cycle < 0.78 -> Triple("lastQuarter", "🌗", R.string.moon_lastQuarter)
+            else -> Triple("waningCrescent", "🌘", R.string.moon_waningCrescent)
+        }
+
+        val distFromNewOrFull = minOf(cycle, minOf(abs(cycle - 0.5), 1.0 - cycle))
+        val isSpringTide = distFromNewOrFull <= 0.08
+        val distFromQuarter = minOf(abs(cycle - 0.25), abs(cycle - 0.75))
+        val isNeapTide = distFromQuarter <= 0.08
+        val tideTypeRes = when {
+            isSpringTide -> R.string.moon_springTide
+            isNeapTide -> R.string.moon_neapTide
+            else -> R.string.moon_normalTide
+        }
+
+        return Moon(key, emoji, illumination, isSpringTide, isNeapTide, tideTypeRes, nameRes)
     }
 }

@@ -1,5 +1,14 @@
+# La imagen solo necesita server/ y public/ (ver Dockerfile). El resto no se sube al construir.
 node_modules
 data
 test
 .env
 .git
+.github
+ios
+android
+landing
+promo
+scripts
+i18n
+*.md

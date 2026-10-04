@@ -12,23 +12,36 @@ const DAY = 86400e3;
 function portusAll(spots) {
   return cached("forecast:portus", 60 * 60e3, async () => {
     const now = Date.now();
-    const entries = await Promise.all(spots.map(async s => {
-      const rows = await spotForecast(s).catch(() => null);
-      if (!rows?.length) return [s.id, null];
-      const hours = rows.map(r => ({
-        // Algunas mallas (p. ej. Rías Baixas) dan la altura del mar de fondo pero no su periodo ni
-        // dirección: se usan los del oleaje total, casi iguales cuando domina el mar de fondo.
-        t: r.t, h: r.h, T: r.Tz ?? r.Tp, dir: r.dir, sh: r.sh, sT: r.sT ?? r.Tz ?? r.Tp, sDir: r.sDir ?? r.dir,
-        seaLevel: null, water: null, wind: r.wind, windDir: r.windDir, gust: null, air: null,
-      }));
-      const current = hours.reduce((a, b) => (Math.abs(b.t - now) < Math.abs(a.t - now) ? b : a));
-      const sun = [];
-      for (let d = Math.floor((now - DAY) / DAY) * DAY; d < now + 8 * DAY; d += DAY) {
-        const st = sunTimes(d + DAY / 2, s.lat, s.lon);
-        if (st) sun.push(st);
-      }
-      return [s.id, { current: { ...current, t: now }, hours, sun }];
-    }));
+    const entries = await Promise.all(
+      spots.map(async (s) => {
+        const rows = await spotForecast(s).catch(() => null);
+        if (!rows?.length) return [s.id, null];
+        const hours = rows.map((r) => ({
+          // Algunas mallas (p. ej. Rías Baixas) dan la altura del mar de fondo pero no su periodo ni
+          // dirección: se usan los del oleaje total, casi iguales cuando domina el mar de fondo.
+          t: r.t,
+          h: r.h,
+          T: r.Tz ?? r.Tp,
+          dir: r.dir,
+          sh: r.sh,
+          sT: r.sT ?? r.Tz ?? r.Tp,
+          sDir: r.sDir ?? r.dir,
+          seaLevel: null,
+          water: null,
+          wind: r.wind,
+          windDir: r.windDir,
+          gust: null,
+          air: null,
+        }));
+        const current = hours.reduce((a, b) => (Math.abs(b.t - now) < Math.abs(a.t - now) ? b : a));
+        const sun = [];
+        for (let d = Math.floor((now - DAY) / DAY) * DAY; d < now + 8 * DAY; d += DAY) {
+          const st = sunTimes(d + DAY / 2, s.lat, s.lon);
+          if (st) sun.push(st);
+        }
+        return [s.id, { current: { ...current, t: now }, hours, sun }];
+      }),
+    );
     const data = Object.fromEntries(entries);
     if (!Object.values(data).some(Boolean)) throw new Error("Puertos del Estado tampoco responde");
     return data;

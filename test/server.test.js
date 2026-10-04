@@ -11,12 +11,18 @@ let proc;
 
 before(async () => {
   proc = spawn(process.execPath, ["server/index.js"], {
-    env: { ...process.env, NODE_ENV: "test", PORT: String(PORT), DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "marea-srv-")), VAPID_SUBJECT: "mailto:test@example.com" },
+    env: {
+      ...process.env,
+      NODE_ENV: "test",
+      PORT: String(PORT),
+      DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "marea-srv-")),
+      VAPID_SUBJECT: "mailto:test@example.com",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   await new Promise((resolve, reject) => {
-    proc.stdout.on("data", d => String(d).includes("escuchando") && resolve());
-    proc.on("exit", code => reject(new Error(`el servidor terminó con código ${code}`)));
+    proc.stdout.on("data", (d) => String(d).includes("escuchando") && resolve());
+    proc.on("exit", (code) => reject(new Error(`el servidor terminó con código ${code}`)));
   });
 });
 after(() => proc.kill());
@@ -61,10 +67,35 @@ test("la clave pública VAPID está disponible", async () => {
 });
 
 test("rechaza suscripciones mal formadas y cuerpos enormes", async () => {
-  const bad = await fetch(`${base}/api/push/subscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscription: { endpoint: "x" } }) });
+  const bad = await fetch(`${base}/api/push/subscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription: { endpoint: "x" } }),
+  });
   assert.equal(bad.status, 400);
   const notJson = await fetch(`${base}/api/push/status`, { method: "POST", body: "{nope" });
   assert.equal(notJson.status, 400);
-  const huge = await fetch(`${base}/api/push/status`, { method: "POST", body: JSON.stringify({ endpoint: "x".repeat(20000) }) }).catch(() => ({ status: 413 }));
+  const huge = await fetch(`${base}/api/push/status`, {
+    method: "POST",
+    body: JSON.stringify({ endpoint: "x".repeat(20000) }),
+  }).catch(() => ({ status: 413 }));
   assert.equal(huge.status, 413);
+});
+
+test("HSTS, URL mal formada y cuerpo que no es un objeto", async () => {
+  assert.match((await fetch(`${base}/`)).headers.get("strict-transport-security"), /max-age=/);
+  assert.equal((await fetch(`${base}/%E0%A4%A`)).status, 400);
+  const r = await fetch(`${base}/api/push/subscribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "null",
+  });
+  assert.equal(r.status, 400);
+});
+
+test("CORS solo para la landing y solo en la API de lectura", async () => {
+  const ok = await fetch(`${base}/api/push/key`, { headers: { Origin: "https://olopezr.github.io" } });
+  assert.equal(ok.headers.get("access-control-allow-origin"), "https://olopezr.github.io");
+  const other = await fetch(`${base}/api/push/key`, { headers: { Origin: "https://evil.example" } });
+  assert.equal(other.headers.get("access-control-allow-origin"), null);
 });

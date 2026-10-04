@@ -21,12 +21,15 @@ function vapidKeys() {
   if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8"));
   const keys = webpush.generateVAPIDKeys();
   fs.writeFileSync(file, JSON.stringify(keys, null, 2), { mode: 0o600 });
-  console.warn(`[push] Claves VAPID generadas en ${file}. En producción defínelas con VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY.`);
+  console.warn(
+    `[push] Claves VAPID generadas en ${file}. En producción defínelas con VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY.`,
+  );
   return keys;
 }
 const VAPID = vapidKeys();
 const SUBJECT = process.env.VAPID_SUBJECT || "mailto:avisos@example.com";
-if (!process.env.VAPID_SUBJECT) console.warn("[push] Define VAPID_SUBJECT (mailto: o URL de contacto) antes de publicar.");
+if (!process.env.VAPID_SUBJECT)
+  console.warn("[push] Define VAPID_SUBJECT (mailto: o URL de contacto) antes de publicar.");
 webpush.setVapidDetails(SUBJECT, VAPID.publicKey, VAPID.privateKey);
 export const publicKey = VAPID.publicKey;
 
@@ -49,17 +52,28 @@ db.exec(`
   PRAGMA foreign_keys = ON;
 `);
 // Las apps nativas comparten tabla con Web Push: endpoint "apns:<token>" o "fcm:<token>", sin claves.
-if (!db.prepare(`PRAGMA table_info(subscriptions)`).all().some(c => c.name === "kind")) {
+if (
+  !db
+    .prepare(`PRAGMA table_info(subscriptions)`)
+    .all()
+    .some((c) => c.name === "kind")
+) {
   db.exec(`ALTER TABLE subscriptions ADD COLUMN kind TEXT NOT NULL DEFAULT 'web'`);
 }
 
 // Idioma de los avisos de cada dispositivo ("es" o "en").
-if (!db.prepare(`PRAGMA table_info(subscriptions)`).all().some(c => c.name === "lang")) {
+if (
+  !db
+    .prepare(`PRAGMA table_info(subscriptions)`)
+    .all()
+    .some((c) => c.name === "lang")
+) {
   db.exec(`ALTER TABLE subscriptions ADD COLUMN lang TEXT NOT NULL DEFAULT 'es'`);
 }
 
 const q = {
-  upsertSub: db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at, kind, lang) VALUES (?, ?, ?, ?, ?, ?, ?)
+  upsertSub:
+    db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at, kind, lang) VALUES (?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, min_score = excluded.min_score, kind = excluded.kind, lang = excluded.lang`),
   clearAlerts: db.prepare(`DELETE FROM alerts WHERE endpoint = ?`),
   addAlert: db.prepare(`INSERT OR IGNORE INTO alerts (endpoint, spot_id) VALUES (?, ?)`),
@@ -75,7 +89,29 @@ const q = {
 };
 
 // ---------- API ----------
-const isSub = s => s && typeof s.endpoint === "string" && /^https:\/\//.test(s.endpoint) && s.endpoint.length < 1000 && s.keys?.p256dh && s.keys?.auth;
+// Solo servicios push conocidos: el servidor hace POST a esta URL, así que aceptar cualquiera permitiría
+// usarlo para enviar peticiones a terceros (SSRF). Chrome, Edge (FCM/WNS), Firefox y Safari.
+const PUSH_HOSTS = [
+  /^fcm\.googleapis\.com$/,
+  /(^|\.)push\.services\.mozilla\.com$/,
+  /(^|\.)push\.apple\.com$/,
+  /\.notify\.windows\.com$/,
+];
+export function isPushEndpoint(endpoint) {
+  try {
+    const u = new URL(endpoint);
+    return u.protocol === "https:" && !u.port && !u.username && PUSH_HOSTS.some((re) => re.test(u.hostname));
+  } catch {
+    return false;
+  }
+}
+const isSub = (s) =>
+  s &&
+  typeof s.endpoint === "string" &&
+  s.endpoint.length < 1000 &&
+  isPushEndpoint(s.endpoint) &&
+  typeof s.keys?.p256dh === "string" &&
+  typeof s.keys?.auth === "string";
 
 // Token de dispositivo de las apps: APNs en hexadecimal; FCM, texto sin espacios.
 const NATIVE = { ios: { kind: "apns", re: /^[0-9a-f]{64,200}$/i }, android: { kind: "fcm", re: /^[\w:.-]{20,4096}$/ } };
@@ -89,12 +125,17 @@ function target({ subscription, device }) {
     return { kind: n.kind, endpoint: `${n.kind}:${token}`, p256dh: "", auth: "" };
   }
   if (!isSub(subscription)) throw Object.assign(new Error("Suscripción no válida"), { status: 400 });
-  return { kind: "web", endpoint: subscription.endpoint, p256dh: subscription.keys.p256dh, auth: subscription.keys.auth };
+  return {
+    kind: "web",
+    endpoint: subscription.endpoint,
+    p256dh: subscription.keys.p256dh,
+    auth: subscription.keys.auth,
+  };
 }
 
 export function subscribe({ subscription, device, spots, minScore, lang }) {
   const t = target({ subscription, device });
-  const ids = (Array.isArray(spots) ? spots : []).filter(id => spotById[id]).slice(0, 50);
+  const ids = (Array.isArray(spots) ? spots : []).filter((id) => spotById[id]).slice(0, 50);
   const min = [2, 3, 4].includes(+minScore) ? +minScore : 3;
   const ep = t.endpoint;
   db.exec("BEGIN");
@@ -119,7 +160,7 @@ export function unsubscribe(endpoint) {
 export function status(endpoint) {
   const sub = q.getSub.get(endpoint);
   if (!sub) return { subscribed: false, spots: [], minScore: 3 };
-  return { subscribed: true, spots: q.spotsOf.all(endpoint).map(r => r.spot_id), minScore: sub.min_score };
+  return { subscribed: true, spots: q.spotsOf.all(endpoint).map((r) => r.spot_id), minScore: sub.min_score };
 }
 
 // Sustituible en los tests para no depender de los servicios push reales.
@@ -130,11 +171,17 @@ let deliver = async (sub, body, opts) => {
   if (!channel) throw Object.assign(new Error(`canal ${sub.kind} sin configurar`), { statusCode: 503 });
   return channel(sub.endpoint.slice(sub.kind.length + 1), JSON.parse(body), { ttl: opts.TTL });
 };
-export const _setDeliver = fn => { deliver = fn; };
+export const _setDeliver = (fn) => {
+  deliver = fn;
+};
 
 async function send(sub, payload) {
   try {
-    await deliver({ kind: sub.kind ?? "web", endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify(payload), { TTL: 6 * 3600 });
+    await deliver(
+      { kind: sub.kind ?? "web", endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+      JSON.stringify(payload),
+      { TTL: 6 * 3600 },
+    );
     return true;
   } catch (err) {
     if (err.gone || ((sub.kind ?? "web") === "web" && (err.statusCode === 404 || err.statusCode === 410))) {
@@ -149,9 +196,16 @@ async function send(sub, payload) {
 export async function sendTest(endpoint) {
   const sub = q.getSub.get(endpoint);
   if (!sub) throw Object.assign(new Error("No hay suscripción para este dispositivo"), { status: 404 });
-  const ok = await send(sub, sub.lang === "en"
-    ? { title: "Marea alerts are on", body: "We'll let you know when your spots are in good shape.", url: "/" }
-    : { title: "Avisos de Marea activados", body: "Te avisaremos cuando tus spots estén en buenas condiciones.", url: "/" });
+  const ok = await send(
+    sub,
+    sub.lang === "en"
+      ? { title: "Marea alerts are on", body: "We'll let you know when your spots are in good shape.", url: "/" }
+      : {
+          title: "Avisos de Marea activados",
+          body: "Te avisaremos cuando tus spots estén en buenas condiciones.",
+          url: "/",
+        },
+  );
   if (!ok) throw Object.assign(new Error("El servicio de notificaciones rechazó el envío"), { status: 502 });
   return { ok };
 }
@@ -159,7 +213,7 @@ export async function sendTest(endpoint) {
 // ---------- Revisión periódica ----------
 const EN_RATING = { flat: "flat", poor: "poor", fair: "fair", good: "good", epic: "very good" };
 const EN_WIND = { off: "offshore", cross: "cross-shore", on: "onshore" };
-const enCardinal = deg => cardinal(deg).replace(/O/g, "W");
+const enCardinal = (deg) => cardinal(deg).replace(/O/g, "W");
 
 function message(spot, day, isToday, lang = "es") {
   const b = day.best;
@@ -174,8 +228,13 @@ function message(spot, day, isToday, lang = "es") {
     };
   }
   const when = isToday ? "hoy" : "mañana";
-  const wind = b.windType === "calm" ? "sin viento"
-    : `viento ${{ off: "terral", cross: "cruzado", on: "de mar" }[b.windType] ?? ""} de ${fmt(b.wind, 0)} kn`.replace("  ", " ");
+  const wind =
+    b.windType === "calm"
+      ? "sin viento"
+      : `viento ${{ off: "terral", cross: "cruzado", on: "de mar" }[b.windType] ?? ""} de ${fmt(b.wind, 0)} kn`.replace(
+          "  ",
+          " ",
+        );
   return {
     ...base,
     title: `${spot.name} se pone ${rating(b.score).label.toLowerCase()} ${when}`,
@@ -184,7 +243,10 @@ function message(spot, day, isToday, lang = "es") {
 }
 
 export async function checkAlerts(now = Date.now()) {
-  const ids = q.activeSpots.all().map(r => r.spot_id).filter(id => spotById[id]);
+  const ids = q.activeSpots
+    .all()
+    .map((r) => r.spot_id)
+    .filter((id) => spotById[id]);
   if (!ids.length) return { checked: 0, sent: 0 };
   const fc = (await forecastAll(SPOTS)).spots;
   let sentCount = 0;
@@ -195,7 +257,10 @@ export async function checkAlerts(now = Date.now()) {
     if (!fc[id]) continue;
     const { days } = await forecastFor(spot, fc[id], now);
     // Hoy (si la mejor hora aún no ha pasado) y mañana.
-    const candidates = days.slice(0, 2).map((d, i) => ({ d, isToday: i === 0 })).filter(({ d }) => d.best.t > now);
+    const candidates = days
+      .slice(0, 2)
+      .map((d, i) => ({ d, isToday: i === 0 }))
+      .filter(({ d }) => d.best.t > now);
     for (const sub of q.watchers.all(id)) {
       for (const { d, isToday } of candidates) {
         if (d.best.score < sub.min_score || q.wasSent.get(sub.endpoint, id, d.key)) continue;
@@ -212,7 +277,10 @@ export async function checkAlerts(now = Date.now()) {
 }
 
 export function startScheduler() {
-  const run = () => checkAlerts().then(r => r.sent && console.log(`[push] ${r.sent} ${r.sent === 1 ? "aviso enviado" : "avisos enviados"}`)).catch(err => console.error("[push]", err.message));
+  const run = () =>
+    checkAlerts()
+      .then((r) => r.sent && console.log(`[push] ${r.sent} ${r.sent === 1 ? "aviso enviado" : "avisos enviados"}`))
+      .catch((err) => console.error("[push]", err.message));
   setTimeout(run, 60e3);
   return setInterval(run, 60 * 60e3);
 }

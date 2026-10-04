@@ -82,6 +82,51 @@ enum Surf {
         wt.key == "calm" ? L("windPhrase.calm") : L("windPhrase", windLabel(wt).lowercased(), fmt(kn, 0))
     }
 
+    static func angDiff(_ a: Double, _ b: Double) -> Double {
+        let d = abs((((a - b).truncatingRemainder(dividingBy: 360)) + 360).truncatingRemainder(dividingBy: 360))
+        return d > 180 ? 360 - d : d
+    }
+
+    static func windType(speed: Double?, dir: Double?, facing: Double) -> WindType {
+        guard let speed, let dir else { return WindType(key: "na", label: "–") }
+        if speed < 5 { return WindType(key: "calm", label: windLabel(WindType(key: "calm", label: ""))) }
+        let d = angDiff(dir, facing)
+        let key = d >= 135 ? "off" : d >= 60 ? "cross" : "on"
+        return WindType(key: key, label: windLabel(WindType(key: key, label: "")))
+    }
+
+    struct BestSessionInfo: Sendable {
+        let t: Double
+        let score: Double
+        let h: Double?
+        let T: Double?
+        let wind: Double?
+        let windType: String?
+        let isTomorrow: Bool
+    }
+
+    static func bestSession(_ s: SpotDetail, now: Double = Date.now.ms, facing: Double = 0) -> BestSessionInfo? {
+        guard !s.days.isEmpty else { return nil }
+        if let set = s.sun?.set, now > set, s.days.count > 1 {
+            let b = s.days[1].best
+            return BestSessionInfo(t: b.t, score: b.score, h: b.h, T: b.T, wind: b.wind, windType: b.windType, isTomorrow: true)
+        }
+        let todayBest = s.days[0].best
+        if todayBest.t >= now - 45 * 60_000 {
+            return BestSessionInfo(t: todayBest.t, score: todayBest.score, h: todayBest.h, T: todayBest.T, wind: todayBest.wind, windType: todayBest.windType, isTomorrow: false)
+        }
+        let remaining = s.hours.filter { $0.t >= now - 30 * 60_000 && (s.sun?.set == nil || $0.t <= (s.sun?.set ?? 0)) }
+        if let bestRem = remaining.max(by: { $0.score < $1.score }) {
+            let wt = windType(speed: bestRem.wind, dir: bestRem.windDir, facing: facing).key
+            return BestSessionInfo(t: bestRem.t, score: bestRem.score, h: bestRem.h, T: bestRem.T, wind: bestRem.wind, windType: wt, isTomorrow: false)
+        }
+        if s.days.count > 1 {
+            let b = s.days[1].best
+            return BestSessionInfo(t: b.t, score: b.score, h: b.h, T: b.T, wind: b.wind, windType: b.windType, isTomorrow: true)
+        }
+        return BestSessionInfo(t: todayBest.t, score: todayBest.score, h: todayBest.h, T: todayBest.T, wind: todayBest.wind, windType: todayBest.windType, isTomorrow: false)
+    }
+
     static func wetsuit(_ c: Double?) -> String {
         guard let c else { return "" }
         return L(c < 15 ? "wetsuit.54" : c < 17 ? "wetsuit.43" : c < 20 ? "wetsuit.32" : "wetsuit.short")
@@ -226,6 +271,54 @@ extension Surf {
         if f.bias >= 0.15 { return L("hist.fitLow", fmt(f.bias)) }
         if f.bias <= -0.15 { return L("hist.fitHigh", fmt(-f.bias)) }
         return L(f.mae < 0.25 ? "hist.fitGood" : "hist.fitMixed", fmt(f.mae))
+    }
+
+    struct Moon {
+        let key: String
+        let emoji: String
+        let illumination: Int
+        let isSpringTide: Bool
+        let isNeapTide: Bool
+        let tideType: String
+        var name: String { L("moon.\(key)") }
+        var tideTypeName: String { L("moon.\(tideType)") }
+    }
+
+    static func moonPhase(_ ms: Double) -> Moon {
+        let lunarMonth = 29.53058770576
+        let newMoonRef = 947182440000.0 // 2000-01-06 18:14 UTC
+        let daysSince = (ms - newMoonRef) / 86400e3
+        var cycle = daysSince.truncatingRemainder(dividingBy: lunarMonth) / lunarMonth
+        if cycle < 0 { cycle += 1 }
+        let illumination = Int(((1 - cos(cycle * 2 * .pi)) / 2 * 100).rounded())
+
+        let key: String
+        let emoji: String
+        if cycle < 0.03 || cycle >= 0.97 {
+            key = "new"; emoji = "🌑"
+        } else if cycle < 0.22 {
+            key = "waxingCrescent"; emoji = "🌒"
+        } else if cycle < 0.28 {
+            key = "firstQuarter"; emoji = "🌓"
+        } else if cycle < 0.47 {
+            key = "waxingGibbous"; emoji = "🌔"
+        } else if cycle < 0.53 {
+            key = "full"; emoji = "🌕"
+        } else if cycle < 0.72 {
+            key = "waningGibbous"; emoji = "🌖"
+        } else if cycle < 0.78 {
+            key = "lastQuarter"; emoji = "🌗"
+        } else {
+            key = "waningCrescent"; emoji = "🌘"
+        }
+
+        let distFromNewOrFull = min(cycle, min(abs(cycle - 0.5), 1 - cycle))
+        let isSpringTide = distFromNewOrFull <= 0.08
+        let distFromQuarter = min(abs(cycle - 0.25), abs(cycle - 0.75))
+        let isNeapTide = distFromQuarter <= 0.08
+        let tideType = isSpringTide ? "springTide" : isNeapTide ? "neapTide" : "normalTide"
+
+        return Moon(key: key, emoji: emoji, illumination: illumination, isSpringTide: isSpringTide, isNeapTide: isNeapTide, tideType: tideType)
     }
 }
 

@@ -35,6 +35,20 @@
                ReferencedContainer = "container:Marea.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CADE8E07BE67AFA81DB2F5D5"
+               BuildableName = "MareaWidget.appex"
+               BlueprintName = "MareaWidget"
+               ReferencedContainer = "container:Marea.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

@@ -317,7 +317,8 @@
   "lon": -3.736,
   "facing": 345,
   "tide": "low",
-  "tz": "Europe/Madrid"
+  "tz": "Europe/Madrid",
+  "webcam": "https://playasdecantabria.es/camara-de-playa/playa-de-somo/"
  },
  {
   "id": "berria",

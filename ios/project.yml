@@ -11,29 +11,32 @@ settings:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "Q64BMK2CLH"
 targets:
   Marea:
     type: application
     platform: iOS
     sources:
       - path: Marea
+    dependencies:
+      - target: MareaWidget
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: es.marea.app
         PRODUCT_NAME: Marea
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_ENTITLEMENTS: Marea/App/Marea.entitlements
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Marea/App/Info.plist
       configs:
         Debug:
-          MAREA_API_BASE: "http://localhost:8080"
+          MAREA_API_BASE: "https://marea.onrender.com"
         Release:
           # Cambia esta URL por la de tu servidor en producción.
           MAREA_API_BASE: "https://marea.onrender.com"
+          CODE_SIGN_ENTITLEMENTS: Marea/App/Marea.entitlements
   MareaTests:
     type: bundle.unit-test
     platform: iOS
@@ -45,12 +48,38 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: es.marea.app.tests
+  MareaWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: MareaWidget
+      # La lista de spots y los textos (español e inglés) son los mismos que los de la app.
+      - path: Marea/Resources/spots.json
+        buildPhase: resources
+      - path: Marea/Resources/es.lproj/Localizable.strings
+        buildPhase: resources
+      - path: Marea/Resources/en.lproj/Localizable.strings
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: es.marea.app.widget
+        PRODUCT_NAME: MareaWidget
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: MareaWidget/Info.plist
+      configs:
+        Debug:
+          MAREA_API_BASE: "http://localhost:8080"
+        Release:
+          MAREA_API_BASE: "https://marea.onrender.com"
 schemes:
   Marea:
     build:
       targets:
         Marea: all
+        MareaWidget: all
         MareaTests: [test]
     test:
       targets:
         - MareaTests
+

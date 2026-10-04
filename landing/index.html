@@ -1,0 +1,1344 @@
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Marea — Oleaje, Viento y Mareas en Tiempo Real para Spots de Surf en España</title>
+
+    <!-- SEO & Social Meta -->
+    <meta
+      name="description"
+      content="App web y nativa para surfistas en España. Datos en tiempo real de boyas y mareógrafos de Puertos del Estado, mareas oficiales del IHM, previsión a 7 días y algoritmo de valoración 0 a 5."
+    />
+    <meta
+      name="keywords"
+      content="surf españa, previsión surf, marea app, boyas puertos del estado, mareas ihm, somo surf, mundaka surf, el palmar surf, oleaje tiempo real"
+    />
+    <meta name="author" content="Marea Surf" />
+
+    <!-- OpenGraph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Marea — El mar no avisa. Tú tienes los datos." />
+    <meta
+      property="og:description"
+      content="Oleaje de boyas en tiempo real, mareas oficiales IHM, viento medido y previsión a 7 días para 83 spots de surf en España. 100% gratis y sin anuncios."
+    />
+    <meta property="og:image" content="assets/hero-surf.jpg" />
+    <meta property="og:url" content="https://olopezr.github.io/marea/" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Marea — Surf en Tiempo Real en España" />
+    <meta
+      name="twitter:description"
+      content="Telemetría real de boyas, mareas oficiales IHM y algoritmo de valoración 0 a 5 para 83 spots de surf."
+    />
+    <meta name="twitter:image" content="assets/hero-surf.jpg" />
+
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icon-180.png" />
+    <meta name="theme-color" content="#071a20" />
+
+    <!-- Fonts (Google Fonts: Archivo, Plus Jakarta Sans, JetBrains Mono) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/landing.css" />
+  </head>
+
+  <body>
+    <!-- Canvas de fondo para partículas y ondas sutiles -->
+    <canvas id="ocean-canvas" aria-hidden="true"></canvas>
+
+    <!-- ==================== HEADER & NAVBAR ==================== -->
+    <header class="site-header" id="site-header">
+      <div class="container header-inner">
+        <a href="#" class="brand-link" aria-label="Marea Inicio">
+          <div class="brand-badge">
+            <svg class="brand-logo" viewBox="0 0 512 512" width="34" height="34" aria-hidden="true">
+              <rect width="512" height="512" rx="128" fill="#071a20" />
+              <path
+                d="M64 300c48-64 96-64 128 0s80 64 128 0 96-64 128 0"
+                fill="none"
+                stroke="#ff7a4d"
+                stroke-width="44"
+                stroke-linecap="round"
+              />
+              <path
+                d="M112 212c40-48 80-48 112 0s72 48 112 0"
+                fill="none"
+                stroke="#56e6f5"
+                stroke-width="32"
+                stroke-linecap="round"
+                opacity=".9"
+              />
+            </svg>
+          </div>
+          <div class="brand-text-wrap">
+            <span class="brand-title">Marea</span>
+            <span class="brand-sub">Surf Telemetry</span>
+          </div>
+        </a>
+
+        <!-- Desktop Nav -->
+        <nav class="desktop-nav" aria-label="Navegación principal">
+          <a href="#spots" class="nav-item">Spots en Vivo</a>
+          <a href="#telemetria" class="nav-item">Telemetría</a>
+          <a href="#marea" class="nav-item">Curva de Marea</a>
+          <a href="#algoritmo" class="nav-item">Algoritmo 0-5</a>
+          <a href="#apps" class="nav-item">Apps & PWA</a>
+          <a href="#faq" class="nav-item">FAQ</a>
+        </nav>
+
+        <!-- CTA Buttons -->
+        <div class="header-actions">
+          <a
+            href="https://github.com/olopezr/marea"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-ghost"
+            title="Ver código en GitHub"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+              />
+            </svg>
+            <span class="btn-text">GitHub</span>
+          </a>
+          <a
+            href="https://marea.onrender.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-primary btn-glow"
+          >
+            <span>Abrir App Web</span>
+            <svg
+              viewBox="0 0 20 20"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M5 10h10M11 6l4 4-4 4" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- ==================== HERO SECTION ==================== -->
+      <section class="hero-section" id="hero">
+        <div class="hero-glow-blob hero-glow-teal" aria-hidden="true"></div>
+        <div class="hero-glow-blob hero-glow-coral" aria-hidden="true"></div>
+
+        <div class="container hero-content">
+          <!-- Live status badge -->
+          <div class="telemetry-pill">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span class="pill-text">RED OCEANOGRÁFICA EN VIVO · 83 SPOTS EN ESPAÑA</span>
+          </div>
+
+          <!-- Main Title -->
+          <h1 class="hero-title">
+            El mar no avisa.<br />
+            <span class="text-gradient">Tú tienes los datos.</span>
+          </h1>
+
+          <!-- Subtitle -->
+          <p class="hero-desc">
+            Boyas de Puertos del Estado en directo, mareas oficiales del IHM, viento costero medido y previsión a 7
+            días. La primera app de surf diseñada con telemetría de precisión, sin publicidad ni suscripciones.
+          </p>
+
+          <!-- CTA Cluster -->
+          <div class="hero-cta-group">
+            <a href="#spots" class="btn btn-primary btn-lg btn-glow">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="10 8 16 12 10 16 10 8" />
+              </svg>
+              <span>Explorar Spots en Directo</span>
+            </a>
+            <a href="#video-demo" class="btn btn-secondary btn-lg">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              <span>Ver Vídeo (45s)</span>
+            </a>
+            <button id="btn-share-hero" class="btn btn-ghost btn-lg" title="Compartir con amigos">
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+              <span>Compartir</span>
+            </button>
+          </div>
+
+          <!-- Trust Badges -->
+          <div class="trust-row">
+            <div class="trust-item">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="#34d399" aria-hidden="true">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>83 spots en España</span>
+            </div>
+            <div class="trust-item">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="#34d399" aria-hidden="true">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>Boyas oficiales en tiempo real</span>
+            </div>
+            <div class="trust-item">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="#34d399" aria-hidden="true">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>100% Gratis · Sin Trackers</span>
+            </div>
+            <div class="trust-item">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="#34d399" aria-hidden="true">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>PWA + iOS + Android</span>
+            </div>
+          </div>
+
+          <!-- ==================== HERO PHONE MOCKUP ==================== -->
+          <div class="hero-mockup-wrapper">
+            <div class="phone-frame">
+              <!-- Dynamic Island / Speaker -->
+              <div class="phone-speaker"></div>
+
+              <!-- Phone Screen Content -->
+              <div class="phone-screen">
+                <!-- App Top Bar -->
+                <div class="app-topbar">
+                  <div class="app-status-row">
+                    <span class="app-clock" id="live-time">10:42</span>
+                    <div class="app-battery">
+                      <svg viewBox="0 0 24 14" width="20" height="12" fill="currentColor">
+                        <rect
+                          x="1"
+                          y="1"
+                          width="19"
+                          height="12"
+                          rx="3"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        />
+                        <rect x="3" y="3" width="13" height="8" rx="1.5" />
+                        <path d="M22 5v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="app-header-title">
+                    <div class="app-badge-live"><span class="dot-pulse"></span> EN DIRECTO</div>
+                    <h2 class="app-spot-name" id="hero-spot-title">Somo · Cantabria</h2>
+                    <p class="app-spot-meta" id="hero-spot-subtitle">
+                      Playa abierta · Ribamontán al Mar · Boya Santander a 14 km
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Main Spot Rating Card -->
+                <div class="app-score-hero">
+                  <div class="score-stars-row">
+                    <div class="star-rating">
+                      <span class="star active">★</span>
+                      <span class="star active">★</span>
+                      <span class="star active">★</span>
+                      <span class="star active">★</span>
+                      <span class="star active">★</span>
+                    </div>
+                    <span class="score-number" id="hero-score-val">4.8</span>
+                    <span class="score-label tag-epic" id="hero-score-badge">Épico</span>
+                  </div>
+                  <p class="score-summary" id="hero-spot-reason">
+                    Mar de fondo potente y ordenado con viento terral suave (offshore). Momento óptimo en bajamar
+                    subiendo.
+                  </p>
+                </div>
+
+                <!-- Telemetry Matrix 2x2 -->
+                <div class="app-telemetry-grid">
+                  <!-- Swell / Boya -->
+                  <div class="telemetry-box active-pulse">
+                    <div class="box-header">
+                      <span class="box-icon">🌊</span>
+                      <span class="box-tag">BOYA EN DIRECTO</span>
+                    </div>
+                    <div class="box-main-val" id="hero-wave-val">2,2 m</div>
+                    <div class="box-sub" id="hero-wave-sub">13 s · NO (305°)</div>
+                    <span class="box-source">Boya IEO Santander (hace 18 min)</span>
+                  </div>
+
+                  <!-- Wind / Estación -->
+                  <div class="telemetry-box">
+                    <div class="box-header">
+                      <span class="box-icon">💨</span>
+                      <span class="box-tag">ESTACIÓN COSTERA</span>
+                    </div>
+                    <div class="box-main-val" id="hero-wind-val">7 kn</div>
+                    <div class="box-sub tag-terral" id="hero-wind-sub">TERRAL · Sur</div>
+                    <span class="box-source">Estación Puertos del Estado</span>
+                  </div>
+
+                  <!-- Marea IHM -->
+                  <div class="telemetry-box">
+                    <div class="box-header">
+                      <span class="box-icon">⏱️</span>
+                      <span class="box-tag">MAREA OFICIAL IHM</span>
+                    </div>
+                    <div class="box-main-val" id="hero-tide-val">Bajamar 0,7 m</div>
+                    <div class="box-sub" id="hero-tide-sub">Coeficiente 82</div>
+                    <span class="box-source">Puerto Santander (Cero Hidrográfico)</span>
+                  </div>
+
+                  <!-- Mejor Ventana -->
+                  <div class="telemetry-box">
+                    <div class="box-header">
+                      <span class="box-icon">🎯</span>
+                      <span class="box-tag">MEJOR SESIÓN HOY</span>
+                    </div>
+                    <div class="box-main-val" id="hero-window-val">10:00 - 13:30</div>
+                    <div class="box-sub text-glow" id="hero-window-sub">Pico de calidad 5★</div>
+                    <span class="box-source">Ventana recomendada</span>
+                  </div>
+                </div>
+
+                <!-- Interactive Mini Tide Wave inside Phone -->
+                <div class="app-tide-widget">
+                  <div class="widget-header">
+                    <span class="widget-title">CURVA DE MAREA DEL DÍA</span>
+                    <span class="widget-time-hint">Desliza para simular las 24h</span>
+                  </div>
+                  <div class="mockup-chart-container">
+                    <svg id="hero-mockup-svg" viewBox="0 0 460 90" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="tide-grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stop-color="#56e6f5" stop-opacity="0.5" />
+                          <stop offset="100%" stop-color="#56e6f5" stop-opacity="0.0" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        class="tide-area-path"
+                        d="M0,70 Q115,10 230,75 T460,20 L460,90 L0,90 Z"
+                        fill="url(#tide-grad)"
+                      />
+                      <path
+                        class="tide-line-path"
+                        d="M0,70 Q115,10 230,75 T460,20"
+                        fill="none"
+                        stroke="#56e6f5"
+                        stroke-width="3"
+                      />
+                      <line
+                        id="hero-tide-cursor"
+                        x1="200"
+                        y1="0"
+                        x2="200"
+                        y2="90"
+                        stroke="#ff7a4d"
+                        stroke-width="2"
+                        stroke-dasharray="4,3"
+                      />
+                      <circle
+                        id="hero-tide-dot"
+                        cx="200"
+                        cy="68"
+                        r="6"
+                        fill="#ff7a4d"
+                        stroke="#ffffff"
+                        stroke-width="2"
+                      />
+                    </svg>
+                  </div>
+                  <div class="time-slider-wrap">
+                    <input
+                      type="range"
+                      id="hero-time-slider"
+                      min="0"
+                      max="23"
+                      value="11"
+                      step="1"
+                      aria-label="Hora del día para simular condiciones"
+                    />
+                    <div class="slider-labels">
+                      <span>00:00</span>
+                      <span id="slider-hour-display">11:00 (Seleccionada)</span>
+                      <span>23:00</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating Badges around mockup -->
+            <div class="floating-badge badge-top-left">
+              <span class="badge-icon">📍</span>
+              <div>
+                <span class="badge-title">83 Spots Calibrados</span>
+                <span class="badge-desc">Con orientación y marea óptima</span>
+              </div>
+            </div>
+
+            <div class="floating-badge badge-top-right">
+              <span class="badge-icon">📡</span>
+              <div>
+                <span class="badge-title">Boyas a &lt;100 km</span>
+                <span class="badge-desc">Dato real medido en el agua</span>
+              </div>
+            </div>
+
+            <div class="floating-badge badge-bottom-left">
+              <span class="badge-icon">🔔</span>
+              <div>
+                <span class="badge-title">Aviso Push Matutino</span>
+                <span class="badge-desc">Solo cuando supera tu umbral</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SPOTS EN VIVO EXPLORER ==================== -->
+      <section class="section spots-section" id="spots">
+        <div class="container">
+          <div class="section-header text-center">
+            <div class="badge-pill">83 SPOTS EN TIEMPO REAL</div>
+            <h2 class="section-title">Todos los spots de surf de España</h2>
+            <p class="section-desc">
+              Explora los 83 spots monitorizados con boyas y mareas oficiales. Haz clic en cualquiera para abrir su
+              previsión y telemetría completa en directo en la app de Marea.
+            </p>
+          </div>
+
+          <!-- Search and live counter bar -->
+          <div class="spots-search-bar-wrap">
+            <div class="search-input-box">
+              <svg
+                class="search-icon"
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                id="spots-search-input"
+                placeholder="Buscar entre los 83 spots por nombre o provincia (ej. Somo, Mundaka, Rodiles, El Palmar, Famara, Pantín...)"
+                aria-label="Buscar spot de surf"
+                autocomplete="off"
+              />
+              <button id="spots-search-clear" class="btn-clear" aria-label="Limpiar búsqueda" style="display: none">
+                ✕
+              </button>
+            </div>
+            <div class="spots-live-indicator">
+              <span class="live-dot" aria-hidden="true"></span>
+              <span id="spots-count-indicator">Mostrando 83 spots</span>
+            </div>
+          </div>
+
+          <!-- Filter tabs by region -->
+          <div class="region-tabs" role="tablist" aria-label="Regiones de Surf">
+            <button class="tab-btn active" data-region="all">Todos (83)</button>
+            <button class="tab-btn" data-region="cantabrico">Cantabria (10)</button>
+            <button class="tab-btn" data-region="asturias">Asturias (14)</button>
+            <button class="tab-btn" data-region="galicia">Galicia (15)</button>
+            <button class="tab-btn" data-region="euskadi">País Vasco (13)</button>
+            <button class="tab-btn" data-region="sur">Andalucía (8)</button>
+            <button class="tab-btn" data-region="canarias">Canarias (16)</button>
+            <button class="tab-btn" data-region="mediterraneo">Mediterráneo & Baleares (7)</button>
+          </div>
+
+          <!-- Spots Grid Cards -->
+          <div class="spots-grid" id="spots-cards-grid">
+            <!-- Populated dynamically via JS -->
+          </div>
+
+          <!-- Selected Spot Interactive Detail Card -->
+          <div class="spot-detail-interactive-card" id="spot-detail-container">
+            <div class="spot-detail-header">
+              <div>
+                <div class="spot-detail-badge" id="detail-tag">CANTABRIA · COSTA CENTRAL</div>
+                <h3 class="spot-detail-title" id="detail-name">Somo · Playa de Somo</h3>
+                <p class="spot-detail-sub" id="detail-desc">
+                  Orientación NNO (340°) · Marea ideal: Media Marea · Fondo: Arena fina
+                </p>
+              </div>
+              <div class="spot-detail-score-box">
+                <span class="score-stars-lg" id="detail-stars">★★★★★</span>
+                <span class="score-value-lg" id="detail-score-num">4.8</span>
+                <span class="score-status-pill tag-epic" id="detail-score-text">Condiciones Épicas</span>
+              </div>
+            </div>
+
+            <div class="spot-detail-metrics-grid">
+              <div class="metric-card">
+                <div class="metric-title">Oleaje de Boya Oficial</div>
+                <div class="metric-val" id="detail-wave-height">2,2 m</div>
+                <div class="metric-detail" id="detail-wave-period">Periodo 13 s · Rumbo NO</div>
+                <div class="metric-foot" id="detail-buoy-dist">Boya Santander (14 km)</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-title">Viento Medido en Costa</div>
+                <div class="metric-val" id="detail-wind-speed">7 nudos</div>
+                <div class="metric-detail tag-terral" id="detail-wind-dir">Terral S (Offshore puro)</div>
+                <div class="metric-foot">Rachas máximas: 9 kn</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-title">Marea & Nivel del Mar</div>
+                <div class="metric-val" id="detail-tide-state">Bajamar 0,7 m</div>
+                <div class="metric-detail" id="detail-tide-coef">Coeficiente 82 (Mareas vivas)</div>
+                <div class="metric-foot">Efecto meteo: +0,08 m</div>
+              </div>
+
+              <div class="metric-card">
+                <div class="metric-title">Previsión a 7 Días</div>
+                <div class="metric-val" id="detail-forecast-trend">Swell en ascenso</div>
+                <div class="metric-detail" id="detail-forecast-peak">Pico máx: Jueves tarde (2,8 m)</div>
+                <div class="metric-foot">Datos horarios continuos</div>
+              </div>
+            </div>
+
+            <div class="spot-detail-action-bar">
+              <div class="spot-action-info">
+                <span
+                  >💡 <strong>Consejo del algoritmo:</strong>
+                  <span id="detail-advice"
+                    >El pico de Somo aguanta tamaño gracias a la barra de arena. Entra antes de la pleamar
+                    completa.</span
+                  ></span
+                >
+              </div>
+              <a
+                href="https://marea.onrender.com/#/spot/somo"
+                id="detail-app-link"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary btn-sm"
+                >Abrir este spot en la App ↗</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TELEMETRÍA VS PREVISIÓN VIEJA ==================== -->
+      <section class="section telemetry-section" id="telemetria">
+        <div class="container">
+          <div class="section-header text-center">
+            <div class="badge-pill">PRECISIÓN OCEANOGRÁFICA</div>
+            <h2 class="section-title">Por qué las apps de surf tradicionales fallan</h2>
+            <p class="section-desc">
+              La mayoría de webs dependen exclusivamente de modelos globales que se calculan cada 12 horas. Marea bebe
+              directamente de la red física de sensores en el mar de España.
+            </p>
+          </div>
+
+          <div class="comparison-grid">
+            <!-- Card Old Way -->
+            <div class="comparison-card card-negative">
+              <div class="comp-badge">OTRAS APPS Y WEBS DE SURF</div>
+              <h3 class="comp-title">Predicciones numéricas a ciegas</h3>
+              <ul class="comp-list">
+                <li>
+                  <span class="icon-cross">✕</span>
+                  <div>
+                    <strong>Modelos desfasados:</strong> Te dicen que hay 2 metros pero el mar de fondo aún no ha
+                    llegado a la costa o se ha frenado mar adentro.
+                  </div>
+                </li>
+                <li>
+                  <span class="icon-cross">✕</span>
+                  <div>
+                    <strong>Mareas aproximadas:</strong> Desfases de hasta 40 minutos en el Cantábrico y coeficientes
+                    genéricos calculados respecto a Francia.
+                  </div>
+                </li>
+                <li>
+                  <span class="icon-cross">✕</span>
+                  <div>
+                    <strong>Viento de modelo global:</strong> No captan las brisas térmicas locales de valle ni el
+                    efecto orográfico de acantilados y rías.
+                  </div>
+                </li>
+                <li>
+                  <span class="icon-cross">✕</span>
+                  <div>
+                    <strong>Plagadas de publicidad:</strong> Banners, vídeos emergentes, tiempos de carga pesados y
+                    muros de pago de 40€ al año.
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Card Marea Way -->
+            <div class="comparison-card card-positive">
+              <div class="comp-badge-live">MAREA · SISTEMA INTEGRADO</div>
+              <h3 class="comp-title">Sensores reales en el agua y puertos</h3>
+              <ul class="comp-list">
+                <li>
+                  <span class="icon-check">✓</span>
+                  <div>
+                    <strong>Boyas de Puertos del Estado:</strong> Mediciones cada hora de boyas costeras y de aguas
+                    profundas a menos de 100 km del spot. Sabes qué tamaño real entra.
+                  </div>
+                </li>
+                <li>
+                  <span class="icon-check">✓</span>
+                  <div>
+                    <strong>Mareas oficiales IHM:</strong> Horas exactas y alturas referidas al Cero Hidrográfico del
+                    puerto más cercano, con corrección de residuo meteorológico NIVMAR.
+                  </div>
+                </li>
+                <li>
+                  <span class="icon-check">✓</span>
+                  <div>
+                    <strong>Estaciones meteorológicas a &lt;40 km:</strong> Viento medido, dirección, temperatura del
+                    aire y presión atmosférica en estaciones costeras reales.
+                  </div>
+                </li>
+                <li>
+                  <span class="icon-check">✓</span>
+                  <div>
+                    <strong>Cero anuncios y máxima privacidad:</strong> Carga ultrarrápida en menos de 0.2 segundos, sin
+                    rastreadores, sin cookies de terceros y 100% gratuita.
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Telemetry Data Sources Row -->
+          <div class="sources-strip">
+            <span class="sources-label">CONECTADO DIRECTAMENTE A:</span>
+            <div class="sources-logos">
+              <div class="source-tag">
+                <span class="source-icon">⚓</span>
+                <span>Puertos del Estado (Red Boyas)</span>
+              </div>
+              <div class="source-tag">
+                <span class="source-icon">🌊</span>
+                <span>Instituto Hidrográfico de la Marina (IHM)</span>
+              </div>
+              <div class="source-tag">
+                <span class="source-icon">🌤️</span>
+                <span>Open-Meteo & Modelos ECMWF / DWD</span>
+              </div>
+              <div class="source-tag">
+                <span class="source-icon">📏</span>
+                <span>Red de Mareógrafos REDMAR</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== CURVA DE MAREA INTERACTIVA ==================== -->
+      <section class="section tide-feature-section" id="marea">
+        <div class="container">
+          <div class="tide-feature-grid">
+            <div class="tide-feature-info">
+              <div class="badge-pill">CARACTERÍSTICA ESTRELLA</div>
+              <h2 class="section-title text-left">Curva de marea deslizable hora a hora</h2>
+              <p class="section-desc text-left">
+                El surf se define en centímetros de agua sobre la rompiente. Con la curva interactiva de Marea, puedes
+                deslizar el cursor a lo largo del día y ver cómo evoluciona la altura de agua, las horas de luz y la
+                calidad del baño.
+              </p>
+
+              <div class="tide-highlights">
+                <div class="highlight-item">
+                  <div class="highlight-num">01</div>
+                  <div>
+                    <h4>Cero Hidrográfico del Puerto</h4>
+                    <p>
+                      Mareas calculadas con las tablas oficiales del IHM para cada zona, no con modelos astronómicos
+                      genéricos.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="highlight-item">
+                  <div class="highlight-num">02</div>
+                  <div>
+                    <h4>Efecto Meteorológico Real (NIVMAR)</h4>
+                    <p>
+                      La presión atmosférica y el viento cambian el nivel real del agua hasta 30 cm respecto a la tabla
+                      teórica.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="highlight-item">
+                  <div class="highlight-num">03</div>
+                  <div>
+                    <h4>Coeficiente & Tipo de Marea</h4>
+                    <p>
+                      Detecta al instante mareas vivas (grandes desplazamientos de agua) o muertas para planear la
+                      entrada y salida.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Interactive Full Tide Demo Card -->
+            <div class="tide-interactive-demo-card">
+              <div class="demo-card-top">
+                <div>
+                  <span class="demo-tag">SIMULADOR EN TIEMPO REAL</span>
+                  <h3 class="demo-spot-title">Playa de Rodiles · Ría de Villaviciosa</h3>
+                </div>
+                <div class="demo-status">
+                  <span class="live-dot"></span> <span id="interactive-tide-phase">Bajamar subiendo</span>
+                </div>
+              </div>
+
+              <!-- Dynamic SVG Curve with Hour Cursor -->
+              <div class="demo-svg-container">
+                <svg id="interactive-tide-svg" viewBox="0 0 600 200" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="demo-tide-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#56e6f5" stop-opacity="0.6" />
+                      <stop offset="60%" stop-color="#1f6f80" stop-opacity="0.2" />
+                      <stop offset="100%" stop-color="#071a20" stop-opacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <!-- Grid Lines -->
+                  <line x1="0" y1="50" x2="600" y2="50" stroke="#1d3a43" stroke-dasharray="2,4" />
+                  <line x1="0" y1="100" x2="600" y2="100" stroke="#1d3a43" stroke-dasharray="2,4" />
+                  <line x1="0" y1="150" x2="600" y2="150" stroke="#1d3a43" stroke-dasharray="2,4" />
+
+                  <!-- Tide Area & Line -->
+                  <path
+                    id="demo-area"
+                    d="M0,130 C100,30 200,170 300,130 C400,30 500,170 600,130 L600,200 L0,200 Z"
+                    fill="url(#demo-tide-fill)"
+                  />
+                  <path
+                    id="demo-line"
+                    d="M0,130 C100,30 200,170 300,130 C400,30 500,170 600,130"
+                    fill="none"
+                    stroke="#56e6f5"
+                    stroke-width="4"
+                  />
+
+                  <!-- Interactive Draggable / Synchronized Line -->
+                  <line
+                    id="interactive-cursor-line"
+                    x1="280"
+                    y1="0"
+                    x2="280"
+                    y2="200"
+                    stroke="#ff7a4d"
+                    stroke-width="3"
+                  />
+                  <circle
+                    id="interactive-cursor-dot"
+                    cx="280"
+                    cy="130"
+                    r="8"
+                    fill="#ff7a4d"
+                    stroke="#ffffff"
+                    stroke-width="3"
+                  />
+
+                  <!-- Tide markers labels -->
+                  <text x="100" y="25" fill="#56e6f5" font-size="12" font-family="JetBrains Mono" text-anchor="middle">
+                    Pleamar 06:14 (3.8m)
+                  </text>
+                  <text x="250" y="185" fill="#34d399" font-size="12" font-family="JetBrains Mono" text-anchor="middle">
+                    Bajamar 12:28 (0.6m)
+                  </text>
+                  <text x="400" y="25" fill="#56e6f5" font-size="12" font-family="JetBrains Mono" text-anchor="middle">
+                    Pleamar 18:42 (3.9m)
+                  </text>
+                </svg>
+              </div>
+
+              <!-- Interactive Controller -->
+              <div class="interactive-slider-control">
+                <div class="control-telemetry-row">
+                  <div class="ctl-stat">
+                    <span class="ctl-label">HORA SELECCIONADA</span>
+                    <span class="ctl-val" id="ctrl-hour-val">12:00</span>
+                  </div>
+                  <div class="ctl-stat">
+                    <span class="ctl-label">ALTURA ESTIMADA</span>
+                    <span class="ctl-val text-cyan" id="ctrl-height-val">0,72 m</span>
+                  </div>
+                  <div class="ctl-stat">
+                    <span class="ctl-label">VALORACIÓN EN ESA HORA</span>
+                    <span class="ctl-val text-green" id="ctrl-score-val">★★★★★ 4.9</span>
+                  </div>
+                </div>
+
+                <input
+                  type="range"
+                  id="interactive-tide-range"
+                  min="0"
+                  max="23"
+                  value="12"
+                  step="1"
+                  aria-label="Deslizar cursor de marea interactiva"
+                />
+                <div class="range-scale">
+                  <span>00:00 (Noche)</span>
+                  <span>08:00 (Amanecer)</span>
+                  <span>14:00 (Mediodía)</span>
+                  <span>20:00 (Puesta)</span>
+                  <span>23:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== ALGORITMO 0 A 5 ==================== -->
+      <section class="section algorithm-section" id="algoritmo">
+        <div class="container">
+          <div class="section-header text-center">
+            <div class="badge-pill">EVALUACIÓN INTELIGENTE</div>
+            <h2 class="section-title">El algoritmo que sabe si merece la pena entrar</h2>
+            <p class="section-desc">
+              Cada spot de surf es único. Una ola de 1.8 metros puede ser una sesión histórica con terral suave en marea
+              baja, o un desastre impracticable con viento cruzado y pleamar. Marea evalúa 5 parámetros clave.
+            </p>
+          </div>
+
+          <div class="algorithm-grid">
+            <!-- Factor 1 -->
+            <div class="algo-card">
+              <div class="algo-num">01</div>
+              <div class="algo-icon">🧭</div>
+              <h3 class="algo-title">Orientación del Spot</h3>
+              <p class="algo-desc">
+                Cada playa tiene su ángulo exacto frente al mar abierto (Facing). Evaluamos si el mar de fondo entra
+                directo, de costado o apantallado por cabos e islas.
+              </p>
+            </div>
+
+            <!-- Factor 2 -->
+            <div class="algo-card">
+              <div class="algo-num">02</div>
+              <div class="algo-icon">💨</div>
+              <h3 class="algo-title">Viento Terral vs Costero</h3>
+              <p class="algo-desc">
+                Comparamos la dirección del viento local contra la orientación de la playa. El viento terral (offshore)
+                peina la ola y suma puntos; el viento de mar (onshore) resta.
+              </p>
+            </div>
+
+            <!-- Factor 3 -->
+            <div class="algo-card">
+              <div class="algo-num">03</div>
+              <div class="algo-icon">⏱️</div>
+              <h3 class="algo-title">Punto de Marea Óptimo</h3>
+              <p class="algo-desc">
+                Hay rompientes que solo funcionan en bajamar seca (como Mundaka o Rodiles), otras en media y otras en
+                pleamar. El algoritmo premia el punto exacto de cada spot.
+              </p>
+            </div>
+
+            <!-- Factor 4 -->
+            <div class="algo-card">
+              <div class="algo-num">04</div>
+              <div class="algo-icon">🌊</div>
+              <h3 class="algo-title">Periodo de Fondo</h3>
+              <p class="algo-desc">
+                Un periodo largo (12-16 segundos) aporta energía y paredes consistentes. Un periodo corto (&lt;8s) suele
+                producir mar de viento desordenado.
+              </p>
+            </div>
+
+            <!-- Factor 5 -->
+            <div class="algo-card">
+              <div class="algo-num">05</div>
+              <div class="algo-icon">🔔</div>
+              <h3 class="algo-title">Avisos Push Sin Spam</h3>
+              <p class="algo-desc">
+                Tú defines tu umbral (por ejemplo, mínimo 4 estrellas en tus 3 spots favoritos). Recibes un aviso a
+                primera hora solo los días que cuadra de verdad.
+              </p>
+            </div>
+
+            <!-- Factor 6 -->
+            <div class="algo-card">
+              <div class="algo-num">06</div>
+              <div class="algo-icon">🛰️</div>
+              <h3 class="algo-title">Validación con Boyas</h3>
+              <p class="algo-desc">
+                Si la boya más cercana marca valores diferentes al modelo numérico, Marea te avisa para que sepas si el
+                swell viene con retraso o adelantado.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== VÍDEO DEMOSTRACIÓN ==================== -->
+      <section class="section video-section" id="video-demo">
+        <div class="container">
+          <div class="section-header text-center">
+            <div class="badge-pill">VÍDEO OFICIAL</div>
+            <h2 class="section-title">Marea en Acción (45 segundos)</h2>
+            <p class="section-desc">
+              Mira la interfaz en funcionamiento, el mapa de boyas, la curva de marea y la fluidez del diseño.
+            </p>
+          </div>
+
+          <div class="video-player-wrapper">
+            <div class="video-container">
+              <video
+                id="promo-video-player"
+                controls
+                playsinline
+                preload="metadata"
+                poster="assets/hero-surf.jpg"
+                width="1280"
+                height="720"
+                aria-label="Vídeo promocional de Marea"
+              >
+                <source src="assets/marea-promo.mp4" type="video/mp4" />
+                Tu navegador no soporta reproducción de vídeo HTML5.
+              </video>
+            </div>
+            <div class="video-caption-bar">
+              <span>📹 Demostración de telemetría de boyas en directo y diseño de la app nativa y PWA</span>
+              <a href="https://github.com/olopezr/marea" target="_blank" rel="noopener noreferrer" class="link-cyan"
+                >Ver repositorio en GitHub →</a
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== APPS NATIVAS Y PWA ==================== -->
+      <section class="section apps-section" id="apps">
+        <div class="container">
+          <div class="section-header text-center">
+            <div class="badge-pill">DISPONIBLE EN TODOS TUS DISPOSITIVOS</div>
+            <h2 class="section-title">Instala Marea como prefieras</h2>
+            <p class="section-desc">
+              Sin barreras. Úsala directamente desde tu navegador como PWA instantánea con soporte offline o compila las
+              apps nativas en SwiftUI y Jetpack Compose.
+            </p>
+          </div>
+
+          <div class="apps-grid">
+            <!-- Card PWA Web -->
+            <div class="app-channel-card featured">
+              <div class="channel-badge">RECOMENDADO · INSTALACIÓN DIRECTA</div>
+              <div class="channel-icon">🌐</div>
+              <h3 class="channel-title">Web App Instalable (PWA)</h3>
+              <p class="channel-desc">
+                Abre la app en Safari, Chrome o Edge y selecciona <em>«Añadir a pantalla de inicio»</em>. Funciona como
+                una app nativa, almacena los datos para abrir sin cobertura y recibe notificaciones push web.
+              </p>
+              <div class="channel-features">
+                <span>✓ Sin pasar por la tienda</span>
+                <span>✓ Modo sin conexión (offline)</span>
+                <span>✓ Ocupa menos de 3 MB</span>
+                <span>✓ Notificaciones Web Push</span>
+              </div>
+              <div class="channel-actions">
+                <a
+                  href="https://marea.onrender.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="btn btn-primary btn-block btn-glow"
+                >
+                  <span>Abrir Marea Web</span>
+                </a>
+                <button class="btn btn-secondary btn-block" id="btn-show-pwa-guide">
+                  <span>¿Cómo añadir a inicio?</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Card iOS -->
+            <div class="app-channel-card">
+              <div class="channel-badge">APPLE ECOSISTEMA</div>
+              <div class="channel-icon">🍎</div>
+              <h3 class="channel-title">App Nativa iOS</h3>
+              <p class="channel-desc">
+                Desarrollada en <strong>SwiftUI</strong> con iOS 17+. Incluye widgets para la pantalla de inicio y de
+                bloqueo con las condiciones de tu spot favorito, y avisos push nativos APNs sin dependencias pesadas.
+              </p>
+              <div class="channel-features">
+                <span>✓ SwiftUI nativo fluido</span>
+                <span>✓ Widgets de pantalla de bloqueo</span>
+                <span>✓ Proyecto con XcodeGen</span>
+                <span>✓ Código fuente disponible</span>
+              </div>
+              <div class="channel-actions">
+                <a
+                  href="https://github.com/olopezr/marea/tree/main/ios"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="btn btn-ghost btn-block"
+                >
+                  <span>Ver código iOS en GitHub</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Card Android -->
+            <div class="app-channel-card">
+              <div class="channel-badge">ANDROID ECOSISTEMA</div>
+              <div class="channel-icon">🤖</div>
+              <h3 class="channel-title">App Nativa Android</h3>
+              <p class="channel-desc">
+                Creada con <strong>Jetpack Compose</strong> y Material 3. Compatible con Android 8+. Dispone de widgets
+                Glance interactivos, notificaciones FCM y sincronización en segundo plano.
+              </p>
+              <div class="channel-features">
+                <span>✓ Jetpack Compose moderno</span>
+                <span>✓ Widgets interactivos para escritorio</span>
+                <span>✓ Integración Firebase FCM</span>
+                <span>✓ Código abierto completo</span>
+              </div>
+              <div class="channel-actions">
+                <a
+                  href="https://github.com/olopezr/marea/tree/main/android"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="btn btn-ghost btn-block"
+                >
+                  <span>Ver código Android en GitHub</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- PWA Instructions Accordion / Helper -->
+          <div class="pwa-guide-modal" id="pwa-guide-box" style="display: none">
+            <div class="guide-header">
+              <h4>Cómo instalar Marea en tu móvil en 10 segundos</h4>
+              <button id="btn-close-pwa-guide" class="btn-close" aria-label="Cerrar guía">✕</button>
+            </div>
+            <div class="guide-steps-grid">
+              <div class="guide-step">
+                <span class="step-num">iOS</span>
+                <p>
+                  Abre la web en <strong>Safari</strong>, pulsa el botón <strong>Compartir</strong> (icono cuadrado con
+                  flecha arriba) y selecciona <strong>«Añadir a pantalla de inicio»</strong>.
+                </p>
+              </div>
+              <div class="guide-step">
+                <span class="step-num">Android</span>
+                <p>
+                  Abre la web en <strong>Chrome</strong>, pulsa los <strong>tres puntos</strong> arriba a la derecha y
+                  selecciona <strong>«Instalar aplicación»</strong> o <strong>«Añadir a pantalla de inicio»</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== PREGUNTAS FRECUENTES (FAQ) ==================== -->
+      <section class="section faq-section" id="faq">
+        <div class="container max-w-3xl">
+          <div class="section-header text-center">
+            <div class="badge-pill">RESOLVEMOS TUS DUDAS</div>
+            <h2 class="section-title">Preguntas Frecuentes</h2>
+            <p class="section-desc">
+              Todo lo que necesitas saber sobre las fuentes de datos, el cálculo de las mareas y el proyecto.
+            </p>
+          </div>
+
+          <div class="faq-list">
+            <details name="faq" class="faq-item" open>
+              <summary class="faq-question">
+                <span>¿De dónde obtiene Marea los datos de oleaje y boyas?</span>
+                <span class="faq-chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>
+                  Marea se conecta directamente a la red oficial de boyas de <strong>Puertos del Estado</strong> (boyas
+                  costeras y de aguas profundas a menos de 100 km de cada spot) para ofrecerte la altura de ola
+                  significativa, periodo de pico y dirección medida en el agua. La previsión futura a 7 días se genera
+                  con modelos de alta resolución a través de Open-Meteo.
+                </p>
+              </div>
+            </details>
+
+            <details name="faq" class="faq-item">
+              <summary class="faq-question">
+                <span>¿Por qué las mareas de Marea son más exactas que en otras apps?</span>
+                <span class="faq-chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>
+                  La gran mayoría de aplicaciones extranjeras utilizan modelos globales de marea que en el Cantábrico y
+                  Galicia pueden tener un desfase de 30 a 40 minutos. Marea utiliza las
+                  <strong>predicciones astronómicas oficiales del Instituto Hidrográfico de la Marina (IHM)</strong>
+                  referidas al cero hidrográfico del puerto más cercano, complementadas con el efecto meteorológico real
+                  del modelo NIVMAR y lecturas de mareógrafos REDMAR.
+                </p>
+              </div>
+            </details>
+
+            <details name="faq" class="faq-item">
+              <summary class="faq-question">
+                <span>¿Tiene algún coste o suscripción premium?</span>
+                <span class="faq-chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>
+                  <strong>No. Marea es 100% gratuita y sin ánimo de lucro.</strong> No tiene anuncios, no vende tus
+                  datos, no requiere tarjeta de crédito ni cuentas de pago. El código de la web y de las aplicaciones
+                  nativas es completamente abierto.
+                </p>
+              </div>
+            </details>
+
+            <details name="faq" class="faq-item">
+              <summary class="faq-question">
+                <span>¿Cómo funcionan las alertas push sin molestar?</span>
+                <span class="faq-chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>
+                  Tú eliges tus playas favoritas y el umbral de calidad deseado (por ejemplo, 4 estrellas). El servidor
+                  revisa las condiciones cada mañana y envía como máximo <strong>un único aviso por spot y día</strong>.
+                  Si el mar no está bueno, no recibirás nada.
+                </p>
+              </div>
+            </details>
+
+            <details name="faq" class="faq-item">
+              <summary class="faq-question">
+                <span>¿Cómo puedo sugerir un spot nuevo o corregir una orientación?</span>
+                <span class="faq-chevron" aria-hidden="true">▾</span>
+              </summary>
+              <div class="faq-answer">
+                <p>
+                  El proyecto está abierto en GitHub. Puedes abrir una sugerencia o editar directamente el archivo de
+                  spots en el repositorio. La comunidad de surfistas locales es clave para afinar rumbos, mareas
+                  recomendadas y fondos de arena o roca.
+                </p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SHARE / DISTRIBUCIÓN ==================== -->
+      <section class="section share-section" id="compartir">
+        <div class="container">
+          <div class="share-box">
+            <div class="share-content">
+              <div class="badge-pill coral">COMPARTE CON TU GRUPO DE SURF</div>
+              <h2 class="share-title">Pásale Marea a tus contactos</h2>
+              <p class="share-desc">
+                Envía el enlace por WhatsApp o Telegram a tus compañeros de baño antes de la próxima sesión para
+                coordinar el baño con los mejores datos.
+              </p>
+
+              <div class="share-buttons-row">
+                <button class="btn btn-whatsapp" id="btn-share-wa">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+                    <path
+                      d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 012.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 01-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.24-.75-.67-1.26-1.49-1.4-1.74-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.15.17-.25.25-.42.08-.17.04-.32-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8.6.26 1.07.41 1.44.53.61.19 1.16.17 1.6.1 1.48-.07 1.47-.6 1.68-1.19.21-.58.21-1.08.15-1.19-.06-.11-.23-.17-.48-.29z"
+                    />
+                  </svg>
+                  <span>WhatsApp</span>
+                </button>
+
+                <button class="btn btn-telegram" id="btn-share-tg">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+                    <path
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .37z"
+                    />
+                  </svg>
+                  <span>Telegram</span>
+                </button>
+
+                <button class="btn btn-ghost" id="btn-copy-url">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span id="copy-text-btn">Copiar Enlace</span>
+                </button>
+              </div>
+
+              <!-- Instant feedback notification -->
+              <div id="copy-toast" class="toast-message" style="display: none">✓ ¡Enlace copiado al portapapeles!</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div class="footer-brand-col">
+          <div class="footer-brand">
+            <svg viewBox="0 0 512 512" width="28" height="28" aria-hidden="true">
+              <rect width="512" height="512" rx="128" fill="#071a20" />
+              <path
+                d="M64 300c48-64 96-64 128 0s80 64 128 0 96-64 128 0"
+                fill="none"
+                stroke="#ff7a4d"
+                stroke-width="44"
+                stroke-linecap="round"
+              />
+              <path
+                d="M112 212c40-48 80-48 112 0s72 48 112 0"
+                fill="none"
+                stroke="#56e6f5"
+                stroke-width="32"
+                stroke-linecap="round"
+                opacity=".9"
+              />
+            </svg>
+            <span class="footer-title">Marea</span>
+          </div>
+          <p class="footer-tagline">
+            Oleaje, viento y mareas en tiempo real para los spots de surf de España. Proyecto de código abierto, sin
+            publicidad ni ánimo de lucro.
+          </p>
+        </div>
+
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Navegación</h4>
+          <ul class="footer-nav">
+            <li><a href="#spots">Spots en Vivo</a></li>
+            <li>
+              <a href="https://marea.onrender.com/" target="_blank" rel="noopener noreferrer">App Web (Render)</a>
+            </li>
+            <li><a href="#telemetria">Telemetría de Boyas</a></li>
+            <li><a href="#marea">Curva de Marea</a></li>
+            <li><a href="#algoritmo">Algoritmo 0 a 5</a></li>
+            <li><a href="#apps">Apps iOS & Android</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <h4 class="footer-heading">Fuentes de Datos</h4>
+          <ul class="footer-nav">
+            <li><a href="https://www.puertos.es" target="_blank" rel="noopener noreferrer">Puertos del Estado</a></li>
+            <li>
+              <a href="https://armada.defensa.gob.es/ihm" target="_blank" rel="noopener noreferrer"
+                >Inst. Hidrográfico de la Marina</a
+              >
+            </li>
+            <li><a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo API</a></li>
+            <li>
+              <a href="https://github.com/olopezr/marea" target="_blank" rel="noopener noreferrer"
+                >Repositorio en GitHub</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="container footer-bottom-inner">
+          <p>© 2026 Marea. Hecho con ❤️ para la comunidad de surf en España.</p>
+          <div class="footer-bottom-links">
+            <a href="https://github.com/olopezr/marea/blob/main/LICENSE" target="_blank" rel="noopener noreferrer"
+              >Licencia Open Source</a
+            >
+            <span>·</span>
+            <a href="https://github.com/olopezr/marea" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/spots-data.js"></script>
+    <script src="js/landing.js"></script>
+  </body>
+</html>

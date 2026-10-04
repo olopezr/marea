@@ -5,7 +5,16 @@ import { fileURLToPath } from "node:url";
 import { SPOTS } from "../public/js/spots.js";
 
 export const TARGETS = ["ios/Marea/Resources/spots.json", "android/app/src/main/assets/spots.json"];
-export const spotsJSON = () => JSON.stringify(SPOTS.map(({ id, name, region, lat, lon, facing, tide, tz }) => ({ id, name, region, lat, lon, facing, tide, tz })), null, 1) + "\n";
+export const spotsJSON = () =>
+  JSON.stringify(
+    SPOTS.map(({ id, name, region, lat, lon, facing, tide, tz, webcam }) => {
+      const s = { id, name, region, lat, lon, facing, tide, tz };
+      if (webcam) s.webcam = webcam;
+      return s;
+    }),
+    null,
+    1,
+  ) + "\n";
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   for (const t of TARGETS) fs.writeFileSync(new URL(`../${t}`, import.meta.url), spotsJSON());

@@ -15,11 +15,11 @@ export async function cached(key, ttlMs, loader, { staleMs = 24 * 3600e3, retryM
   }
 
   const pending = loader()
-    .then(value => {
+    .then((value) => {
       entries.set(key, { value, at: Date.now() });
       return value;
     })
-    .catch(err => {
+    .catch((err) => {
       const failed = { failedAt: Date.now(), error: err, retryAfterMs: err.retryAfterMs };
       if (e?.value !== undefined && now - e.at < staleMs) {
         entries.set(key, { value: e.value, at: e.at, ...failed });
@@ -40,14 +40,26 @@ export async function fetchJSON(url, init = {}, timeoutMs = 15000) {
   const host = new URL(url).host;
   const until = blocked.get(host);
   if (until && Date.now() < until) {
-    throw Object.assign(new Error(`${host} limita las peticiones; se reintentará en ${Math.ceil((until - Date.now()) / 60e3)} min`), { status: 429, retryAfterMs: until - Date.now() });
+    throw Object.assign(
+      new Error(`${host} limita las peticiones; se reintentará en ${Math.ceil((until - Date.now()) / 60e3)} min`),
+      { status: 429, retryAfterMs: until - Date.now() },
+    );
   }
-  const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs), headers: { "User-Agent": "MareaSurf/1.0", ...init.headers } });
+  const res = await fetch(url, {
+    ...init,
+    signal: AbortSignal.timeout(timeoutMs),
+    headers: { "User-Agent": "MareaSurf/1.0", ...init.headers },
+  });
   if (res.status === 429) {
-    const reason = await res.json().then(b => b.reason).catch(() => null);
+    const reason = await res
+      .json()
+      .then((b) => b.reason)
+      .catch(() => null);
     const retryAfterMs = (+res.headers.get("retry-after") || 15 * 60) * 1000;
     blocked.set(host, Date.now() + retryAfterMs);
-    console.warn(`[fuente] ${host} respondió 429${reason ? `: ${reason}` : ""}. Pausa de ${Math.round(retryAfterMs / 60e3)} min`);
+    console.warn(
+      `[fuente] ${host} respondió 429${reason ? `: ${reason}` : ""}. Pausa de ${Math.round(retryAfterMs / 60e3)} min`,
+    );
     throw Object.assign(new Error(`${host} respondió 429`), { status: 429, retryAfterMs });
   }
   if (!res.ok) throw new Error(`${host} respondió ${res.status}`);
@@ -60,13 +72,14 @@ export function limiter(max, retryDelayMs = 600) {
   let active = 0;
   const queue = [];
   return async (url, init) => {
-    if (active >= max) await new Promise(r => queue.push(r));
+    if (active >= max) await new Promise((r) => queue.push(r));
     active++;
     try {
-      try { return await fetchJSON(url, init); }
-      catch (err) {
+      try {
+        return await fetchJSON(url, init);
+      } catch (err) {
         if (err.status === 429) throw err;
-        await new Promise(r => setTimeout(r, retryDelayMs));
+        await new Promise((r) => setTimeout(r, retryDelayMs));
         return await fetchJSON(url, init);
       }
     } finally {

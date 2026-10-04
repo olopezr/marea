@@ -1,8 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  angDiff, cardinal, windType, waveParts, rate, rating, tideExtremes, curveFromExtremes, tideAt, tideNorm,
-  localToUtc, hhmm, startOfLocalDay, dayLabel, fmt,
+  angDiff,
+  cardinal,
+  windType,
+  waveParts,
+  rate,
+  rating,
+  tideExtremes,
+  curveFromExtremes,
+  tideAt,
+  tideNorm,
+  localToUtc,
+  hhmm,
+  startOfLocalDay,
+  dayLabel,
+  fmt,
 } from "../public/js/surf.js";
 
 test("angDiff da la distancia angular más corta", () => {
@@ -23,9 +36,9 @@ test("cardinal usa la rosa de 16 rumbos en español", () => {
 test("windType clasifica el viento según la orientación de la playa", () => {
   // Playa orientada al norte (mira a 0°).
   assert.equal(windType(3, 180, 0).key, "calm");
-  assert.equal(windType(10, 180, 0).key, "off");   // viene de tierra
+  assert.equal(windType(10, 180, 0).key, "off"); // viene de tierra
   assert.equal(windType(10, 90, 0).key, "cross");
-  assert.equal(windType(10, 10, 0).key, "on");     // viene del mar
+  assert.equal(windType(10, 10, 0).key, "on"); // viene del mar
   assert.equal(windType(null, 10, 0).key, "na");
 });
 
@@ -41,15 +54,20 @@ test("rate premia mar de fondo largo con terral y castiga viento de mar", () => 
   assert.ok(offshore >= 4, `terral debería ser muy bueno, fue ${offshore}`);
   assert.ok(onshore < 2, `viento de mar fuerte debería ser pobre, fue ${onshore}`);
   assert.ok(rate({ ...base, h: 0.2, wind: 2, windDir: 165 }) < 1, "sin ola es plato");
-  assert.ok(rate({ ...base, dir: 160, wind: 2, windDir: 165 }) < rate({ ...base, wind: 2, windDir: 165 }), "swell que no entra en la playa puntúa menos");
+  assert.ok(
+    rate({ ...base, dir: 160, wind: 2, windDir: 165 }) < rate({ ...base, wind: 2, windDir: 165 }),
+    "swell que no entra en la playa puntúa menos",
+  );
   assert.equal(rate({ h: null, T: 10, facing: 0 }), 0);
 });
 
 test("rate se mantiene entre 0 y 5", () => {
-  for (const h of [0, 0.5, 1, 2, 3, 5, 9]) for (const T of [4, 8, 12, 18]) for (const wind of [0, 10, 40]) {
-    const s = rate({ h, T, dir: 0, wind, windDir: 0, facing: 0, tideNorm: 0.9, tidePref: "low" });
-    assert.ok(s >= 0 && s <= 5);
-  }
+  for (const h of [0, 0.5, 1, 2, 3, 5, 9])
+    for (const T of [4, 8, 12, 18])
+      for (const wind of [0, 10, 40]) {
+        const s = rate({ h, T, dir: 0, wind, windDir: 0, facing: 0, tideNorm: 0.9, tidePref: "low" });
+        assert.ok(s >= 0 && s <= 5);
+      }
 });
 
 test("rating asigna etiquetas por tramos", () => {
@@ -61,9 +79,10 @@ test("rating asigna etiquetas por tramos", () => {
 });
 
 test("tideExtremes encuentra pleamar y bajamar con precisión sub-horaria", () => {
-  const H = 3600e3, period = 12.42;
+  const H = 3600e3,
+    period = 12.42;
   const times = Array.from({ length: 30 }, (_, i) => i * H);
-  const levels = times.map(t => 2 * Math.cos((2 * Math.PI * (t / H - 3.3)) / period));
+  const levels = times.map((t) => 2 * Math.cos((2 * Math.PI * (t / H - 3.3)) / period));
   const ext = tideExtremes(times, levels);
   assert.equal(ext[0].type, "high");
   assert.ok(Math.abs(ext[0].t / H - 3.3) < 0.1, `pleamar a las ${ext[0].t / H} h`);
@@ -73,7 +92,11 @@ test("tideExtremes encuentra pleamar y bajamar con precisión sub-horaria", () =
 });
 
 test("curveFromExtremes pasa por los extremos y es monótona entre ellos", () => {
-  const ext = [{ t: 0, h: 1, type: "low" }, { t: 6 * 3600e3, h: 4, type: "high" }, { t: 12 * 3600e3, h: 1, type: "low" }];
+  const ext = [
+    { t: 0, h: 1, type: "low" },
+    { t: 6 * 3600e3, h: 4, type: "high" },
+    { t: 12 * 3600e3, h: 1, type: "low" },
+  ];
   const { times, levels } = curveFromExtremes(ext, 0, 12 * 3600e3, 3600e3);
   assert.equal(levels[0], 1);
   assert.equal(levels[6], 4);
@@ -91,7 +114,10 @@ test("localToUtc convierte hora oficial, incluido el cambio de hora y Canarias",
   assert.equal(new Date(localToUtc("2026-10-25", "12:00", "Europe/Madrid")).toISOString(), "2026-10-25T11:00:00.000Z");
   assert.equal(new Date(localToUtc("2026-10-24", "12:00", "Europe/Madrid")).toISOString(), "2026-10-24T10:00:00.000Z");
   // Canarias va una hora por detrás.
-  assert.equal(new Date(localToUtc("2026-10-02", "04:49", "Atlantic/Canary")).toISOString(), "2026-10-02T03:49:00.000Z");
+  assert.equal(
+    new Date(localToUtc("2026-10-02", "04:49", "Atlantic/Canary")).toISOString(),
+    "2026-10-02T03:49:00.000Z",
+  );
 });
 
 test("formato en la zona horaria del spot", () => {
@@ -108,8 +134,11 @@ test("withCoefficients da 70 a una marea de carrera media y escala con la carrer
   const { withCoefficients, coefficientAt, coefLabel } = await import("../public/js/surf.js");
   const H = 3600e3;
   const ext = [
-    { t: 0, h: 1, type: "low" }, { t: 6 * H, h: 4, type: "high" }, { t: 12 * H, h: 1, type: "low" },
-    { t: 18 * H, h: 2.5, type: "high" }, { t: 24 * H, h: 1, type: "low" },
+    { t: 0, h: 1, type: "low" },
+    { t: 6 * H, h: 4, type: "high" },
+    { t: 12 * H, h: 1, type: "low" },
+    { t: 18 * H, h: 2.5, type: "high" },
+    { t: 24 * H, h: 1, type: "low" },
   ];
   const out = withCoefficients(ext, 3); // carrera media del puerto: 3 m
   assert.equal(out[1].coef, 70, "carrera 3 m = media");
@@ -117,8 +146,57 @@ test("withCoefficients da 70 a una marea de carrera media y escala con la carrer
   assert.equal(out[0].coef, undefined, "las bajamares no llevan coeficiente");
   assert.equal(coefficientAt(out, 7 * H), 70);
   assert.equal(coefficientAt(out, 17 * H), 35);
-  assert.equal(withCoefficients([{ t: 0, h: 9, type: "high" }, { t: 1, h: 0, type: "low" }], 3)[0].coef, 120, "se limita a 120");
+  assert.equal(
+    withCoefficients(
+      [
+        { t: 0, h: 9, type: "high" },
+        { t: 1, h: 0, type: "low" },
+      ],
+      3,
+    )[0].coef,
+    120,
+    "se limita a 120",
+  );
   assert.deepEqual(withCoefficients(ext, null), ext, "sin carrera media no hay coeficientes");
   assert.equal(coefLabel(100), "vivas fuertes");
   assert.equal(coefLabel(40), "mareas muertas");
+});
+
+test("sunTimes calcula salida, puesta y crepúsculo civil (dawn/dusk)", async () => {
+  const { sunTimes } = await import("../public/js/surf.js");
+  const t = Date.UTC(2026, 9, 4, 12, 0); // 4 de octubre de 2026
+  // Somo: lat 43.45, lon -3.74
+  const st = sunTimes(t, 43.45, -3.74);
+  assert.ok(st.rise > 0);
+  assert.ok(st.set > st.rise);
+  assert.ok(st.dawn < st.rise, "el amanecer civil (primera luz) es antes de la salida");
+  assert.ok(st.dusk > st.set, "el anochecer civil (última luz) es después de la puesta");
+  const diffDawn = (st.rise - st.dawn) / 60e3;
+  assert.ok(diffDawn >= 25 && diffDawn <= 40, `el crepúsculo dura ~30 min, fue ${diffDawn} min`);
+});
+
+test("moonPhase calcula iluminación, fase y mareas vivas/muertas", async () => {
+  const { moonPhase } = await import("../public/js/surf.js");
+  // 6 de enero de 2000 fue luna nueva exacta
+  const mNew = moonPhase(947182440000);
+  assert.equal(mNew.key, "new");
+  assert.equal(mNew.emoji, "🌑");
+  assert.ok(mNew.illumination <= 5);
+  assert.equal(mNew.isSpringTide, true);
+  assert.equal(mNew.tideType, "springTide");
+
+  // ~14.76 días después: luna llena
+  const mFull = moonPhase(947182440000 + 14.765 * 86400e3);
+  assert.equal(mFull.key, "full");
+  assert.equal(mFull.emoji, "🌕");
+  assert.ok(mFull.illumination >= 95);
+  assert.equal(mFull.isSpringTide, true);
+  assert.equal(mFull.tideType, "springTide");
+
+  // ~7.38 días después: cuarto creciente (mareas muertas)
+  const mQuarter = moonPhase(947182440000 + 7.38 * 86400e3);
+  assert.equal(mQuarter.key, "firstQuarter");
+  assert.equal(mQuarter.emoji, "🌓");
+  assert.equal(mQuarter.isNeapTide, true);
+  assert.equal(mQuarter.tideType, "neapTide");
 });

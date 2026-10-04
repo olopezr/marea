@@ -1,0 +1,581 @@
+/* ==========================================================================
+   MAREA PROMO V2 - CINEMATIC MOTION DESIGN SYSTEM
+   ========================================================================== */
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url("/fonts/archivo-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/figtree-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/jetbrainsmono-latin.woff2") format("woff2");
+}
+
+:root {
+  --bg-deep: #030d12;
+  --bg-card: rgba(8, 28, 36, 0.78);
+  --bg-card-border: rgba(69, 209, 223, 0.22);
+  --teal-glow: #45d1df;
+  --teal-neon: #56e6f5;
+  --teal-dim: #216874;
+  --coral-glow: #ff6a3d;
+  --coral-bright: #ff8559;
+  --gold-glow: #ffd15c;
+  --text-pure: #ffffff;
+  --text-muted: rgba(220, 240, 245, 0.72);
+  --font-display: "Archivo", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: "Figtree", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: var(--text-pure);
+  font-family: var(--font-body);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Lienzo de 1920x1080 centrado */
+#viewport {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 50% 35%, #0a2530 0%, #041117 65%, #02070a 100%);
+  overflow: hidden;
+}
+
+/* Capa de fondo canvas para radar, partículas y rejilla oceánica */
+#bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Efecto vignette cinemático superior e inferior */
+.vignette {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  z-index: 90;
+}
+
+/* Contenedor maestro de escenas */
+#stage {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  perspective: 1400px;
+}
+
+/* ==========================================================================
+   ELEMENTOS GLOBALES
+   ========================================================================== */
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 22px;
+  border-radius: 999px;
+  background: rgba(69, 209, 223, 0.12);
+  border: 1px solid rgba(69, 209, 223, 0.35);
+  color: var(--teal-neon);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 20px rgba(69, 209, 223, 0.18);
+}
+
+.badge-pill.coral {
+  background: rgba(255, 106, 61, 0.12);
+  border-color: rgba(255, 106, 61, 0.4);
+  color: var(--coral-bright);
+  box-shadow: 0 0 20px rgba(255, 106, 61, 0.2);
+}
+
+.dot-live {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 12px #34d399;
+  display: inline-block;
+}
+
+.title-huge {
+  font-family: var(--font-display);
+  font-size: 96px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-transform: uppercase;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 30%, #a4e7ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.6));
+}
+
+.subtitle {
+  font-family: var(--font-body);
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 20px;
+  max-width: 1100px;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   ESCENA 1: HOOK & SONAR TELEMETRY
+   ========================================================================== */
+
+#s-hook .radar-hud {
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  border: 1px dashed rgba(69, 209, 223, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotateX(60deg) translateZ(-60px);
+}
+
+#s-hook .radar-ring-2 {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  border: 1px solid rgba(69, 209, 223, 0.2);
+}
+
+#s-hook .radar-ring-3 {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 106, 61, 0.3);
+}
+
+.telemetry-card {
+  position: absolute;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  backdrop-filter: blur(16px);
+  padding: 16px 24px;
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(69, 209, 223, 0.15);
+  font-family: var(--font-mono);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 5;
+}
+
+.telemetry-card .loc {
+  color: var(--teal-neon);
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+}
+
+.telemetry-card .val {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.telemetry-card .sub {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   ESCENA 2: THE TITLE DROP (MAREA)
+   ========================================================================== */
+
+#s-drop .logo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.marea-logo-svg {
+  width: 220px;
+  height: 220px;
+  filter: drop-shadow(0 0 45px rgba(69, 209, 223, 0.45));
+}
+
+.brand-text {
+  font-family: var(--font-display);
+  font-size: 148px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  background: linear-gradient(180deg, #ffffff 40%, #b2eff5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.8));
+}
+
+.marea-tagline {
+  font-size: 34px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.marea-tagline span {
+  color: var(--coral-bright);
+}
+
+/* ==========================================================================
+   ESCENA 3: EL ALGORITMO DE VALORACIÓN (0 A 5)
+   ========================================================================== */
+
+#s-score .scoring-layout {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+  max-width: 1600px;
+  width: 90%;
+}
+
+.scoring-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.phone-mockup-3d {
+  width: 440px;
+  background: #0a1f28;
+  border: 4px solid #1a424e;
+  border-radius: 52px;
+  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.8), 0 0 60px rgba(69, 209, 223, 0.25);
+  overflow: hidden;
+  transform: rotateY(-18deg) rotateX(12deg);
+  transition: transform 0.2s;
+  padding: 24px;
+  position: relative;
+}
+
+.phone-island {
+  width: 110px;
+  height: 28px;
+  background: #000;
+  border-radius: 20px;
+  margin: 0 auto 20px auto;
+}
+
+.phone-card {
+  background: rgba(14, 38, 48, 0.85);
+  border: 1px solid rgba(69, 209, 223, 0.25);
+  border-radius: 24px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.phone-spot-name {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.rating-badge-large {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(255, 106, 61, 0.18), rgba(255, 106, 61, 0.05));
+  border: 1px solid rgba(255, 106, 61, 0.4);
+  padding: 16px 20px;
+  border-radius: 18px;
+}
+
+.rating-num {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--coral-bright);
+}
+
+.rating-stars {
+  color: var(--gold-glow);
+  font-size: 24px;
+  letter-spacing: 4px;
+}
+
+.factors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.factor-item {
+  background: rgba(6, 22, 28, 0.7);
+  border: 1px solid rgba(69, 209, 223, 0.18);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.factor-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.factor-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ==========================================================================
+   ESCENA 4: BOYAS REALES VS MODELOS (TELEMETRÍA)
+   ========================================================================== */
+
+#s-buoys .buoys-hud {
+  display: flex;
+  align-items: stretch;
+  gap: 48px;
+  margin-top: 40px;
+}
+
+.hud-card {
+  width: 540px;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 28px;
+  padding: 38px;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+.hud-card.active-buoy {
+  border-color: rgba(52, 211, 153, 0.45);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(52, 211, 153, 0.2);
+}
+
+.hud-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hud-card-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.hud-metrics {
+  display: flex;
+  gap: 32px;
+}
+
+.metric-big {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-num {
+  font-family: var(--font-display);
+  font-size: 58px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.metric-lbl {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.hud-verdict {
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #34d399;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   ESCENA 5: CURVA DE MAREA CONTINUA Y ASTRONOMÍA
+   ========================================================================== */
+
+#s-tide .tide-container {
+  width: 1400px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  margin-top: 20px;
+}
+
+.tide-card-glow {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 32px;
+  padding: 40px;
+  backdrop-filter: blur(24px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 50px rgba(69, 209, 223, 0.15);
+  position: relative;
+}
+
+.tide-curve-canvas {
+  width: 100%;
+  height: 240px;
+  display: block;
+}
+
+.daylight-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(6, 20, 26, 0.85);
+  border: 1px solid rgba(69, 209, 223, 0.2);
+  border-radius: 18px;
+  padding: 18px 32px;
+  font-family: var(--font-mono);
+  font-size: 17px;
+}
+
+.sun-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-pure);
+}
+
+.sun-item span {
+  color: var(--gold-glow);
+}
+
+/* ==========================================================================
+   ESCENA 6: MULTIPLATAFORMA & CIERRE
+   ========================================================================== */
+
+#s-climax .devices-showcase {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  margin: 30px 0;
+  perspective: 1200px;
+}
+
+.device-card-flat {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-card-border);
+  border-radius: 28px;
+  padding: 24px 36px;
+  backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+.device-card-flat svg {
+  width: 38px;
+  height: 38px;
+  fill: var(--teal-neon);
+}
+
+.cta-tagline {
+  font-family: var(--font-display);
+  font-size: 72px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: #fff;
+  margin-top: 10px;
+}
+
+.cta-tagline span {
+  color: var(--coral-bright);
+}
+
+.cta-specs {
+  display: flex;
+  gap: 36px;
+  margin-top: 24px;
+}
+
+.spec-chip {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+}

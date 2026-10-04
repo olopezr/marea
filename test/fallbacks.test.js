@@ -8,7 +8,7 @@ const { overview, detail } = await import("../server/conditions.js");
 const { spotById } = await import("../public/js/spots.js");
 
 test("si el IHM no responde se usa la marea del modelo y se indica", async () => {
-  const somo = (await overview()).spots.find(s => s.id === "somo");
+  const somo = (await overview()).spots.find((s) => s.id === "somo");
   assert.equal(somo.tide.source, "model");
   assert.equal(somo.tide.port, null);
   assert.ok(somo.tide.next, "sigue habiendo próxima pleamar o bajamar");

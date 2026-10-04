@@ -92,6 +92,8 @@ object Icons {
     val clear = svgIcon("clear", "M7 7l10 10M17 7L7 17", false, 2f)
     val map = svgIcon("map", "M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6zM9 4v14M15 6v14", false, 1.8f)
     val help = svgIcon("help", "M21 12a9 9 0 1 1-18 0a9 9 0 1 1 18 0zM9.6 9.3a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2.9-1.2 1.8v.4M12 17v.2", false, 1.8f)
+    val share = svgIcon("share", "M21 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM9 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 19a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98", false, 1.8f)
+    val video = svgIcon("video", "M23 7l-7 5 7 5V7zM1 5h15v14H1z", false, 1.8f)
 }
 
 // ---------- Piezas de interfaz ----------

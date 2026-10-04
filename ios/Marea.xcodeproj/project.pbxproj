@@ -11,7 +11,9 @@
 		087F63A81F52AB0925A2DAFD /* jetbrainsmono_semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AB76D6E813B82B572484A68B /* jetbrainsmono_semibold.ttf */; };
 		0B96E6E01118D9F070DB6732 /* archivo_expanded_extrabold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 981BE412D9DABA873CB21A90 /* archivo_expanded_extrabold.ttf */; };
 		18694193E6DC3F16296A51E8 /* SurfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2539C9026DB0A20145EF3B6F /* SurfTests.swift */; };
+		1F8D995CCA317C2450DC32C8 /* es in Resources */ = {isa = PBXBuildFile; fileRef = 153EA0412852F6C283591D2B /* es */; };
 		219E818A2F3442D9E76A4B7D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B78BAF8A7FE946E45414D942 /* Assets.xcassets */; };
+		2C0630C39E7A187C4280F93B /* MareaWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7D3894CA8F9FCC224BEC7FB6 /* MareaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		392830F8DC492AB0F514AF3E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 657577562EA9D1C3F8BF1BEA /* InfoPlist.strings */; };
 		3B5E3C9A865924FF2B5B9A2A /* spots.json in Resources */ = {isa = PBXBuildFile; fileRef = F73C12D79D905492551DC8E3 /* spots.json */; };
 		40448F3737A3EEB4EEB86F6A /* SpotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF59A4923543D78F702D82D0 /* SpotListView.swift */; };
@@ -22,7 +24,9 @@
 		6535E9D7472F0CF80BE6D5D1 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E056D38644F34FB24B51B82 /* Theme.swift */; };
 		6F16C6321FAB311FD5F6825D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A71B05F4DD95F4CE9D66602 /* Models.swift */; };
 		715FFCE70991D9EC1EAF9DA6 /* LocationPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69FB97C27F03F9158E2C8A40 /* LocationPanel.swift */; };
+		725C36673CF909D3F62C4954 /* MareaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F029246F979C39397829415 /* MareaWidget.swift */; };
 		777AE5248951454B0A865FA7 /* archivo_bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D8F79160A0F78706E0CD3E52 /* archivo_bold.ttf */; };
+		7D6567A1EE1FE0A171F6CBE8 /* spots.json in Resources */ = {isa = PBXBuildFile; fileRef = F73C12D79D905492551DC8E3 /* spots.json */; };
 		8D423EC13A83A8C838341621 /* BuoyPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D4A362900418CD714ED8AB /* BuoyPanel.swift */; };
 		9CC88C467F89B2C415EE7266 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6B2E0EBDD33613AA65E06E /* Help.swift */; };
 		AA8D7F13A20C879CF65263D1 /* figtree_semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DEFF00B7B65C01CDE68D244D /* figtree_semibold.ttf */; };
@@ -35,6 +39,7 @@
 		D132FC9AC77E47DAAE87617E /* overview.json in Resources */ = {isa = PBXBuildFile; fileRef = 957EBA19254A90A5D1DC25AD /* overview.json */; };
 		DCA99808303D4DF3486304B2 /* MareaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A711F4B677C2FC7F77B72F8 /* MareaApp.swift */; };
 		E16C81FBC211D70D2E2A9C30 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA54C16ABE08FDE05FE9D779 /* L10n.swift */; };
+		E1C5C8F50F8B474BAB98B379 /* en in Resources */ = {isa = PBXBuildFile; fileRef = 8D0617B4A68BBEA18445845B /* en */; };
 		FE191C7763F8BF46E954F07B /* Surf.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA5435032A453958E51BBD2 /* Surf.swift */; };
 		FE1D8D80C9748203F41C0492 /* SpotDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75FD649597B13B0DC90BA1CD /* SpotDetailView.swift */; };
 /* End PBXBuildFile section */
@@ -47,15 +52,36 @@
 			remoteGlobalIDString = FB72CA2E63642E5D264B126F;
 			remoteInfo = Marea;
 		};
+		521879F9A6B98DDF7B566ACD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D81DA1CECCA3362E088B853F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CADE8E07BE67AFA81DB2F5D5;
+			remoteInfo = MareaWidget;
+		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		E244012FC52492AE6AAB53C4 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2C0630C39E7A187C4280F93B /* MareaWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		07C852213312760399219879 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		0A71B05F4DD95F4CE9D66602 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		0B524B256A64198DBC8EB873 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0D602BBE9DC7C2BC1833652D /* Marea.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Marea.entitlements; sourceTree = "<group>"; };
+		153EA0412852F6C283591D2B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		2539C9026DB0A20145EF3B6F /* SurfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfTests.swift; sourceTree = "<group>"; };
-		41CCA01A183A45BDFA7EE3FD /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		393DA0F8B1C255A8FAEC0428 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		499CDFC330C3114BFCB9F4CC /* Marea.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Marea.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		51C91FDAE87C1AD70020FBDA /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		535ADBCE901EA37395C1917C /* somo.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = somo.json; sourceTree = "<group>"; };
@@ -66,8 +92,11 @@
 		75FD649597B13B0DC90BA1CD /* SpotDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDetailView.swift; sourceTree = "<group>"; };
 		77F4BABB3370856D8656D2AD /* TideChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TideChartView.swift; sourceTree = "<group>"; };
 		7A711F4B677C2FC7F77B72F8 /* MareaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MareaApp.swift; sourceTree = "<group>"; };
+		7D3894CA8F9FCC224BEC7FB6 /* MareaWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MareaWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7F029246F979C39397829415 /* MareaWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MareaWidget.swift; sourceTree = "<group>"; };
 		84477D9F0C1784E43CC4B6D2 /* jetbrainsmono_bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = jetbrainsmono_bold.ttf; sourceTree = "<group>"; };
 		8BF1C59134AD002CE1D5561D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		8D0617B4A68BBEA18445845B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		8E056D38644F34FB24B51B82 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8FBDBBAB1D06B7DB56B5F9E1 /* MareaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MareaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		957EBA19254A90A5D1DC25AD /* overview.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = overview.json; sourceTree = "<group>"; };
@@ -95,8 +124,17 @@
 			children = (
 				E4AC0C544C9D8467C1D33CDF /* Marea */,
 				3572A74B12D0E61C574DEA69 /* MareaTests */,
+				D76A93888344A05AF5B1B54A /* MareaWidget */,
 				73800002F9250489EFE67FD7 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		3108ABFCAAEC6BA4F4AC03DA /* en.lproj */ = {
+			isa = PBXGroup;
+			children = (
+				8D0617B4A68BBEA18445845B /* en */,
+			);
+			path = en.lproj;
 			sourceTree = "<group>";
 		};
 		3572A74B12D0E61C574DEA69 /* MareaTests */ = {
@@ -113,6 +151,7 @@
 			children = (
 				499CDFC330C3114BFCB9F4CC /* Marea.app */,
 				8FBDBBAB1D06B7DB56B5F9E1 /* MareaTests.xctest */,
+				7D3894CA8F9FCC224BEC7FB6 /* MareaWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -138,6 +177,23 @@
 				C79270814514148B56281753 /* MareaSinPush.entitlements */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		C55BAC451559B1696F79E908 /* es.lproj */ = {
+			isa = PBXGroup;
+			children = (
+				153EA0412852F6C283591D2B /* es */,
+			);
+			path = es.lproj;
+			sourceTree = "<group>";
+		};
+		D76A93888344A05AF5B1B54A /* MareaWidget */ = {
+			isa = PBXGroup;
+			children = (
+				393DA0F8B1C255A8FAEC0428 /* Info.plist */,
+				7F029246F979C39397829415 /* MareaWidget.swift */,
+			);
+			path = MareaWidget;
 			sourceTree = "<group>";
 		};
 		DB98A7A11D2D3E34FFDA0C6C /* Fonts */ = {
@@ -196,6 +252,8 @@
 				B78BAF8A7FE946E45414D942 /* Assets.xcassets */,
 				8BF1C59134AD002CE1D5561D /* PrivacyInfo.xcprivacy */,
 				F73C12D79D905492551DC8E3 /* spots.json */,
+				3108ABFCAAEC6BA4F4AC03DA /* en.lproj */,
+				C55BAC451559B1696F79E908 /* es.lproj */,
 				DB98A7A11D2D3E34FFDA0C6C /* Fonts */,
 				657577562EA9D1C3F8BF1BEA /* InfoPlist.strings */,
 				E17FD9B7C6EDC5339105165A /* Localizable.strings */,
@@ -225,16 +283,36 @@
 			productReference = 8FBDBBAB1D06B7DB56B5F9E1 /* MareaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		CADE8E07BE67AFA81DB2F5D5 /* MareaWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A794DA6B17E6053CEAFA942 /* Build configuration list for PBXNativeTarget "MareaWidget" */;
+			buildPhases = (
+				2F9754190159FA6F3B2A4B04 /* Sources */,
+				7B69C96CFC92196BEA5C162A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MareaWidget;
+			packageProductDependencies = (
+			);
+			productName = MareaWidget;
+			productReference = 7D3894CA8F9FCC224BEC7FB6 /* MareaWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		FB72CA2E63642E5D264B126F /* Marea */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D2AA40E0C4DAFFE1F71970AC /* Build configuration list for PBXNativeTarget "Marea" */;
 			buildPhases = (
 				393DB8965D33E7D631A1BB5A /* Sources */,
 				021AA2C8BE257D4B2931CE95 /* Resources */,
+				E244012FC52492AE6AAB53C4 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8F572C868AC6A36ED18630F1 /* PBXTargetDependency */,
 			);
 			name = Marea;
 			packageProductDependencies = (
@@ -253,10 +331,13 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					8D253FCA0F9B55A6421EB290 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = Q64BMK2CLH;
+					};
+					CADE8E07BE67AFA81DB2F5D5 = {
+						DevelopmentTeam = Q64BMK2CLH;
 					};
 					FB72CA2E63642E5D264B126F = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = Q64BMK2CLH;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -278,6 +359,7 @@
 			targets = (
 				FB72CA2E63642E5D264B126F /* Marea */,
 				8D253FCA0F9B55A6421EB290 /* MareaTests */,
+				CADE8E07BE67AFA81DB2F5D5 /* MareaWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -301,6 +383,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7B69C96CFC92196BEA5C162A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1F8D995CCA317C2450DC32C8 /* es in Resources */,
+				E1C5C8F50F8B474BAB98B379 /* en in Resources */,
+				7D6567A1EE1FE0A171F6CBE8 /* spots.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EF02A488F57DE2539EF983F8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -313,6 +405,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2F9754190159FA6F3B2A4B04 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				725C36673CF909D3F62C4954 /* MareaWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		364DF286E48C1E25AECA5541 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -347,6 +447,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		8F572C868AC6A36ED18630F1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CADE8E07BE67AFA81DB2F5D5 /* MareaWidget */;
+			targetProxy = 521879F9A6B98DDF7B566ACD /* PBXContainerItemProxy */;
+		};
 		FD5BBA143BDA2E9E4A2A5385 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = FB72CA2E63642E5D264B126F /* Marea */;
@@ -367,8 +472,8 @@
 		E17FD9B7C6EDC5339105165A /* Localizable.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
-				07C852213312760399219879 /* en */,
-				41CCA01A183A45BDFA7EE3FD /* es */,
+				8D0617B4A68BBEA18445845B /* en */,
+				153EA0412852F6C283591D2B /* es */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
@@ -392,6 +497,24 @@
 				MAREA_API_BASE = "https://marea.onrender.com";
 				PRODUCT_BUNDLE_IDENTIFIER = es.marea.app;
 				PRODUCT_NAME = Marea;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		1BCED99D9C26CC8E4922C68C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MareaWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MAREA_API_BASE = "https://marea.onrender.com";
+				PRODUCT_BUNDLE_IDENTIFIER = es.marea.app.widget;
+				PRODUCT_NAME = MareaWidget;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -433,7 +556,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = Q64BMK2CLH;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -494,7 +617,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = Marea/App/Marea.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -503,9 +625,27 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MAREA_API_BASE = "http://localhost:8080";
+				MAREA_API_BASE = "https://marea.onrender.com";
 				PRODUCT_BUNDLE_IDENTIFIER = es.marea.app;
 				PRODUCT_NAME = Marea;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F61FEF97D5BC7835009983B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MareaWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MAREA_API_BASE = "http://localhost:8080";
+				PRODUCT_BUNDLE_IDENTIFIER = es.marea.app.widget;
+				PRODUCT_NAME = MareaWidget;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -547,7 +687,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = Q64BMK2CLH;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -580,6 +720,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0A794DA6B17E6053CEAFA942 /* Build configuration list for PBXNativeTarget "MareaWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F61FEF97D5BC7835009983B0 /* Debug */,
+				1BCED99D9C26CC8E4922C68C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		3ABDB9BF6C1164DEE38F839F /* Build configuration list for PBXProject "Marea" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

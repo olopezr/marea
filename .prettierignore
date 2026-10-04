@@ -1,0 +1,12 @@
+node_modules/
+data/
+ios/
+android/
+promo/
+promo-v2/
+package-lock.json
+public/vendor/
+public/fonts/
+public/icons/
+*.webmanifest
+public/js/strings.js

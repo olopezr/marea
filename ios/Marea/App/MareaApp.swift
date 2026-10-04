@@ -59,6 +59,10 @@ struct RootView: View {
                 }
         }
         .tint(Theme.accent)
+        // Enlace del widget: marea://spot/<id>
+        .onOpenURL { url in
+            if url.scheme == "marea", url.host == "spot" { app.open(url: "/#/spot/\(url.lastPathComponent)") }
+        }
         .overlay(alignment: .bottom) { ToastView(message: app.toast) }
         .task { await app.alerts.load() }
     }

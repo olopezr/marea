@@ -1,0 +1,46 @@
+services:
+  web:
+    build: .
+    container_name: marea-web
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DATA_DIR=/data
+      - ENABLE_SCHEDULER=${ENABLE_SCHEDULER:-true}
+    volumes:
+      - marea-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Worker dedicado opcional para escalado multi-instancia
+  # Para arrancar ambos: docker compose --profile worker up
+  worker:
+    build: .
+    container_name: marea-worker
+    restart: unless-stopped
+    command: ["node", "server/worker.js"]
+    profiles:
+      - worker
+      - full
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/data
+      - WORKER_RUN_ON_START=true
+    volumes:
+      - marea-data:/data
+
+volumes:
+  marea-data:
+    name: marea-data

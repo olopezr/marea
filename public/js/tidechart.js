@@ -3,40 +3,50 @@
 import { tideAt, coefficientAt, hhmm, fmt } from "./surf.js";
 import { t as tr } from "./i18n.js";
 
-const coefLabel = c => tr(c >= 95 ? "coef.springStrong" : c >= 70 ? "coef.spring" : c >= 45 ? "coef.mean" : "coef.neap");
+const esc = (s) =>
+  String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-const W = 340, H = 176, TOP = 26, BOTTOM = 40;
+const coefLabel = (c) =>
+  tr(c >= 95 ? "coef.springStrong" : c >= 70 ? "coef.spring" : c >= 45 ? "coef.mean" : "coef.neap");
+
+const W = 340,
+  H = 176,
+  TOP = 26,
+  BOTTOM = 40;
 const STEP = 15 * 60e3;
 
 // Valor interpolado de una serie [[t, v], ...] (null si cae en un hueco mayor que maxGap).
 function valueAt(points, t, maxGap = 2 * 3600e3) {
   if (!points?.length) return null;
   for (let i = 0; i < points.length - 1; i++) {
-    const [t0, v0] = points[i], [t1, v1] = points[i + 1];
+    const [t0, v0] = points[i],
+      [t1, v1] = points[i + 1];
     if (t >= t0 && t <= t1) return t1 - t0 > maxGap ? null : v0 + ((v1 - v0) * (t - t0)) / (t1 - t0);
   }
   return null;
 }
 
-const duration = ms => {
-  const m = Math.round(ms / 60e3), h = Math.floor(m / 60);
+const duration = (ms) => {
+  const m = Math.round(ms / 60e3),
+    h = Math.floor(m / 60);
   return h ? tr("duration.hm", h, String(m % 60).padStart(2, "0")) : tr("duration.m", m);
 };
 // Cuánto suben o bajan el mar el viento y la presión (residuo meteorológico de Puertos del Estado).
-const surgeText = m => {
+const surgeText = (m) => {
   if (m == null) return tr("surge.none");
   const cm = Math.abs(Math.round(m * 100));
   return cm < 3 ? tr("surge.flat") : tr(m > 0 ? "surge.up" : "surge.down", cm);
 };
 
 function geometry(day) {
-  const vals = [...day.points.map(p => p[1]), ...(day.observed?.points ?? []).map(p => p[1])];
-  const min = Math.min(...vals) - 0.2, max = Math.max(...vals) + 0.2;
+  const vals = [...day.points.map((p) => p[1]), ...(day.observed?.points ?? []).map((p) => p[1])];
+  const min = Math.min(...vals) - 0.2,
+    max = Math.max(...vals) + 0.2;
   const span = day.to - day.from;
   return {
-    x: t => ((t - day.from) / span) * W,
-    y: v => TOP + (1 - (v - min) / (max - min)) * (H - TOP - BOTTOM),
-    t: x => day.from + (x / W) * span,
+    x: (t) => ((t - day.from) / span) * W,
+    y: (v) => TOP + (1 - (v - min) / (max - min)) * (H - TOP - BOTTOM),
+    t: (x) => day.from + (x / W) * span,
   };
 }
 
@@ -51,16 +61,24 @@ export function tideChartHTML(day, sun, tz) {
     ? `<rect x="0" y="${TOP - 10}" width="${Math.max(0, g.x(sun.rise))}" height="${H - TOP - BOTTOM + 10}" class="night"/>
        <rect x="${g.x(sun.set)}" y="${TOP - 10}" width="${Math.max(0, W - g.x(sun.set))}" height="${H - TOP - BOTTOM + 10}" class="night"/>`
     : "";
-  const ext = day.ext.filter(e => e.t >= day.from && e.t < day.to);
-  const labels = ext.map(e => `<circle cx="${g.x(e.t)}" cy="${g.y(e.h)}" r="3.5" class="ext"/>
-    <text x="${Math.min(W - 26, Math.max(26, g.x(e.t)))}" y="${e.type === "high" ? g.y(e.h) - 9 : g.y(e.h) + 17}" text-anchor="middle" class="lbl">${hhmm(e.t, tz)} · ${fmt(e.h)}</text>`).join("");
+  const ext = day.ext.filter((e) => e.t >= day.from && e.t < day.to);
+  const labels = ext
+    .map(
+      (e) => `<circle cx="${g.x(e.t)}" cy="${g.y(e.h)}" r="3.5" class="ext"/>
+    <text x="${Math.min(W - 26, Math.max(26, g.x(e.t)))}" y="${e.type === "high" ? g.y(e.h) - 9 : g.y(e.h) + 17}" text-anchor="middle" class="lbl">${hhmm(e.t, tz)} · ${fmt(e.h)}</text>`,
+    )
+    .join("");
   const obsPts = day.observed?.points ?? [];
   const obs = obsPts.length ? `<path d="${path(obsPts, g)}" class="obs-line"/>` : "";
   // Etiqueta "medido" al principio de la línea medida, encima de ella, donde no tapa los extremos.
   const first = obsPts.find(([t]) => t >= day.from + 20 * 60e3);
-  const obsLabel = first ? `<text x="${g.x(first[0]) + 4}" y="${Math.max(12, g.y(first[1]) - 8)}" class="obs-lbl">${tr("chart.measuredLabel")}</text>` : "";
-  const ticks = [0, 6, 12, 18].map(hh => `<text x="${(hh / 24) * W + 2}" y="${H - 4}" class="axis">${String(hh).padStart(2, "0")}h</text>`).join("");
-  const coefs = ext.filter(e => e.coef != null);
+  const obsLabel = first
+    ? `<text x="${g.x(first[0]) + 4}" y="${Math.max(12, g.y(first[1]) - 8)}" class="obs-lbl">${tr("chart.measuredLabel")}</text>`
+    : "";
+  const ticks = [0, 6, 12, 18]
+    .map((hh) => `<text x="${(hh / 24) * W + 2}" y="${H - 4}" class="axis">${String(hh).padStart(2, "0")}h</text>`)
+    .join("");
+  const coefs = ext.filter((e) => e.coef != null);
 
   return `
     <div class="tide-readout" aria-live="polite"></div>
@@ -81,9 +99,9 @@ export function tideChartHTML(day, sun, tz) {
     </div>
     <div class="tide-legend small muted">
       <span><i class="sw sw-pred"></i>${tr("legend.prediction")}</span>
-      ${obs ? `<span><i class="sw sw-obs"></i>${tr("legend.measuredAt", day.observed.gauge)}${day.observed.samePort === false ? tr("legend.away", day.observed.distKm) : ""}</span>` : ""}
+      ${obs ? `<span><i class="sw sw-obs"></i>${esc(tr("legend.measuredAt", day.observed.gauge))}${day.observed.samePort === false ? tr("legend.away", day.observed.distKm) : ""}</span>` : ""}
       <span><i class="sw sw-now"></i>${tr("legend.now")}</span>
-      ${coefs.length ? `<span>${tr("legend.coefs", coefs.map(e => `<b>${e.coef}</b> (${hhmm(e.t, tz)})`).join(" · "))}</span>` : ""}
+      ${coefs.length ? `<span>${tr("legend.coefs", coefs.map((e) => `<b>${e.coef}</b> (${hhmm(e.t, tz)})`).join(" · "))}</span>` : ""}
     </div>`;
 }
 
@@ -96,7 +114,7 @@ export function bindTideChart(root, day, tz, now) {
   const dot = svg.querySelector("[data-dot]");
   const obsDot = svg.querySelector("[data-obs-dot]");
   const nowLine = svg.querySelector("[data-now]");
-  const clampT = t => Math.min(day.to - 60e3, Math.max(day.from, t));
+  const clampT = (t) => Math.min(day.to - 60e3, Math.max(day.from, t));
 
   if (now >= day.from && now < day.to) nowLine.setAttribute("transform", `translate(${g.x(now)},0)`);
   else nowLine.remove();
@@ -105,7 +123,11 @@ export function bindTideChart(root, day, tz, now) {
 
   function show(t) {
     current = clampT(t);
-    const at = tideAt(day.points.map(p => p[0]), day.points.map(p => p[1]), current);
+    const at = tideAt(
+      day.points.map((p) => p[0]),
+      day.points.map((p) => p[1]),
+      current,
+    );
     if (!at) return;
     const x = g.x(current);
     cursor.setAttribute("transform", `translate(${x},0)`);
@@ -115,11 +137,14 @@ export function bindTideChart(root, day, tz, now) {
     if (measured != null) obsDot.setAttribute("cy", g.y(measured));
 
     const coef = coefficientAt(day.ext, current);
-    const next = day.ext.find(e => e.t > current);
+    const next = day.ext.find((e) => e.t > current);
     const residual = valueAt(day.surge?.points, current);
     const isNow = Math.abs(current - now) < 8 * 60e3;
     svg.setAttribute("aria-valuenow", Math.round((current - day.from) / 60e3));
-    svg.setAttribute("aria-valuetext", tr("chart.value", hhmm(current, tz), fmt(at.h), tr(at.rising ? "chart.rising" : "chart.falling")));
+    svg.setAttribute(
+      "aria-valuetext",
+      tr("chart.value", hhmm(current, tz), fmt(at.h), tr(at.rising ? "chart.rising" : "chart.falling")),
+    );
 
     readout.innerHTML = `
       <div class="ro-main">
@@ -134,21 +159,39 @@ export function bindTideChart(root, day, tz, now) {
       </div>`;
   }
 
-  const fromPointer = e => {
+  const fromPointer = (e) => {
     const r = svg.getBoundingClientRect();
     return g.t(((e.clientX - r.left) / r.width) * W);
   };
   let dragging = false;
-  svg.addEventListener("pointerdown", e => { dragging = true; svg.setPointerCapture(e.pointerId); show(fromPointer(e)); });
-  svg.addEventListener("pointermove", e => { if (dragging || e.pointerType === "mouse") show(fromPointer(e)); });
-  const end = e => { dragging = false; if (svg.hasPointerCapture?.(e.pointerId)) svg.releasePointerCapture(e.pointerId); };
+  svg.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    svg.setPointerCapture(e.pointerId);
+    show(fromPointer(e));
+  });
+  svg.addEventListener("pointermove", (e) => {
+    if (dragging || e.pointerType === "mouse") show(fromPointer(e));
+  });
+  const end = (e) => {
+    dragging = false;
+    if (svg.hasPointerCapture?.(e.pointerId)) svg.releasePointerCapture(e.pointerId);
+  };
   svg.addEventListener("pointerup", end);
   svg.addEventListener("pointercancel", end);
-  svg.addEventListener("keydown", e => {
+  svg.addEventListener("keydown", (e) => {
     const moves = { ArrowLeft: -STEP, ArrowRight: STEP, PageDown: -3600e3, PageUp: 3600e3 };
-    if (e.key in moves) { e.preventDefault(); show(current + moves[e.key]); }
-    if (e.key === "Home") { e.preventDefault(); show(day.from); }
-    if (e.key === "End") { e.preventDefault(); show(day.to); }
+    if (e.key in moves) {
+      e.preventDefault();
+      show(current + moves[e.key]);
+    }
+    if (e.key === "Home") {
+      e.preventDefault();
+      show(day.from);
+    }
+    if (e.key === "End") {
+      e.preventDefault();
+      show(day.to);
+    }
   });
 
   show(current);

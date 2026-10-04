@@ -23,6 +23,13 @@ actor APIClient {
         return URL(string: raw.isEmpty ? "https://marea.onrender.com" : raw)!
     }()
 
+    static func spotWebURL(_ id: String) -> URL {
+        let base = baseURL.absoluteString.hasSuffix("/")
+            ? String(baseURL.absoluteString.dropLast())
+            : baseURL.absoluteString
+        return URL(string: "\(base)/#/spot/\(id)") ?? baseURL
+    }
+
     private static let cacheVersion = "api-v5"
     private let freshMs: Double = 5 * 60_000
     private let session: URLSession

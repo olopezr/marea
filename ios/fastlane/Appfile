@@ -1,0 +1,3 @@
+app_identifier("es.marea.app")
+apple_id(ENV["APPLE_ID"] || "dev@example.com")
+team_id(ENV["DEVELOPMENT_TEAM"] || ENV["APNS_TEAM_ID"] || "")

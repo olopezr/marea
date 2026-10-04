@@ -13,6 +13,7 @@ struct Spot: Codable, Sendable, Identifiable, Hashable {
     let facing: Double
     let tide: String
     let tz: String
+    var webcam: String? = nil
 
     static let all: [Spot] = {
         guard let url = Bundle.main.url(forResource: "spots", withExtension: "json"),
@@ -170,6 +171,8 @@ struct UVToday: Codable, Sendable, Hashable {
 struct Sun: Codable, Sendable, Hashable {
     let rise: Double
     let set: Double
+    var dawn: Double? = nil
+    var dusk: Double? = nil
 }
 
 struct ClosestBuoy: Codable, Sendable, Hashable {
@@ -292,6 +295,10 @@ struct DayCell: Codable, Sendable, Hashable {
 struct BestHour: Codable, Sendable, Hashable {
     let t: Double
     let score: Double
+    var h: Double? = nil
+    var T: Double? = nil
+    var wind: Double? = nil
+    var windType: String? = nil
 }
 
 struct Day: Codable, Sendable, Hashable {

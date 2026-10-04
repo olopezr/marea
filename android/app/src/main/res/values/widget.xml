@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Símbolos del widget, iguales en todos los idiomas. -->
+<resources>
+    <string name="widget_placeholder" translatable="false">–</string>
+    <string name="widget_unit_m" translatable="false">m</string>
+</resources>

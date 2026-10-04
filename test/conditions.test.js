@@ -9,13 +9,13 @@ const { spotById, SPOTS } = await import("../public/js/spots.js");
 test("overview combina previsión y marea oficial sin consultar PORTUS", async () => {
   const o = await overview();
   assert.equal(o.spots.length, SPOTS.length);
-  const somo = o.spots.find(s => s.id === "somo");
+  const somo = o.spots.find((s) => s.id === "somo");
   assert.equal(somo.tide.source, "ihm");
   assert.equal(somo.tide.port.name, "Santander");
   assert.ok(somo.tide.next && somo.tide.next.t > Date.now());
   assert.ok(somo.score >= 3, `terral suave con 1,8 m a 12 s debería ser bueno, fue ${somo.score}`);
   assert.equal(somo.buoy, undefined, "la lista no trae boya");
-  assert.equal(calls.filter(u => u.includes("portus.puertos.es")).length, 0, "la lista no llama a PORTUS");
+  assert.equal(calls.filter((u) => u.includes("portus.puertos.es")).length, 0, "la lista no llama a PORTUS");
 });
 
 test("la boya se carga al abrir el detalle", async () => {
@@ -40,7 +40,11 @@ test("las fuentes se piden una vez y se reutilizan desde la caché", async () =>
   await overview();
   assert.equal(calls.length, before, "una segunda llamada no debe tocar la red");
   // Las peticiones de un solo punto son la previsión en la posición de la boya (detalle).
-  assert.equal(calls.filter(u => u.includes("open-meteo") && new URL(u).searchParams.get("latitude").includes(",")).length, 2, "una petición por API para todos los spots");
+  assert.equal(
+    calls.filter((u) => u.includes("open-meteo") && new URL(u).searchParams.get("latitude").includes(",")).length,
+    2,
+    "una petición por API para todos los spots",
+  );
 });
 
 test("detail devuelve curva del día, 24 h y 7 días ordenados", async () => {
@@ -50,7 +54,7 @@ test("detail devuelve curva del día, 24 h y 7 días ordenados", async () => {
   assert.ok(d.hours.length >= 24 && d.hours.length <= 25);
   assert.ok(d.days.length >= 6 && d.days.length <= 7);
   for (let i = 1; i < d.days.length; i++) assert.ok(d.days[i].rise > d.days[i - 1].rise);
-  assert.ok(d.days.every(day => day.cells.length > 0 && day.best.score >= 0));
+  assert.ok(d.days.every((day) => day.cells.length > 0 && day.best.score >= 0));
   assert.ok(d.sun && d.sun.rise < d.sun.set);
 });
 
@@ -64,8 +68,8 @@ test("las horas del IHM se interpretan en UTC", async () => {
 
 test("detail añade coeficientes, efecto meteorológico, nivel medido y meteo de Portus", async () => {
   const d = await detail(spotById.somo);
-  const highs = d.tideDay.ext.filter(e => e.type === "high");
-  assert.ok(highs.length && highs.every(e => e.coef >= 20 && e.coef <= 120));
+  const highs = d.tideDay.ext.filter((e) => e.type === "high");
+  assert.ok(highs.length && highs.every((e) => e.coef >= 20 && e.coef <= 120));
   assert.ok(d.tide.coef >= 20);
   assert.equal(d.tideDay.surge.beach, "Somo (Ribamontán al Mar)", "cierra el paréntesis que falta en PORTUS");
   assert.ok(d.tideDay.surge.points.every(([, r]) => r === 0.12));
@@ -78,7 +82,10 @@ test("detail añade coeficientes, efecto meteorológico, nivel medido y meteo de
   // Cada 5 min desde una hora antes de empezar el día (no un número fijo: a medianoche hay pocas lecturas).
   const obs = d.tideDay.observed.points;
   assert.ok(obs.length >= 12, "al menos una hora de lecturas");
-  assert.ok(obs.slice(1).every(([t], i) => Math.abs(t - obs[i][0] - 5 * 60e3) < 1000), "serie del mareógrafo cada 5 min");
+  assert.ok(
+    obs.slice(1).every(([t], i) => Math.abs(t - obs[i][0] - 5 * 60e3) < 1000),
+    "serie del mareógrafo cada 5 min",
+  );
   assert.ok(Math.abs(d.meteo.wind.wind - 9.7) < 0.1, "5 m/s son 9,7 nudos");
   assert.ok(Math.abs(d.meteo.wind.gust - 15.6) < 0.1);
   assert.equal(d.meteo.air.air, 18.5, "se salta la estación más cercana que marca 0 °C");
@@ -90,20 +97,37 @@ test("las mareas del IHM se guardan en disco para no volver a pedirlas", async (
   const fs = await import("node:fs");
   const path = await import("node:path");
   const files = fs.readdirSync(path.join(process.env.DATA_DIR, "ihm"));
-  assert.ok(files.some(f => /^20-\d{6}\.json$/.test(f)), `meses guardados: ${files.join(", ")}`);
+  assert.ok(
+    files.some((f) => /^20-\d{6}\.json$/.test(f)),
+    `meses guardados: ${files.join(", ")}`,
+  );
 });
 
 test("cada boya trae lo previsto por el modelo en su posición", async () => {
   const somo = await detail(spotById.somo);
-  assert.deepEqual(somo.buoy.predicted, { h: 2, Tp: 14, dir: 315 }, "la dirección se convierte a 'de dónde viene' (135 + 180)");
+  assert.deepEqual(
+    somo.buoy.predicted,
+    { h: 2, Tp: 14, dir: 315 },
+    "la dirección se convierte a 'de dónde viene' (135 + 180)",
+  );
 });
 
 test("el detalle incluye el índice UV de hoy (ahora y máximo con su hora)", async () => {
   const { uvToday } = await import("../server/conditions.js");
-  const H = 3600e3, from = Date.UTC(2026, 9, 3);
+  const H = 3600e3,
+    from = Date.UTC(2026, 9, 3);
   const hours = Array.from({ length: 24 }, (_, i) => ({ t: from + i * H, uv: Math.max(0, 6 - Math.abs(i - 13)) }));
   assert.deepEqual(uvToday(hours, from + 10.5 * H, from, from + 24 * H), { now: 3, max: 6, maxT: from + 13 * H });
-  assert.equal(uvToday(hours.map(h => ({ ...h, uv: null })), from, from, from + 24 * H), null, "sin datos (previsión de respaldo)");
+  assert.equal(
+    uvToday(
+      hours.map((h) => ({ ...h, uv: null })),
+      from,
+      from,
+      from + 24 * H,
+    ),
+    null,
+    "sin datos (previsión de respaldo)",
+  );
   const d = await detail(spotById.somo);
   assert.equal(d.uv.max, 6, "llega desde Open-Meteo hasta el detalle");
 });
@@ -117,19 +141,23 @@ test("un spot del Mediterráneo no usa un puerto del IHM lejano: marea del model
 
 test("reconcile: quita el efecto viento/presión si empeora el ajuste y realinea un cero distinto", async () => {
   const { reconcile } = await import("../server/conditions.js");
-  const H = 3600e3, t0 = Date.UTC(2026, 9, 3);
+  const H = 3600e3,
+    t0 = Date.UTC(2026, 9, 3);
   const times = Array.from({ length: 25 }, (_, i) => t0 + i * H);
   const tide = { times, levels: times.map((_, i) => 2 + 1.5 * Math.sin(i / 2)) };
   const pts = (f) => times.map((t, i) => [t, f(i)]);
   // Lo medido coincide con la predicción salvo un cero 35 cm más bajo; el modelo de viento dice +20 cm.
-  const obs = { gauge: "Prueba", points: pts(i => tide.levels[i] - 0.35) };
-  const badSurge = { beach: "X", points: pts(i => 0.2 * Math.sin(i)) };
+  const obs = { gauge: "Prueba", points: pts((i) => tide.levels[i] - 0.35) };
+  const badSurge = { beach: "X", points: pts((i) => 0.2 * Math.sin(i)) };
   const r1 = reconcile(tide, badSurge, obs);
   assert.equal(r1.surge, null, "el efecto viento/presión que no cuadra con lo medido se descarta");
-  assert.ok(Math.abs(r1.observed.points[5][1] - tide.levels[5]) < 0.01, "lo medido se realinea al cero de la predicción");
+  assert.ok(
+    Math.abs(r1.observed.points[5][1] - tide.levels[5]) < 0.01,
+    "lo medido se realinea al cero de la predicción",
+  );
   // Si el efecto viento/presión explica lo medido, se mantiene y no se toca el medido.
-  const surge = { beach: "X", points: pts(i => 0.1 + 0.05 * Math.cos(i)) };
-  const obs2 = { gauge: "Prueba", points: pts(i => tide.levels[i] + 0.1 + 0.05 * Math.cos(i)) };
+  const surge = { beach: "X", points: pts((i) => 0.1 + 0.05 * Math.cos(i)) };
+  const obs2 = { gauge: "Prueba", points: pts((i) => tide.levels[i] + 0.1 + 0.05 * Math.cos(i)) };
   const r2 = reconcile(tide, surge, obs2);
   assert.equal(r2.surge, surge);
   assert.equal(r2.observed, obs2);
@@ -147,9 +175,17 @@ test("solo se usan boyas en la ventana de oleaje de la playa", async () => {
   const { inSwellWindow } = await import("../server/sources/portus.js");
   const conil = { lat: 36.282, lon: -6.105, facing: 250 };
   assert.equal(inSwellWindow(conil, { lat: 36.0, lon: -5.6, distKm: 56 }), false, "Tarifa, dentro del Estrecho");
-  assert.equal(inSwellWindow(conil, { lat: 36.49, lon: -6.96, distKm: 80 }), true, "Golfo de Cádiz, mar abierto delante");
+  assert.equal(
+    inSwellWindow(conil, { lat: 36.49, lon: -6.96, distKm: 80 }),
+    true,
+    "Golfo de Cádiz, mar abierto delante",
+  );
   const confital = { lat: 28.158, lon: -15.44, facing: 330 };
-  assert.equal(inSwellWindow(confital, { lat: 28.05, lon: -15.39, distKm: 13 }), false, "Las Palmas Este, en la otra costa");
+  assert.equal(
+    inSwellWindow(confital, { lat: 28.05, lon: -15.39, distKm: 13 }),
+    false,
+    "Las Palmas Este, en la otra costa",
+  );
   const salinas = { lat: 43.578, lon: -5.958, facing: 340 };
   assert.equal(inSwellWindow(salinas, { lat: 43.75, lon: -6.18, distKm: 26 }), true, "Cabo de Peñas, mar abierto");
 });
@@ -157,7 +193,10 @@ test("solo se usan boyas en la ventana de oleaje de la playa", async () => {
 test("la boya trae sus últimas 48 h, la tendencia y la previsión en su posición", async () => {
   const b = (await detail(spotById.somo)).buoy;
   assert.ok(b.history.length >= 40, "lecturas horarias de dos días");
-  assert.ok(b.history.every(([t], i) => i === 0 || t > b.history[i - 1][0]), "ordenadas");
+  assert.ok(
+    b.history.every(([t], i) => i === 0 || t > b.history[i - 1][0]),
+    "ordenadas",
+  );
   assert.equal(b.trend.key, "up", "de 2 a 2,5 m en 6 h es subir");
   assert.ok(b.model.length > 48, "previsión de hace 48 h a dentro de 24 h");
   // Previsión simulada constante de 1,8 m frente a una boya entre 1,5 y 2,5 m: hay error medio.
@@ -168,8 +207,9 @@ test("la boya trae sus últimas 48 h, la tendencia y la previsión en su posici�
 
 test("tendencia del oleaje", async () => {
   const { trend } = await import("../server/sources/portus.js");
-  const now = Date.now(), H = 3600e3;
-  const rows = hs => hs.map((h, i) => ({ t: now - (hs.length - 1 - i) * H, h }));
+  const now = Date.now(),
+    H = 3600e3;
+  const rows = (hs) => hs.map((h, i) => ({ t: now - (hs.length - 1 - i) * H, h }));
   assert.equal(trend(rows([1, 1, 1, 1, 1, 1, 1.1, 1.1])).key, "steady");
   assert.equal(trend(rows([2, 2, 2, 2, 2, 2, 1.5, 1.5])).key, "down");
   assert.equal(trend(rows([1])), null, "sin lecturas de hace 6 h no hay tendencia");

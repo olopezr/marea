@@ -1,0 +1,25 @@
+default_platform(:android)
+
+platform :android do
+  desc "Ejecuta los tests unitarios de Android"
+  lane :test do
+    gradle(task: "testDebugUnitTest")
+  end
+
+  desc "Compila el APK y App Bundle de Release"
+  lane :build do
+    gradle(
+      tasks: ["assembleRelease", "bundleRelease"]
+    )
+  end
+
+  desc "Sube una nueva versión a Google Play (track interno / beta)"
+  lane :beta do
+    test
+    build
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab"
+    )
+  end
+end

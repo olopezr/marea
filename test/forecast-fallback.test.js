@@ -10,7 +10,7 @@ const { spotById } = await import("../public/js/spots.js");
 test("si Open-Meteo responde 429 se usa la previsión de Puertos del Estado", async () => {
   const o = await overview();
   assert.equal(o.forecastSource, "portus");
-  const somo = o.spots.find(s => s.id === "somo");
+  const somo = o.spots.find((s) => s.id === "somo");
   assert.ok(somo, "Somo tiene previsión");
   assert.equal(somo.now.h, 2, "usa el punto de mar abierto, no el del interior del puerto (0,1 m)");
   assert.equal(somo.now.dir, 310, "domina el mar de fondo: su dirección convertida a de dónde viene (130 + 180)");
@@ -27,7 +27,9 @@ test("el detalle con previsión de respaldo trae horas de luz calculadas y menos
 });
 
 test("tras un 429 no se vuelve a llamar a Open-Meteo en cada petición", async () => {
-  const before = calls.filter(u => u.includes("open-meteo")).length;
-  await overview(); await overview(); await detail(spotById.somo);
-  assert.equal(calls.filter(u => u.includes("open-meteo")).length, before, "Open-Meteo queda en pausa");
+  const before = calls.filter((u) => u.includes("open-meteo")).length;
+  await overview();
+  await overview();
+  await detail(spotById.somo);
+  assert.equal(calls.filter((u) => u.includes("open-meteo")).length, before, "Open-Meteo queda en pausa");
 });

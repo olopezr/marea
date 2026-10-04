@@ -8,7 +8,11 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 
 test("los textos generados de la web y las apps están al día con i18n/strings.json", () => {
   for (const [file, content] of Object.entries(outputs())) {
-    assert.equal(fs.readFileSync(path.join(ROOT, file), "utf8"), content, `${file} desactualizado: ejecuta node scripts/i18n.mjs`);
+    assert.equal(
+      fs.readFileSync(path.join(ROOT, file), "utf8"),
+      content,
+      `${file} desactualizado: ejecuta node scripts/i18n.mjs`,
+    );
   }
 });
 
@@ -25,7 +29,10 @@ test("la web y las apps solo usan claves que existen", () => {
       if (!fs.statSync(file).isFile() || !/\.(js|swift|kt)$/.test(file) || file.endsWith("strings.js")) continue;
       for (const m of fs.readFileSync(file, "utf8").matchAll(re)) {
         if (m[1] === "app_name") continue;
-        assert.ok(keys.has(m[1]) || keys.has(m[1].replace(/_/g, ".")), `${path.relative(ROOT, file)}: clave desconocida ${m[1]}`);
+        assert.ok(
+          keys.has(m[1]) || keys.has(m[1].replace(/_/g, ".")),
+          `${path.relative(ROOT, file)}: clave desconocida ${m[1]}`,
+        );
       }
     }
   };

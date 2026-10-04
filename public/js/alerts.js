@@ -6,20 +6,23 @@ export const supported = () => "serviceWorker" in navigator && "PushManager" in 
 
 // iOS solo permite notificaciones web si la app está instalada en la pantalla de inicio.
 export const needsInstall = () =>
-  /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.matchMedia("(display-mode: standalone)").matches && !navigator.standalone;
+  /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+  !window.matchMedia("(display-mode: standalone)").matches &&
+  !navigator.standalone;
 
-const b64ToBytes = b64 => {
+const b64ToBytes = (b64) => {
   const pad = "=".repeat((4 - (b64.length % 4)) % 4);
   const raw = atob((b64 + pad).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(raw, c => c.charCodeAt(0));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 };
 
 // Si el service worker no llega a registrarse (navegadores integrados, modo privado…), `ready` no se
 // resuelve nunca: se espera como mucho 4 s para no dejar la pantalla de avisos cargando para siempre.
-const swReady = () => Promise.race([
-  navigator.serviceWorker.ready,
-  new Promise((_, reject) => setTimeout(() => reject(new Error(t("err.webPushUnavailable"))), 4000)),
-]);
+const swReady = () =>
+  Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(t("err.webPushUnavailable"))), 4000)),
+  ]);
 
 async function currentSubscription() {
   if (!supported()) return null;

@@ -28,7 +28,18 @@ struct SpotDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) { header }
-            ToolbarItem(placement: .topBarTrailing) { FavButton(on: app.favs.contains(id)) { app.toggleFav(id) } }
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 8) {
+                    if let meta {
+                        ShareButton(
+                            url: APIClient.spotWebURL(id),
+                            subject: L("share.title", meta.name),
+                            message: shareText(res: result, meta: meta)
+                        )
+                    }
+                    FavButton(on: app.favs.contains(id), circular: true) { app.toggleFav(id) }
+                }
+            }
         }
         .toolbarBackground(Theme.bg, for: .navigationBar)
         .refreshable { await load(force: true) }
@@ -58,6 +69,24 @@ struct SpotDetailView: View {
         }
     }
 
+    private func shareText(res: Cached<SpotDetail>?, meta: Spot) -> String {
+        guard let res else { return "\(meta.name) · Marea" }
+        let s = res.data, n = s.now, t = s.tide, r = Rating(score: s.score)
+        let tideStr = t.h.map { "\(Surf.fmt($0)) m \(t.rising == true ? "↗" : "↘")" } ?? "–"
+        let url = APIClient.spotWebURL(meta.id).absoluteString
+        return L(
+            "share.text",
+            meta.name,
+            Surf.fmt(n.h),
+            Surf.fmt(n.T, 0),
+            Surf.cardinal(n.dir),
+            Surf.windPhrase(n.windType, n.wind),
+            tideStr,
+            r.label,
+            url
+        )
+    }
+
     // ---------- Contenido ----------
 
     @ViewBuilder
@@ -66,7 +95,25 @@ struct SpotDetailView: View {
         let water = s.buoy?.water ?? n.water
         DataBanners(ts: res.ts, stale: res.stale, offline: res.offline, forecastSource: s.forecastSource)
         Hero(spot: s)
-        alertButton
+        HStack(spacing: 10) {
+            alertButton
+            if let webcam = meta?.webcam, let url = URL(string: webcam) {
+                Link(destination: url) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "video.fill")
+                        Text(L("detail.webcam"))
+                    }
+                    .font(Theme.bodySemibold())
+                    .foregroundStyle(Theme.ink)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .padding(.horizontal, 16)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line, lineWidth: 1.5))
+                }
+                .accessibilityLabel(L("detail.webcamAria", meta?.name ?? ""))
+            }
+        }
         BuoyPanel(spot: s)
         if let b = s.buoy, (b.history?.count ?? 0) >= 6 || !(b.model ?? []).isEmpty { HistoryPanel(buoy: b) }
 
@@ -93,14 +140,28 @@ struct SpotDetailView: View {
                 Tile(label: L("tile.energy"), value: Text(p.map { "\(Surf.fmt($0, $0 < 10 ? 1 : 0)) kW/m" } ?? "–"), help: "energy") {
                     Text(p.map(Surf.powerLabel) ?? "")
                 }
-                Tile(label: L("tile.water"), value: Text("\(Surf.fmt(water)) °C")) { Text(Surf.wetsuit(water)) }
+                let moon = Surf.moonPhase(Date.now.ms)
+                Tile(label: L("tile.moon"), value: Text("\(moon.emoji) \(moon.name)")) {
+                    // El coeficiente oficial manda sobre la estimación por la fase lunar.
+                    Text("\(moon.illumination)% · \(t.coef.map { Surf.coefLabel($0).capitalizedFirst } ?? moon.tideTypeName)")
+                }
             }
             GridRow {
+                Tile(label: L("tile.water"), value: Text("\(Surf.fmt(water)) °C")) { Text(Surf.wetsuit(water)) }
                 Tile(label: L("tile.air"), value: Text("\(Surf.fmt(s.meteo?.air?.air ?? n.air, 0)) °C")) {
                     Text(L(s.meteo?.air != nil ? "air.measured" : "air.forecast"))
                 }
+            }
+            GridRow {
                 Tile(label: L("tile.uv"), value: Text(s.uv?.now.map { "\(Int($0.rounded())) · \(Surf.uvLabel($0))" } ?? "–")) {
                     Text(s.uv.map { L("uv.max", "\(Int($0.max.rounded()))", Surf.hour($0.maxT, tz), Surf.uvAdvice($0.max)) } ?? L("uv.none"))
+                }
+                let bs = Surf.bestSession(s, now: Date.now.ms, facing: meta?.facing ?? 0)
+                Tile(label: L("tile.bestSession"), value: Text(bs.map { "\(($0.isTomorrow ? "\(L("tomorrow")) " : ""))\(Surf.hhmm($0.t, tz)) · \(Rating(score: $0.score).label)" } ?? "–")) {
+                    if let bs = bs, let h = bs.h, let t = bs.T, let w = bs.wind {
+                        let wt = WindType(key: bs.windType ?? "na", label: "")
+                        Text("\(Surf.fmt(h)) m · \(Surf.fmt(t, 0)) s · \(Surf.windPhrase(wt, w))")
+                    }
                 }
             }
             GridRow {
@@ -437,11 +498,23 @@ struct DaylightTile: View {
                     }
                 }
                 HStack(alignment: .center) {
-                    sunTime(sun.rise, L("sun.rise"), .leading)
+                    VStack(alignment: .leading, spacing: 1) {
+                        sunTime(sun.rise, L("sun.rise"), .leading)
+                        if let dawn = sun.dawn {
+                            Text("\(L("sun.dawn")): \(Surf.hhmm(dawn, tz))")
+                                .font(Theme.mono(10)).foregroundStyle(Theme.muted)
+                        }
+                    }
                     Spacer(minLength: 6)
                     Text(L("sun.daylight", len)).foregroundStyle(Theme.muted).multilineTextAlignment(.center).lineLimit(2)
                     Spacer(minLength: 6)
-                    sunTime(sun.set, L("sun.set"), .trailing)
+                    VStack(alignment: .trailing, spacing: 1) {
+                        sunTime(sun.set, L("sun.set"), .trailing)
+                        if let dusk = sun.dusk {
+                            Text("\(L("sun.dusk")): \(Surf.hhmm(dusk, tz))")
+                                .font(Theme.mono(10)).foregroundStyle(Theme.muted)
+                        }
+                    }
                 }
                 .font(Theme.body(13))
                 .accessibilityElement(children: .ignore)

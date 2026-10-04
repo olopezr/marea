@@ -19,21 +19,29 @@ Requiere Node.js 22.13 o posterior.
 npm install
 cp .env.example .env     # y rellénalo (ver abajo)
 npm start                # http://localhost:8080
+npm run dev              # servidor con recarga automática
+npm run worker           # ejecuta el programador de avisos de forma independiente
 npm test                 # tests sin red
+npm run test:coverage    # tests con informe de cobertura
+npm run lint             # comprobación de estilo con ESLint
+npm run format           # formateo automático con Prettier
+npm run check            # verificación completa (lint + format + test)
 ```
 
 ## Configuración
 
-| Variable | Obligatoria | Qué es |
-|---|---|---|
-| `PORT` | No (8080) | Puerto HTTP |
-| `DATA_DIR` | No (`./data`) | Base de datos SQLite de avisos. En producción, un volumen persistente |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Sí, en producción | Claves de notificaciones push. Genera unas con `npm run vapid`. Si cambian, todas las suscripciones dejan de funcionar |
-| `VAPID_SUBJECT` | Sí, en producción | `mailto:` de contacto para los servicios push |
-| `OPEN_METEO_API_KEY` | Sí, si el uso es comercial | Clave del plan de pago de Open-Meteo |
-| `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY`, `APNS_BUNDLE_ID` | Para avisos en la app de iOS | Clave `.p8` de Apple Push Notifications (`APNS_KEY` es su contenido). `APNS_SANDBOX=true` para compilaciones de Xcode |
-| `FCM_SERVICE_ACCOUNT` | Para avisos en la app de Android | JSON de una cuenta de servicio del proyecto de Firebase |
-| `KEEP_AWAKE_URL` | No (en Render, `RENDER_EXTERNAL_URL`) | URL pública que el servidor visita cada 10 min para que el plan gratuito de Render no lo duerma |
+| Variable                                                    | Obligatoria                           | Qué es                                                                                                                 |
+| ----------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                                                      | No (8080)                             | Puerto HTTP                                                                                                            |
+| `DATA_DIR`                                                  | No (`./data`)                         | Base de datos SQLite de avisos. En producción, un volumen persistente                                                  |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`                     | Sí, en producción                     | Claves de notificaciones push. Genera unas con `npm run vapid`. Si cambian, todas las suscripciones dejan de funcionar |
+| `VAPID_SUBJECT`                                             | Sí, en producción                     | `mailto:` de contacto para los servicios push                                                                          |
+| `OPEN_METEO_API_KEY`                                        | Sí, si el uso es comercial            | Clave del plan de pago de Open-Meteo                                                                                   |
+| `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY`, `APNS_BUNDLE_ID` | Para avisos en la app de iOS          | Clave `.p8` de Apple Push Notifications (`APNS_KEY` es su contenido). `APNS_SANDBOX=true` para compilaciones de Xcode  |
+| `FCM_SERVICE_ACCOUNT`                                       | Para avisos en la app de Android      | JSON de una cuenta de servicio del proyecto de Firebase                                                                |
+| `KEEP_AWAKE_URL`                                            | No (en Render, `RENDER_EXTERNAL_URL`) | URL pública que el servidor visita cada 10 min para que el plan gratuito de Render no lo duerma                        |
+| `ENABLE_SCHEDULER`                                          | No (true)                             | Inicia el programador de avisos en el servidor web. Pon `false` si ejecutas un worker independiente                    |
+| `WORKER_RUN_ON_START`                                       | No (false)                            | Si es `true`, el worker ejecuta una revisión de avisos al arrancar                                                     |
 
 Sin claves VAPID, el servidor genera unas y las guarda en `DATA_DIR/vapid.json` (válido para desarrollo).
 
@@ -44,12 +52,23 @@ Sin claves VAPID, el servidor genera unas y las guarda en `DATA_DIR/vapid.json` 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/olopezr/marea)
 
 El archivo `render.yaml` crea un servicio web gratuito en Frankfurt con el Dockerfile. Limitaciones del plan gratuito:
+
 - Se duerme tras 15 minutos sin visitas; la primera visita después tarda 30–60 s.
 - No conserva archivos: las suscripciones a avisos se pierden en cada reinicio o despliegue y los avisos no se revisan mientras duerme. Para avisos fiables hace falta un plan con disco persistente o una base de datos externa.
 
-### Con disco persistente
+### Con Docker Compose
 
-La app es un único proceso Node con una carpeta de datos. Funciona en cualquier servicio que ejecute contenedores con un volumen persistente: Fly.io, Railway, Render, un VPS con Docker, etc.
+Puedes desplegar la aplicación completa con persistencia en un único comando:
+
+```bash
+# Servidor web estándar:
+docker compose up -d
+
+# Con worker independiente de alertas (escalado horizontal del web):
+docker compose --profile worker up -d
+```
+
+### Con contenedor Docker individual
 
 ```bash
 docker build -t marea .
@@ -57,8 +76,9 @@ docker run -d -p 8080:8080 -v marea-data:/data --env-file .env marea
 ```
 
 Requisitos del entorno:
+
 - **HTTPS obligatorio**: sin él no funcionan ni la instalación ni las notificaciones. La mayoría de plataformas lo dan de serie.
-- **Una sola instancia**: la caché y el programador de avisos viven en memoria y la base de datos es SQLite. Para escalar a varias instancias habría que mover las suscripciones a PostgreSQL y el programador a un único proceso.
+- **Escalado**: para escalar a varias instancias web, desactiva el scheduler en el servidor (`ENABLE_SCHEDULER=false`) y ejecuta el contenedor del worker (`docker compose --profile worker up`).
 - Salud: `GET /api/health`.
 
 Al publicar una versión nueva, cambia `VERSION` en `public/sw.js` para que los móviles descarten la caché anterior.
@@ -68,6 +88,7 @@ Al publicar una versión nueva, cambia `VERSION` en `public/sw.js` para que los 
 ```
 server/
   index.js           Servidor HTTP: estáticos, API, cabeceras de seguridad, límite de peticiones
+  worker.js          Worker independiente para la revisión y envío periódico de alertas push
   conditions.js      Combina las fuentes y calcula valoraciones, mejores horas y días
   push.js            Suscripciones (SQLite), revisión horaria y envío de avisos
   native-push.js     Envío a las apps: APNs (HTTP/2 + JWT ES256) y FCM HTTP v1, sin dependencias
@@ -86,20 +107,24 @@ public/
   legal/             Fuentes de datos, privacidad y aviso legal
 test/                Tests con fuentes simuladas (node --test)
 ios/                 App de iOS (SwiftUI, iOS 17+), proyecto generado con XcodeGen
+  fastlane/          Automatización de tests y subida a TestFlight
 android/             App de Android (Kotlin, Jetpack Compose, Android 8+)
-scripts/             export-spots.mjs copia la lista de spots a las apps
+  fastlane/          Automatización de tests y subida a Google Play
+scripts/             export-spots.mjs copia la lista de spots a las apps; i18n.mjs compila textos
+.github/workflows/   Integración continua (CI): linter, formato, sincronización y tests
+docker-compose.yml   Orquestación de servicios web y worker persistente
 ```
 
 ### API
 
-| Ruta | Respuesta |
-|---|---|
-| `GET /api/spots` | Resumen de todos los spots: valoración, condiciones, marea y boya |
-| `GET /api/spots/:id` | Detalle: curva de marea del día, 24 horas y 7 días |
-| `GET /api/push/key` | Clave pública VAPID |
-| `GET /api/spots/:id/boya` | Solo la boya del spot (la lista la pide por tarjeta) |
-| `POST /api/push/subscribe` | `{ subscription, spots, minScore }` (navegador) o `{ device: { platform: "ios" \| "android", token }, spots, minScore }` (apps) |
-| `POST /api/push/status`, `/unsubscribe`, `/test` | `{ endpoint }`; en las apps, `"apns:<token>"` o `"fcm:<token>"` |
+| Ruta                                             | Respuesta                                                                                                                       |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/spots`                                 | Resumen de todos los spots: valoración, condiciones, marea y boya                                                               |
+| `GET /api/spots/:id`                             | Detalle: curva de marea del día, 24 horas y 7 días                                                                              |
+| `GET /api/push/key`                              | Clave pública VAPID                                                                                                             |
+| `GET /api/spots/:id/boya`                        | Solo la boya del spot (la lista la pide por tarjeta)                                                                            |
+| `POST /api/push/subscribe`                       | `{ subscription, spots, minScore }` (navegador) o `{ device: { platform: "ios" \| "android", token }, spots, minScore }` (apps) |
+| `POST /api/push/status`, `/unsubscribe`, `/test` | `{ endpoint }`; en las apps, `"apns:<token>"` o `"fcm:<token>"`                                                                 |
 
 ## Apps nativas
 
@@ -121,8 +146,9 @@ open Marea.xcodeproj
 ```
 
 - **URL del servidor**: `MAREA_API_BASE` en `project.yml` (Debug: `http://localhost:8080`; Release: tu dominio). Para probar contra otro puerto: `xcodebuild ... MAREA_API_BASE=http://localhost:8099`.
-- **Avisos**: en Apple Developer, crea el App ID `es.marea.app` con *Push Notifications* y una clave APNs (`.p8`); pon tu equipo en `DEVELOPMENT_TEAM` y define en el servidor `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY` y `APNS_BUNDLE_ID`. En el simulador sin equipo se usa un token de prueba para poder probar la pantalla de avisos.
+- **Avisos**: en Apple Developer, crea el App ID `es.marea.app` con _Push Notifications_ y una clave APNs (`.p8`); pon tu equipo en `DEVELOPMENT_TEAM` y define en el servidor `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY` y `APNS_BUNDLE_ID`. En el simulador sin equipo se usa un token de prueba para poder probar la pantalla de avisos.
 - **Tests**: `xcodebuild test -project Marea.xcodeproj -scheme Marea -destination 'platform=iOS Simulator,name=iPhone 17'`.
+- **Automatización (Fastlane)**: `cd ios && bundle exec fastlane test` para tests o `bundle exec fastlane beta` para compilar y enviar a TestFlight.
 
 ### Android (`android/`)
 
@@ -137,6 +163,7 @@ cd android
 
 - **URL del servidor**: `mareaApiBaseDebug` y `mareaApiBaseRelease` en `gradle.properties` (`10.0.2.2` es el Mac visto desde el emulador).
 - **Avisos**: crea un proyecto de Firebase con la app `es.marea.app`, descarga `google-services.json` a `android/app/` (no se sube al repositorio) y define `FCM_SERVICE_ACCOUNT` en el servidor. Sin ese archivo la app compila igual; en Debug usa un token de prueba y en Release los avisos quedan desactivados.
+- **Automatización (Fastlane)**: `cd android && bundle exec fastlane test` para tests o `bundle exec fastlane beta` para publicar en el canal interno de Google Play.
 
 ## Notas sobre los datos
 
