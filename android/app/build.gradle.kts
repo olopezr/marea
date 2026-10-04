@@ -23,11 +23,26 @@ android {
         buildConfigField("boolean", "HAS_FIREBASE", hasFirebase.toString())
     }
 
+    signingConfigs {
+        create("release") {
+            val keystoreFile = project.findProperty("mareaKeystoreFile") as? String ?: System.getenv("KEYSTORE_FILE")
+            if (keystoreFile != null && file(keystoreFile).exists()) {
+                storeFile = file(keystoreFile)
+                storePassword = project.findProperty("mareaKeystorePassword") as? String ?: System.getenv("KEYSTORE_PASSWORD") ?: ""
+                keyAlias = project.findProperty("mareaKeyAlias") as? String ?: System.getenv("KEY_ALIAS") ?: ""
+                keyPassword = project.findProperty("mareaKeyPassword") as? String ?: System.getenv("KEY_PASSWORD") ?: ""
+            } else {
+                initWith(getByName("debug"))
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "API_BASE", "\"${property("mareaApiBaseDebug")}\"")
         }
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
