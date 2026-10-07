@@ -1,6 +1,12 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "marea-cache-test-"));
+
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cached, clearMemoryCache } from "../server/cache.js";
+const { cached, clearMemoryCache } = await import("../server/cache.js");
 
 test("cached sirve el último dato bueno y no reintenta la fuente hasta pasado retryMs", async () => {
   let calls = 0,
