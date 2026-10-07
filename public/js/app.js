@@ -495,26 +495,24 @@ function locate() {
 }
 
 // ---------- Mapa de spots ----------
-// Leaflet (public/vendor/leaflet) se carga solo al abrir el mapa.
-let leaflet = null;
-function loadLeaflet() {
-  if (window.L) return Promise.resolve(window.L);
-  leaflet ??= new Promise((resolve, reject) => {
+// MapLibre (public/vendor/maplibre) con el mapa de OpenFreeMap: libre, sin claves ni límites y con uso
+// comercial permitido (las teselas de openstreetmap.org no admiten apps con tráfico). Se carga al usarlo.
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+let maplibre = null;
+function loadMapLibre() {
+  if (!maplibre) {
     const css = document.createElement("link");
     css.rel = "stylesheet";
-    css.href = "/vendor/leaflet/leaflet.css";
+    css.href = "/vendor/maplibre/maplibre-gl.css";
     document.head.append(css);
-    const js = document.createElement("script");
-    js.src = "/vendor/leaflet/leaflet.js";
-    js.onload = () => resolve(window.L);
-    js.onerror = () => {
-      leaflet = null;
-      reject(new Error(t("error.connect")));
-    };
-    document.head.append(js);
-  });
-  return leaflet;
+    maplibre = import("/vendor/maplibre/maplibre-gl.mjs").catch((err) => {
+      maplibre = null;
+      throw new Error(t("error.connect"), { cause: err });
+    });
+  }
+  return maplibre;
 }
+const qColor = (key) => getComputedStyle(document.documentElement).getPropertyValue(`--q-${key}`).trim();
 
 async function renderMap() {
   document.title = `${t("map.title")} · Marea`;
@@ -526,36 +524,99 @@ async function renderMap() {
   <main id="map-view"><div class="spots-map" id="spots-map"></div>
     <div class="legend small">${RATINGS.map((x) => `<span><i class="q q-${x.key}"></i>${ratingLabel(x.key)}</span>`).join("")}</div>
   </main>`;
-  let res, L;
+  let res, ml;
   try {
-    [res, L] = await Promise.all([getOverview(false), loadLeaflet()]);
+    [res, ml] = await Promise.all([getOverview(false), loadMapLibre()]);
   } catch (err) {
     app.querySelector("#map-view").innerHTML = errorBox(err.message);
     return;
   }
   const el = app.querySelector("#spots-map");
   if (!el) return; // se ha cambiado de pantalla mientras cargaba
-  const map = L.map(el, { zoomControl: true, attributionControl: true });
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
-  }).addTo(map);
-  const color = (key) => getComputedStyle(document.documentElement).getPropertyValue(`--q-${key}`).trim();
   const spots = res.data.spots;
-  for (const s of [...spots].sort((a, b) => a.score - b.score)) {
-    // los mejores, encima
-    const r = rating(s.score);
-    L.circleMarker([s.lat, s.lon], { radius: 9, color: "#fff", weight: 2, fillColor: color(r.key), fillOpacity: 1 })
-      .addTo(map)
-      .bindTooltip(t("map.marker", s.name, ratingLabel(r.key), fmt(s.now.h)), { direction: "top", offset: [0, -8] })
-      .bindPopup(
-        `<b>${esc(s.name)}</b><br>${esc(ratingLabel(r.key))} · ${fmt(s.now.h)} m · ${fmt(s.now.T, 0)} s<br><a href="#/spot/${s.id}">${t("card.open", esc(s.name))}</a>`,
-      );
-  }
   // Se abre sobre la Península y Baleares; Canarias queda a un desplazamiento.
   const main = spots.filter((s) => s.lat > 34);
-  map.fitBounds(L.latLngBounds((main.length ? main : spots).map((s) => [s.lat, s.lon])), { padding: [24, 24] });
+  const box = (main.length ? main : spots).reduce(
+    (b, s) => [Math.min(b[0], s.lon), Math.min(b[1], s.lat), Math.max(b[2], s.lon), Math.max(b[3], s.lat)],
+    [180, 90, -180, -90],
+  );
+  const map = new ml.Map({
+    container: el,
+    style: MAP_STYLE,
+    bounds: box,
+    fitBoundsOptions: { padding: 24 },
+    attributionControl: { compact: true },
+  });
+  map.addControl(new ml.NavigationControl({ showCompass: false }));
+  const features = [...spots]
+    .sort((a, b) => a.score - b.score) // los mejores, encima
+    .map((s) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [s.lon, s.lat] },
+      properties: { id: s.id, q: rating(s.score).key },
+    }));
+  map.on("load", () => {
+    map.addSource("spots", { type: "geojson", data: { type: "FeatureCollection", features } });
+    map.addLayer({
+      id: "spots",
+      type: "circle",
+      source: "spots",
+      paint: {
+        "circle-radius": 8,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+        "circle-color": ["match", ["get", "q"], ...RATINGS.flatMap((r) => [r.key, qColor(r.key)]), "#888888"],
+      },
+    });
+  });
+  map.on("mouseenter", "spots", () => (map.getCanvas().style.cursor = "pointer"));
+  map.on("mouseleave", "spots", () => (map.getCanvas().style.cursor = ""));
+  map.on("click", "spots", (e) => {
+    const s = spots.find((x) => x.id === e.features[0].properties.id);
+    if (!s) return;
+    const r = rating(s.score);
+    new ml.Popup({ offset: 12 })
+      .setLngLat([s.lon, s.lat])
+      .setHTML(
+        `<b>${esc(s.name)}</b><br>${esc(ratingLabel(r.key))} · ${fmt(s.now.h)} m · ${fmt(s.now.T, 0)} s<br><a href="#/spot/${s.id}">${esc(t("card.open", s.name))}</a>`,
+      )
+      .addTo(map);
+  });
+}
+
+// Mapa pequeño de la ubicación (sin interacción: un toque abre la ruta). Se crea al verse en pantalla.
+function bindLocationMap(s) {
+  const el = app.querySelector(".location .map");
+  if (!el) return;
+  const create = async () => {
+    try {
+      const ml = await loadMapLibre();
+      if (!el.isConnected) return;
+      new ml.Map({
+        container: el,
+        style: MAP_STYLE,
+        center: [s.lon, s.lat],
+        zoom: 13.5,
+        interactive: false,
+        attributionControl: { compact: true },
+      }).on("load", function () {
+        new ml.Marker({ color: qColor("epic") }).setLngLat([s.lon, s.lat]).addTo(this);
+      });
+    } catch {
+      el.classList.add("map-off");
+    }
+  };
+  if (!("IntersectionObserver" in window)) return create();
+  const io = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        io.disconnect();
+        create();
+      }
+    },
+    { rootMargin: "300px 0px" },
+  );
+  io.observe(el);
 }
 
 // ---------- Detalle de un spot ----------
@@ -607,18 +668,15 @@ function weekRows(days, tz, todayFrom) {
   );
 }
 
-// Dónde está la playa: mapa de OpenStreetMap y coordenadas.
+// Dónde está la playa: mapa (OpenFreeMap) y coordenadas.
 const coords = (lat, lon) =>
   `${fmt(Math.abs(lat), 4)}° ${lat >= 0 ? "N" : "S"} · ${fmt(Math.abs(lon), 4)}° ${lon >= 0 ? "E" : lang === "en" ? "W" : "O"}`;
 function locationPanel(s) {
-  const d = 0.02,
-    bbox = [s.lon - d * 1.4, s.lat - d, s.lon + d * 1.4, s.lat + d].map((x) => x.toFixed(4)).join(",");
   // Ruta hasta la playa (abre Google Maps o su app en el móvil).
   const link = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}`;
   return `<section class="panel location">
     <h3>${t("loc.title")}</h3>
-    <iframe class="map" title="${esc(t("loc.map", s.name))}" loading="lazy" referrerpolicy="no-referrer"
-      src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik&amp;marker=${s.lat},${s.lon}"></iframe>
+    <a class="map" href="${link}" target="_blank" rel="noopener" aria-label="${esc(t("loc.map", s.name))}. ${esc(t("loc.hint"))}"></a>
     <div class="location-row"><span class="coords">${coords(s.lat, s.lon)}</span><a href="${link}" target="_blank" rel="noopener">${t("loc.directions")}</a></div>
   </section>`;
 }
@@ -930,6 +988,7 @@ async function renderSpot(id, force = false) {
   bindHourStrip();
   const tidePanel = app.querySelector(".tide-panel");
   if (tidePanel && s.tideDay.points.length >= 4) bindTideChart(tidePanel, s.tideDay, tz, now);
+  bindLocationMap(s);
 }
 
 // Botones ◀ ▶ y degradado de la tira horaria según la posición del scroll.
