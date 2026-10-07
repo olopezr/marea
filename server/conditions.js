@@ -99,11 +99,20 @@ function tideNow(tide, now) {
   };
 }
 
+function currentConditions(fc, now) {
+  if (!fc.hours?.length) return { ...fc.current, t: now };
+  const closest = fc.hours.reduce((a, b) => (Math.abs(b.t - now) < Math.abs(a.t - now) ? b : a));
+  const diffCurrent = Math.abs((fc.current?.t ?? 0) - now);
+  const diffClosest = Math.abs(closest.t - now);
+  const base = diffCurrent <= diffClosest ? fc.current : closest;
+  return { ...base, t: now };
+}
+
 // La lista no consulta PORTUS (boyas, estaciones, mareógrafos): esos datos se cargan solo al abrir
 // el detalle de un spot, para no lanzar decenas de peticiones a la vez contra su API.
 async function summaryOf(spot, fc, now, opts = {}) {
   const tide = await tides(spot, fc, now - 13 * H, now + 13 * H, opts);
-  const c = { ...fc.current, t: now };
+  const c = currentConditions(fc, now);
   const score = scoreOf(spot, c, tide);
   const warning = aemet.activeWarningFor(spot, now, opts?.warnings);
   return {
