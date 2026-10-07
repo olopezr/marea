@@ -46,3 +46,27 @@ test("cached recupera el valor persistido en SQLite tras limpiar la memoria", as
   assert.deepEqual(val2, { weather: "waves", temp: 21 });
   assert.equal(calls, 1, "no debe volver a llamar a la fuente si está en disco");
 });
+
+test("cached respeta el TTL y vuelve a consultar la fuente una vez expirado", async () => {
+  let calls = 0;
+  const loader = async () => {
+    calls++;
+    return { n: calls };
+  };
+  const v1 = await cached("ttl:key", 50, loader);
+  assert.equal(v1.n, 1);
+  assert.equal(calls, 1);
+
+  // Consulta dentro del TTL: no vuelve a llamar
+  const v2 = await cached("ttl:key", 50, loader);
+  assert.equal(v2.n, 1);
+  assert.equal(calls, 1);
+
+  // Espera a que expire el TTL (70ms > 50ms)
+  await new Promise((r) => setTimeout(r, 70));
+
+  // Consulta tras expirar el TTL: debe refrescar
+  const v3 = await cached("ttl:key", 50, loader);
+  assert.equal(v3.n, 2);
+  assert.equal(calls, 2, "debe volver a llamar al loader tras expirar el TTL");
+});
