@@ -219,6 +219,172 @@ main {
   font-size: 0.88rem;
 }
 
+/* Avisos meteorológicos AEMET */
+.badge-warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 650;
+  width: fit-content;
+  border: 1px solid transparent;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+}
+.badge-warning .badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.badge-amarillo {
+  background: color-mix(in srgb, #f59e0b 15%, var(--surface));
+  border-color: color-mix(in srgb, #f59e0b 45%, transparent);
+  color: color-mix(in srgb, #b45309 85%, var(--ink));
+}
+.badge-amarillo .badge-dot {
+  background: #f59e0b;
+}
+.badge-naranja {
+  background: color-mix(in srgb, #ea580c 18%, var(--surface));
+  border-color: color-mix(in srgb, #ea580c 55%, transparent);
+  color: color-mix(in srgb, #c2410c 90%, var(--ink));
+}
+.badge-naranja .badge-dot {
+  background: #ea580c;
+  box-shadow: 0 0 6px #ea580c;
+}
+.badge-rojo {
+  background: color-mix(in srgb, #dc2626 22%, var(--surface));
+  border-color: color-mix(in srgb, #dc2626 65%, transparent);
+  color: color-mix(in srgb, #b91c1c 95%, var(--ink));
+}
+.badge-rojo .badge-dot {
+  background: #dc2626;
+  box-shadow: 0 0 8px #dc2626;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+.warning-banner {
+  border-radius: 16px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.warning-banner.banner-amarillo {
+  background: color-mix(in srgb, #f59e0b 12%, var(--surface));
+  border-color: color-mix(in srgb, #f59e0b 35%, transparent);
+}
+.warning-banner.banner-naranja {
+  background: color-mix(in srgb, #ea580c 15%, var(--surface));
+  border-color: color-mix(in srgb, #ea580c 45%, transparent);
+  box-shadow: 0 4px 20px color-mix(in srgb, #ea580c 12%, transparent);
+}
+.warning-banner.banner-rojo {
+  background: color-mix(in srgb, #dc2626 18%, var(--surface));
+  border-color: color-mix(in srgb, #dc2626 55%, transparent);
+  box-shadow: 0 4px 24px color-mix(in srgb, #dc2626 18%, transparent);
+}
+.wb-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.wb-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.wb-title-group {
+  display: grid;
+  gap: 4px;
+}
+.wb-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+.wb-pill {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.68rem;
+  font-family: var(--display);
+}
+.pill-amarillo {
+  background: color-mix(in srgb, #f59e0b 25%, var(--surface));
+  color: color-mix(in srgb, #b45309 95%, var(--ink));
+}
+.pill-naranja {
+  background: color-mix(in srgb, #ea580c 25%, var(--surface));
+  color: color-mix(in srgb, #c2410c 95%, var(--ink));
+}
+.pill-rojo {
+  background: color-mix(in srgb, #dc2626 28%, var(--surface));
+  color: color-mix(in srgb, #b91c1c 95%, var(--ink));
+}
+.wb-state {
+  font-weight: 650;
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+.wb-zone {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.wb-headline {
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.wb-desc {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.wb-time {
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wb-notice {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 85%, var(--ink));
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 40%, transparent);
+}
+.wb-instruction {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
 /* Tarjeta de spot */
 .card {
   position: relative;

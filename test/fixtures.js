@@ -22,6 +22,49 @@ export function installFetch(opts = {}) {
     if (url.host.includes("open-meteo.com") && opts.openMeteo429) {
       return new Response(JSON.stringify({ error: true, reason: "Daily API request limit exceeded" }), { status: 429 });
     }
+    if (url.host.includes("aemet.es")) {
+      if (url.pathname.includes("CAP_AFAE_wah_RSS.xml")) {
+        return new Response(
+          `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>AEMET - Avisos</title>
+    <item>
+      <title>Aviso. Nivel naranja. Costeros. Menorca</title>
+      <description>Aviso de costeros de nivel naranja de 00:00 09-10-2026 CEST (UTC+2) a 14:59 09-10-2026 CEST (UTC+2).</description>
+      <link>https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/cap/test_menorca.xml</link>
+      <guid>test_menorca.xml</guid>
+    </item>
+  </channel>
+</rss>`,
+          { status: 200, headers: { "Content-Type": "application/xml" } },
+        );
+      }
+      return new Response(
+        `<?xml version="1.0" encoding="UTF-8"?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+  <info>
+    <language>es-ES</language>
+    <event>Aviso de costeros de nivel naranja</event>
+    <headline>Aviso de costeros de nivel naranja. Costa - Menorca</headline>
+    <description>Viento del norte de 50 a 65 km/h (fuerza 7 a 8) y olas de 4 a 5 m.</description>
+    <instruction>Esté preparado. Tome precauciones.</instruction>
+    <onset>2026-10-09T00:00:00+02:00</onset>
+    <expires>2026-10-09T14:59:59+02:00</expires>
+  </info>
+  <info>
+    <language>en-GB</language>
+    <event>Severe coastal warning</event>
+    <headline>Severe coastal warning. Costa - Menorca</headline>
+    <description>North wind 50 to 65 km/h (force 7 to 8) and waves 4 to 5 m.</description>
+    <instruction>Be prepared. Take precautions.</instruction>
+    <onset>2026-10-09T00:00:00+02:00</onset>
+    <expires>2026-10-09T14:59:59+02:00</expires>
+  </info>
+</alert>`,
+        { status: 200, headers: { "Content-Type": "application/xml" } },
+      );
+    }
     if (url.host.includes("open-meteo.com")) {
       const lats = url.searchParams.get("latitude").split(",");
       const start = Math.floor(Date.now() / H) * H - 24 * H;

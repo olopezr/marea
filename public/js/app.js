@@ -149,6 +149,63 @@ function dataBanners(res) {
   return out.join("");
 }
 
+function warningBanner(warnings, tz) {
+  if (!warnings?.length) return "";
+  const lang = t("lang") === "en" ? "en" : "es";
+  return warnings
+    .slice(0, 2)
+    .map((w) => {
+      const lvl = w.level || "amarillo";
+      const lvlText = t(`warning.level.${lvl}`) || lvl;
+      const risk = t(`warning.risk.${lvl}`) || "";
+      const phenom = t(`warning.phenomenon.${w.phenomenon}`) || w.phenomenon;
+      const activeState = t(w.active ? "warning.activeNow" : "warning.upcoming");
+      const title = `${t("warning.aemet")}: ${phenom} (${lvlText.toUpperCase()})`;
+      const desc =
+        (lang === "en" ? w.details?.en?.description : w.details?.es?.description) ||
+        w.details?.es?.description ||
+        w.desc ||
+        "";
+      const instruction =
+        (lang === "en" ? w.details?.en?.instruction : w.details?.es?.instruction) || w.details?.es?.instruction || "";
+      const timeStr =
+        w.start && w.end
+          ? t(
+              "warning.window",
+              `${new Date(w.start).toLocaleDateString(lang === "en" ? "en-GB" : "es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: tz })}`,
+              `${new Date(w.end).toLocaleDateString(lang === "en" ? "en-GB" : "es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: tz })}`,
+            )
+          : "";
+      return `
+      <aside class="warning-banner banner-${lvl}" role="alert">
+        <div class="wb-header">
+          <div class="wb-icon" aria-hidden="true">⚠️</div>
+          <div class="wb-title-group">
+            <div class="wb-meta">
+              <span class="wb-pill pill-${lvl}">${esc(lvlText)} · ${esc(risk)}</span>
+              <span class="wb-state">${esc(activeState)}</span>
+              <span class="wb-zone">${esc(w.zone)}</span>
+            </div>
+            <h3 class="wb-headline">${esc(title)}</h3>
+          </div>
+        </div>
+        ${desc ? `<p class="wb-desc">${esc(desc)}</p>` : ""}
+        ${timeStr ? `<p class="wb-time"><span class="wb-clock" aria-hidden="true">🕒</span> ${esc(timeStr)}</p>` : ""}
+        <p class="wb-notice">${esc(t("warning.unfavorable"))}</p>
+        ${instruction ? `<p class="wb-instruction small muted"><span class="eyebrow">${esc(t("warning.instruction"))}:</span> ${esc(instruction)}</p>` : ""}
+      </aside>`;
+    })
+    .join("");
+}
+
+function warningBadge(w) {
+  if (!w) return "";
+  const lvl = w.level || "amarillo";
+  const lvlText = t(`warning.level.${lvl}`) || lvl;
+  const phenom = t(`warning.phenomenon.${w.phenomenon}`) || w.phenomenon;
+  return `<span class="badge-warning badge-${lvl}" title="${esc(w.desc || w.phenomenon)}"><span class="badge-dot" aria-hidden="true"></span><span class="badge-text">${esc(t("warning.badge", lvlText))}: ${esc(phenom)}</span></span>`;
+}
+
 const skeletonCards = (n = 4) =>
   Array.from({ length: n }, () => `<div class="card skeleton" aria-hidden="true"></div>`).join("");
 const errorBox = (msg) =>
@@ -227,7 +284,8 @@ function watchBuoyLines(rows) {
 function card(s, dist) {
   const r = rating(s.score),
     n = s.now,
-    tide = s.tide;
+    tide = s.tide,
+    w = s.warning;
   return `
   <article class="card">
     <a class="card-link" href="#/spot/${s.id}" aria-label="${esc(t("card.open", s.name))}"></a>
@@ -238,6 +296,7 @@ function card(s, dist) {
       </div>
       <button class="fav ${favs.has(s.id) ? "on" : ""}" data-fav="${s.id}" aria-pressed="${favs.has(s.id)}" aria-label="${t("favorite")}">${icon.star(favs.has(s.id))}</button>
     </header>
+    ${warningBadge(w)}
     <div class="rating r-${r.key}"><span class="chip">${ratingLabel(r.key)}</span>${scoreBar(s.score)}</div>
     <dl class="metrics">
       <div><dt>${t("metric.wave")}</dt><dd><b>${fmt(n.h)}</b> m</dd></div>
@@ -766,6 +825,7 @@ async function renderSpot(id, force = false) {
 
   app.querySelector("#detail").innerHTML = `
     ${dataBanners(res)}
+    ${warningBanner(s.warnings, tz)}
     <section class="hero r-${r.key}">
       <p class="eyebrow">${t("hero.now", hhmm(now, tz))}</p>
       <div class="hero-row">

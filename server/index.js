@@ -9,7 +9,7 @@ import { nearestReading } from "./sources/portus.js";
 import * as push from "./push.js";
 import { clientIp } from "./request.js";
 
-const PORT = +process.env.PORT || 8080;
+const PORT = +process.env.PORT || 8800;
 const PUBLIC = path.resolve(import.meta.dirname, "../public");
 const started = Date.now();
 
@@ -214,7 +214,7 @@ const server = http.createServer(async (req, res) => {
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {
     console.error(
-      `El puerto ${PORT} ya está en uso, probablemente por otra copia de Marea. Párala con Ctrl+C en su terminal o arranca en otro puerto: PORT=8081 npm start`,
+      `El puerto ${PORT} ya está en uso, probablemente por otra copia de Marea. Párala con Ctrl+C en su terminal o arranca en otro puerto: PORT=8801 npm start`,
     );
     process.exit(1);
   }

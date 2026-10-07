@@ -7,6 +7,7 @@ App web instalable (PWA) que reúne en un solo sitio el estado del mar para 83 s
 - **Medidas reales** de Puertos del Estado: oleaje de boyas (a menos de 100 km), viento, temperatura y presión de estaciones (a menos de 40 km) y nivel del mar de los mareógrafos.
 - **Curva de marea deslizable** con hora, altura, coeficiente, efecto de la meteorología y nivel medido.
 - **Valoración** de 0 a 5 por spot y hora, según ola, periodo, exposición, viento y marea.
+- **Avisos oficiales de AEMET** (Plan Meteoalerta en formato CAP): alertas en tiempo real por fenómenos costeros, viento, tormentas o galernas cruzados por spot.
 - **Avisos push** cuando un spot elegido supera el umbral de calidad, como máximo uno por spot y día.
 - Favoritos, ordenar por cercanía, modo sin conexión, tema claro y oscuro, e instalable en iOS y Android.
 - **Apps nativas** para iOS (SwiftUI) y Android (Jetpack Compose) con los mismos datos y avisos push nativos (ver [Apps nativas](#apps-nativas)).
@@ -18,7 +19,7 @@ Requiere Node.js 22.13 o posterior.
 ```bash
 npm install
 cp .env.example .env     # y rellénalo (ver abajo)
-npm start                # http://localhost:8080
+npm start                # http://localhost:8800
 npm run dev              # servidor con recarga automática
 npm run worker           # ejecuta el programador de avisos de forma independiente
 npm test                 # tests sin red
@@ -32,7 +33,7 @@ npm run check            # verificación completa (lint + format + test)
 
 | Variable                                                    | Obligatoria                           | Qué es                                                                                                                 |
 | ----------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `PORT`                                                      | No (8080)                             | Puerto HTTP                                                                                                            |
+| `PORT`                                                      | No (8800)                             | Puerto HTTP                                                                                                            |
 | `DATA_DIR`                                                  | No (`./data`)                         | Base de datos SQLite de avisos. En producción, un volumen persistente                                                  |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`                     | Sí, en producción                     | Claves de notificaciones push. Genera unas con `npm run vapid`. Si cambian, todas las suscripciones dejan de funcionar |
 | `VAPID_SUBJECT`                                             | Sí, en producción                     | `mailto:` de contacto para los servicios push                                                                          |
@@ -98,6 +99,7 @@ server/
     openmeteo.js     Previsión de todos los spots en una petición por API (caché 1 h, por el límite de llamadas)
     ihm.js           Mareas oficiales por mes y puerto (caché 12 h)
     portus.js        Puertos del Estado: boyas, estaciones, mareógrafos y nivel del mar por playa
+    aemet.js         Avisos oficiales de la AEMET (Plan Meteoalerta CAP, caché 15 min)
 public/
   js/spots.js        Lista de spots (compartida con el servidor)
   js/surf.js         Lógica pura compartida: valoración, mareas, zonas horarias
