@@ -77,7 +77,10 @@
     <string name="error_connect">Couldn\'t connect to the server</string>
     <string name="error_status">Error %1$s</string>
     <string name="warning_aemet">AEMET Warning</string>
+    <string name="warning_aemetPlural">Official AEMET warnings</string>
     <string name="warning_aemet_source">Meteoalerta Plan · AEMET</string>
+    <string name="warning_activeCount">%1$s active warnings</string>
+    <string name="warning_totalCount">%1$s warnings</string>
     <string name="warning_badge">%1$s warning</string>
     <string name="warning_level_amarillo">yellow</string>
     <string name="warning_level_naranja">orange</string>

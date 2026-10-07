@@ -78,7 +78,10 @@
     <string name="error_connect">No se pudo conectar con el servidor</string>
     <string name="error_status">Error %1$s</string>
     <string name="warning_aemet">Aviso de la AEMET</string>
+    <string name="warning_aemetPlural">Avisos oficiales de la AEMET</string>
     <string name="warning_aemet_source">Plan Meteoalerta · AEMET</string>
+    <string name="warning_activeCount">%1$s avisos activos</string>
+    <string name="warning_totalCount">%1$s avisos</string>
     <string name="warning_badge">Aviso %1$s</string>
     <string name="warning_level_amarillo">amarillo</string>
     <string name="warning_level_naranja">naranja</string>

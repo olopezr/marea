@@ -101,7 +101,10 @@
   "error.status": ["Error {0}", "Error {0}"],
 
   "warning.aemet": ["Aviso de la AEMET", "AEMET Warning"],
+  "warning.aemetPlural": ["Avisos oficiales de la AEMET", "Official AEMET warnings"],
   "warning.aemet.source": ["Plan Meteoalerta · AEMET", "Meteoalerta Plan · AEMET"],
+  "warning.activeCount": ["{0} avisos activos", "{0} active warnings"],
+  "warning.totalCount": ["{0} avisos", "{0} warnings"],
   "warning.badge": ["Aviso {0}", "{0} warning"],
   "warning.level.amarillo": ["amarillo", "yellow"],
   "warning.level.naranja": ["naranja", "orange"],

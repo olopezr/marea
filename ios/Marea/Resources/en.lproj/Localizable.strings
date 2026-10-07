@@ -75,7 +75,10 @@
 "error.connect" = "Couldn't connect to the server";
 "error.status" = "Error %1$@";
 "warning.aemet" = "AEMET Warning";
+"warning.aemetPlural" = "Official AEMET warnings";
 "warning.aemet.source" = "Meteoalerta Plan · AEMET";
+"warning.activeCount" = "%1$@ active warnings";
+"warning.totalCount" = "%1$@ warnings";
 "warning.badge" = "%1$@ warning";
 "warning.level.amarillo" = "yellow";
 "warning.level.naranja" = "orange";

@@ -361,6 +361,55 @@ main {
   color: var(--ink);
   line-height: 1.2;
 }
+.wb-items {
+  display: grid;
+  gap: 12px;
+}
+.wb-item {
+  display: grid;
+  gap: 6px;
+}
+.wb-item + .wb-item {
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--line) 45%, transparent);
+}
+.wb-item-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wb-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--display);
+  padding: 3px 9px;
+  border-radius: 999px;
+  line-height: 1.2;
+}
+.wb-item-chip.chip-amarillo {
+  background: color-mix(in srgb, #f59e0b 22%, var(--surface));
+  color: color-mix(in srgb, #b45309 95%, var(--ink));
+}
+.wb-item-chip.chip-naranja {
+  background: color-mix(in srgb, #ea580c 24%, var(--surface));
+  color: color-mix(in srgb, #c2410c 95%, var(--ink));
+}
+.wb-item-chip.chip-rojo {
+  background: color-mix(in srgb, #dc2626 28%, var(--surface));
+  color: color-mix(in srgb, #b91c1c 95%, var(--ink));
+}
+.wb-item-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
 .wb-desc {
   font-size: 0.9rem;
   line-height: 1.45;

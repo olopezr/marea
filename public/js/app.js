@@ -152,22 +152,37 @@ function dataBanners(res) {
 function warningBanner(warnings, tz) {
   if (!warnings?.length) return "";
   const lang = t("lang") === "en" ? "en" : "es";
-  return warnings
-    .slice(0, 2)
+  const list = warnings.slice(0, 3);
+  const isMultiple = list.length > 1;
+
+  const top = list[0];
+  const topLvl = top.level || "amarillo";
+  const topLvlText = t(`warning.level.${topLvl}`) || topLvl;
+  const topRisk = t(`warning.risk.${topLvl}`) || "";
+
+  const activeCount = list.filter((w) => w.active).length;
+  let stateText;
+  if (isMultiple) {
+    stateText = activeCount > 0 ? t("warning.activeCount", activeCount) : t("warning.totalCount", list.length);
+  } else {
+    stateText = t(top.active ? "warning.activeNow" : "warning.upcoming");
+  }
+
+  const zone = top.zone || "";
+  const headline = isMultiple
+    ? t("warning.aemetPlural")
+    : `${t("warning.aemet")}: ${t(`warning.phenomenon.${top.phenomenon}`) || top.phenomenon} (${topLvlText.toUpperCase()})`;
+
+  const itemsHtml = list
     .map((w) => {
       const lvl = w.level || "amarillo";
       const lvlText = t(`warning.level.${lvl}`) || lvl;
-      const risk = t(`warning.risk.${lvl}`) || "";
       const phenom = t(`warning.phenomenon.${w.phenomenon}`) || w.phenomenon;
-      const activeState = t(w.active ? "warning.activeNow" : "warning.upcoming");
-      const title = `${t("warning.aemet")}: ${phenom} (${lvlText.toUpperCase()})`;
       const desc =
         (lang === "en" ? w.details?.en?.description : w.details?.es?.description) ||
         w.details?.es?.description ||
         w.desc ||
         "";
-      const instruction =
-        (lang === "en" ? w.details?.en?.instruction : w.details?.es?.instruction) || w.details?.es?.instruction || "";
       const timeStr =
         w.start && w.end
           ? t(
@@ -176,26 +191,43 @@ function warningBanner(warnings, tz) {
               `${new Date(w.end).toLocaleDateString(lang === "en" ? "en-GB" : "es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: tz })}`,
             )
           : "";
+
       return `
-      <aside class="warning-banner banner-${lvl}" role="alert">
-        <div class="wb-header">
-          <div class="wb-icon" aria-hidden="true">⚠️</div>
-          <div class="wb-title-group">
-            <div class="wb-meta">
-              <span class="wb-pill pill-${lvl}">${esc(lvlText)} · ${esc(risk)}</span>
-              <span class="wb-state">${esc(activeState)}</span>
-              <span class="wb-zone">${esc(w.zone)}</span>
-            </div>
-            <h3 class="wb-headline">${esc(title)}</h3>
-          </div>
+      <div class="wb-item">
+        <div class="wb-item-header">
+          <span class="wb-item-chip chip-${lvl}">
+            <span class="wb-item-dot" aria-hidden="true"></span>
+            ${esc(phenom)} (${esc(lvlText.charAt(0).toUpperCase() + lvlText.slice(1))})
+          </span>
+          ${timeStr ? `<span class="wb-time"><span class="wb-clock" aria-hidden="true">🕒</span> ${esc(timeStr)}</span>` : ""}
         </div>
         ${desc ? `<p class="wb-desc">${esc(desc)}</p>` : ""}
-        ${timeStr ? `<p class="wb-time"><span class="wb-clock" aria-hidden="true">🕒</span> ${esc(timeStr)}</p>` : ""}
-        <p class="wb-notice">${esc(t("warning.unfavorable"))}</p>
-        ${instruction ? `<p class="wb-instruction small muted"><span class="eyebrow">${esc(t("warning.instruction"))}:</span> ${esc(instruction)}</p>` : ""}
-      </aside>`;
+      </div>`;
     })
     .join("");
+
+  const topInstruction =
+    (lang === "en" ? top.details?.en?.instruction : top.details?.es?.instruction) || top.details?.es?.instruction || "";
+
+  return `
+  <aside class="warning-banner banner-${topLvl}" role="alert">
+    <div class="wb-header">
+      <div class="wb-icon" aria-hidden="true">⚠️</div>
+      <div class="wb-title-group">
+        <div class="wb-meta">
+          <span class="wb-pill pill-${topLvl}">${esc(topLvlText)} · ${esc(topRisk)}</span>
+          <span class="wb-state">${esc(stateText)}</span>
+          ${zone ? `<span class="wb-zone">${esc(zone)}</span>` : ""}
+        </div>
+        <h3 class="wb-headline">${esc(headline)}</h3>
+      </div>
+    </div>
+    <div class="wb-items">
+      ${itemsHtml}
+    </div>
+    <p class="wb-notice">${esc(t("warning.unfavorable"))}</p>
+    ${topInstruction ? `<p class="wb-instruction small muted"><span class="eyebrow">${esc(t("warning.instruction"))}:</span> ${esc(topInstruction)}</p>` : ""}
+  </aside>`;
 }
 
 function warningBadge(w) {
