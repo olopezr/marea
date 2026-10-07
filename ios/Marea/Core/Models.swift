@@ -79,6 +79,7 @@ struct SpotSummary: Codable, Sendable, Identifiable, Hashable {
     let score: Double
     let now: Now
     let tide: TideNow
+    var warning: SpotWarning? = nil
 }
 
 struct Overview: Codable, Sendable {
@@ -332,6 +333,39 @@ struct SpotDetail: Codable, Sendable {
     let tideDay: TideDay
     let hours: [Hour]
     let days: [Day]
+    var warnings: [SpotWarning]? = nil
+}
+
+struct WarningDetailsText: Codable, Sendable, Hashable {
+    let headline: String?
+    let description: String?
+    let instruction: String?
+    let onset: String?
+    let expires: String?
+}
+
+struct WarningDetails: Codable, Sendable, Hashable {
+    let es: WarningDetailsText?
+    let en: WarningDetailsText?
+}
+
+struct SpotWarning: Codable, Sendable, Hashable, Identifiable {
+    var id: String { rawId ?? "\(level ?? "")-\(phenomenon ?? "")-\(zone ?? "")" }
+    let rawId: String?
+    let level: String?
+    let phenomenon: String?
+    let zone: String?
+    let desc: String?
+    let start: Double?
+    let end: Double?
+    let link: String?
+    let active: Bool?
+    let details: WarningDetails?
+
+    enum CodingKeys: String, CodingKey {
+        case rawId = "id"
+        case level, phenomenon, zone, desc, start, end, link, active, details
+    }
 }
 
 struct AlertState: Codable, Sendable, Equatable {

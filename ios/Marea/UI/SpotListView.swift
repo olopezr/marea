@@ -192,6 +192,9 @@ struct SpotCard: View {
                 Spacer()
                 FavButton(on: app.favs.contains(s.id)) { app.toggleFav(s.id) }.padding(.top, -10).padding(.trailing, -10)
             }
+            if let w = s.warning {
+                WarningBadgeView(warning: w)
+            }
             HStack(spacing: 10) { RatingChip(rating: r); ScoreBar(score: s.score) }
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 10) {
                 GridRow {

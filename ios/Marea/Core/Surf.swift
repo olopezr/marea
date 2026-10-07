@@ -71,6 +71,14 @@ enum Surf {
 
     static func hour(_ ms: Double, _ tz: String) -> String { String(hhmm(ms, tz).prefix(2)) }
 
+    static func warningDate(_ ms: Double, _ tz: String) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: L10n.isEnglish ? "en_GB" : "es_ES")
+        f.timeZone = TimeZone(identifier: tz)
+        f.dateFormat = "EEE, d MMM, HH:mm"
+        return f.string(from: Date(ms: ms))
+    }
+
     static func ago(_ ms: Double, now: Date = .now) -> String {
         let m = Int(((now.ms - ms) / 60_000).rounded())
         if m < 1 { return L("ago.now") }

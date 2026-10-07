@@ -50,6 +50,23 @@ enum Theme {
     /// Color de la tendencia de la boya: verde si sube, acento si baja.
     static func trend(_ key: String) -> Color { key == "up" ? greenText : key == "down" ? accentText : ink }
 
+    /// Colores para avisos meteorológicos AEMET (amarillo, naranja, rojo).
+    static func warningColor(_ level: String?) -> Color {
+        switch level?.lowercased() {
+        case "rojo": dyn(0xDC2626, 0xFF4D4D)
+        case "naranja": dyn(0xEA580C, 0xFF7A33)
+        default: dyn(0xF59E0B, 0xFBBF24)
+        }
+    }
+
+    static func warningText(_ level: String?) -> Color {
+        switch level?.lowercased() {
+        case "rojo": dyn(0xB91C1C, 0xFF8080)
+        case "naranja": dyn(0xC2410C, 0xFFA066)
+        default: dyn(0xB45309, 0xFCD34D)
+        }
+    }
+
     static func heroLabel(_ r: Rating) -> Color {
         let q = UIColor(Theme.q(r)), bg = UIColor(Theme.bg)
         return Color(uiColor: UIColor { traits in
@@ -166,6 +183,35 @@ struct RatingChip: View {
         Text(rating.label.uppercased()).font(Theme.monoBold(11, relativeTo: .caption)).tracking(0.7)
             .foregroundStyle(Theme.qText(rating)).padding(.horizontal, 9).padding(.vertical, 6)
             .background(q.opacity(0.16), in: Capsule())
+    }
+}
+
+struct WarningBadgeView: View {
+    let warning: SpotWarning
+
+    var body: some View {
+        let lvl = warning.level ?? "amarillo"
+        let lvlKey = "warning.level.\(lvl)"
+        let lvlText = L(lvlKey) == lvlKey ? lvl : L(lvlKey)
+        let phenomKey = "warning.phenomenon.\(warning.phenomenon ?? "")"
+        let phenomLocalized = L(phenomKey)
+        let phenomText = phenomLocalized == phenomKey ? (warning.phenomenon ?? "") : phenomLocalized
+        let color = Theme.warningColor(lvl)
+        let textColor = Theme.warningText(lvl)
+
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text("\(L("warning.badge", lvlText)): \(phenomText)")
+                .font(Theme.bodySemibold(12, relativeTo: .caption))
+                .foregroundStyle(textColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.15), in: Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.4), lineWidth: 1))
+        .accessibilityLabel("\(L("warning.badge", lvlText)): \(phenomText)")
     }
 }
 

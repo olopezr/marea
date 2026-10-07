@@ -94,6 +94,9 @@ struct SpotDetailView: View {
         let s = res.data, tz = s.tz, n = s.now, t = s.tide
         let water = s.buoy?.water ?? n.water
         DataBanners(ts: res.ts, stale: res.stale, offline: res.offline, forecastSource: s.forecastSource)
+        if let warnings = s.warnings, !warnings.isEmpty {
+            WarningBannerView(warnings: warnings, tz: tz)
+        }
         Hero(spot: s)
         HStack(spacing: 10) {
             alertButton
@@ -115,6 +118,9 @@ struct SpotDetailView: View {
             }
         }
         BuoyPanel(spot: s)
+        if let b = s.buoy, (b.history?.count ?? 0) >= 6 || !(b.model ?? []).isEmpty {
+            HistoryPanel(buoy: b)
+        }
 
         // Grid (no perezoso) para que las dos fichas de cada fila tengan la misma altura.
         Grid(horizontalSpacing: 10, verticalSpacing: 10) {
@@ -182,8 +188,6 @@ struct SpotDetailView: View {
             }
             Text(tideNote(s)).font(Theme.body(13)).foregroundStyle(Theme.muted)
         }
-
-        if let b = s.buoy, (b.history?.count ?? 0) >= 6 || !(b.model ?? []).isEmpty { HistoryPanel(buoy: b) }
 
         Panel {
             PanelTitle(text: L("hours.title"))
@@ -536,3 +540,132 @@ struct DaylightTile: View {
         }
     }
 }
+
+// Avisos meteorológicos oficiales AEMET (warningBanner en public/js/app.js)
+struct WarningBannerView: View {
+    let warnings: [SpotWarning]
+    let tz: String
+
+    var body: some View {
+        let list = Array(warnings.prefix(3))
+        if let top = list.first {
+            let isMultiple = list.count > 1
+            let topLvl = top.level ?? "amarillo"
+            let topLvlKey = "warning.level.\(topLvl)"
+            let topLvlText = L(topLvlKey) == topLvlKey ? topLvl : L(topLvlKey)
+            let topRiskKey = "warning.risk.\(topLvl)"
+            let topRisk = L(topRiskKey) == topRiskKey ? "" : L(topRiskKey)
+
+            let activeCount = list.filter { $0.active == true }.count
+            let stateText = isMultiple
+                ? (activeCount > 0 ? L("warning.activeCount", "\(activeCount)") : L("warning.totalCount", "\(list.count)"))
+                : L(top.active == true ? "warning.activeNow" : "warning.upcoming")
+
+            let zone = top.zone ?? ""
+            let phenomTopKey = "warning.phenomenon.\(top.phenomenon ?? "")"
+            let phenomTop = L(phenomTopKey) == phenomTopKey ? (top.phenomenon ?? "") : L(phenomTopKey)
+            let headline = isMultiple
+                ? L("warning.aemetPlural")
+                : "\(L("warning.aemet")): \(phenomTop) (\(topLvlText.uppercased()))"
+
+            let topInstruction = L10n.isEnglish
+                ? (top.details?.en?.instruction ?? top.details?.es?.instruction ?? "")
+                : (top.details?.es?.instruction ?? "")
+
+            let baseColor = Theme.warningColor(topLvl)
+
+            VStack(alignment: .leading, spacing: 12) {
+                // Cabecera del aviso
+                HStack(alignment: .top, spacing: 10) {
+                    Text("⚠️")
+                        .font(.system(size: 22))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Text("\(topLvlText.uppercased())\(topRisk.isEmpty ? "" : " · \(topRisk)")")
+                                .font(Theme.monoBold(10.5, relativeTo: .caption2))
+                                .foregroundStyle(Theme.warningText(topLvl))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 2)
+                                .background(baseColor.opacity(0.22), in: RoundedRectangle(cornerRadius: 6))
+                            Text(stateText)
+                                .font(Theme.body(12, relativeTo: .caption))
+                                .foregroundStyle(Theme.ink)
+                            if !zone.isEmpty {
+                                Text(zone)
+                                    .font(Theme.body(12, relativeTo: .caption))
+                                    .foregroundStyle(Theme.muted)
+                                    .lineLimit(1)
+                            }
+                        }
+                        Text(headline)
+                            .font(Theme.heading(16, relativeTo: .subheadline))
+                            .foregroundStyle(Theme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                // Lista de avisos (hasta 3)
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(list) { w in
+                        let itemLvl = w.level ?? "amarillo"
+                        let itemLvlKey = "warning.level.\(itemLvl)"
+                        let itemLvlText = L(itemLvlKey) == itemLvlKey ? itemLvl : L(itemLvlKey)
+                        let pKey = "warning.phenomenon.\(w.phenomenon ?? "")"
+                        let pText = L(pKey) == pKey ? (w.phenomenon ?? "") : L(pKey)
+                        let desc = L10n.isEnglish
+                            ? (w.details?.en?.description ?? w.details?.es?.description ?? w.desc ?? "")
+                            : (w.details?.es?.description ?? w.desc ?? "")
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .center, spacing: 8) {
+                                HStack(spacing: 5) {
+                                    Circle().fill(Theme.warningColor(itemLvl)).frame(width: 6, height: 6)
+                                    Text("\(pText) (\(itemLvlText.capitalizedFirst))")
+                                        .font(Theme.bodySemibold(12, relativeTo: .caption))
+                                        .foregroundStyle(Theme.warningText(itemLvl))
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(Theme.warningColor(itemLvl).opacity(0.16), in: Capsule())
+
+                                if let start = w.start, let end = w.end {
+                                    Text("🕒 \(L("warning.window", Surf.warningDate(start, tz), Surf.warningDate(end, tz)))")
+                                        .font(Theme.body(11.5, relativeTo: .caption2))
+                                        .foregroundStyle(Theme.muted)
+                                        .lineLimit(1)
+                                }
+                            }
+                            if !desc.isEmpty {
+                                Text(desc)
+                                    .font(Theme.body(13, relativeTo: .footnote))
+                                    .foregroundStyle(Theme.ink)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
+
+                // Nota y recomendación oficial
+                Text(L("warning.unfavorable"))
+                    .font(Theme.body(12.5, relativeTo: .caption))
+                    .foregroundStyle(Theme.muted)
+
+                if !topInstruction.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Eyebrow(text: L("warning.instruction"))
+                        Text(topInstruction)
+                            .font(Theme.body(12.5, relativeTo: .caption))
+                            .foregroundStyle(Theme.ink)
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(baseColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(baseColor.opacity(0.35), lineWidth: 1.5))
+            .accessibilityElement(children: .combine)
+        }
+    }
+}
+
