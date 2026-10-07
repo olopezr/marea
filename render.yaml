@@ -11,6 +11,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Horas de caché para Open-Meteo (por defecto 2h: ~2.000 llamadas/día para no superar el límite gratuito de 10.000).
+      - key: OPEN_METEO_TTL_HOURS
+        value: "2"
       # Contacto para los servicios de notificaciones push (Google, Apple, Mozilla).
       - key: VAPID_SUBJECT
         value: https://github.com/olopezr/marea

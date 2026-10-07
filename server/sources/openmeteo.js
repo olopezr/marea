@@ -1,18 +1,27 @@
 // Previsión de oleaje y viento (Open-Meteo). Una petición por API para todos los spots.
 // Con OPEN_METEO_API_KEY se usan los servidores del plan comercial.
+// Con OPEN_METEO_BASE_URL se puede redirigir a un proxy de caché (ej. Cloudflare Worker o Nginx).
 import { cached, fetchJSON } from "../cache.js";
 
 const KEY = process.env.OPEN_METEO_API_KEY;
-const MARINE = KEY
-  ? "https://customer-marine-api.open-meteo.com/v1/marine"
-  : "https://marine-api.open-meteo.com/v1/marine";
-const WEATHER = KEY ? "https://customer-api.open-meteo.com/v1/forecast" : "https://api.open-meteo.com/v1/forecast";
+const BASE_URL = process.env.OPEN_METEO_BASE_URL?.replace(/\/+$/, "");
+const MARINE = BASE_URL
+  ? `${BASE_URL}/v1/marine`
+  : KEY
+    ? "https://customer-marine-api.open-meteo.com/v1/marine"
+    : "https://marine-api.open-meteo.com/v1/marine";
+const WEATHER = BASE_URL
+  ? `${BASE_URL}/v1/forecast`
+  : KEY
+    ? "https://customer-api.open-meteo.com/v1/forecast"
+    : "https://api.open-meteo.com/v1/forecast";
 const MARINE_VARS =
   "wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_direction,swell_wave_period,sea_level_height_msl";
 const WIND_VARS = "wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m";
-// Open-Meteo cuenta cada spot como una llamada (algo más si pasa de 10 variables). Con unos 80 spots,
-// refrescar cada hora son ~5.500 llamadas al día, dentro del límite gratuito de 10.000. La previsión es horaria.
-const TTL = 60 * 60e3;
+// Open-Meteo cuenta cada spot como una llamada. Con ~80 spots, un TTL de 2 horas reduce el consumo
+// a ~2.000 llamadas al día (muy holgado dentro del límite gratuito de 10.000). Los modelos no
+// actualizan más a menudo. Configurable con OPEN_METEO_TTL_HOURS.
+const TTL = Math.max(1, Number(process.env.OPEN_METEO_TTL_HOURS) || 2) * 3600e3;
 
 const utc = (s) => Date.parse(s + "Z");
 

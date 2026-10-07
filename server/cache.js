@@ -1,12 +1,88 @@
-// Caché en memoria con TTL. Agrupa peticiones simultáneas a la misma clave y,
+// Caché en memoria y SQLite con TTL. Agrupa peticiones simultáneas a la misma clave,
+// persiste las respuestas válidas en disco para sobrevivir a reinicios del servidor y,
 // si la fuente falla, sirve el último valor bueno durante `staleMs`.
 // Tras un fallo no se vuelve a llamar a la fuente hasta pasados `retryMs`: así una fuente caída o que
 // limita peticiones no recibe una llamada nueva por cada visita.
+import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import { DATA_DIR } from "./config.js";
+
 const entries = new Map();
+
+let db = null;
+let getStmt = null;
+let setStmt = null;
+let cleanupScheduled = false;
+
+function initDb() {
+  if (db) return db;
+  try {
+    db = new DatabaseSync(path.join(DATA_DIR, "marea.db"));
+    db.exec(`
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE IF NOT EXISTS cache_entries (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        at INTEGER NOT NULL
+      );
+    `);
+    getStmt = db.prepare("SELECT value, at FROM cache_entries WHERE key = ?");
+    setStmt = db.prepare(`
+      INSERT INTO cache_entries (key, value, at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, at = excluded.at
+    `);
+    if (!cleanupScheduled && process.env.NODE_ENV !== "test") {
+      cleanupScheduled = true;
+      setInterval(() => {
+        try {
+          const weekAgo = Date.now() - 7 * 24 * 3600e3;
+          db.prepare("DELETE FROM cache_entries WHERE at < ?").run(weekAgo);
+        } catch {}
+      }, 24 * 3600e3).unref();
+    }
+  } catch (err) {
+    console.warn(`[cache] Persistencia SQLite no disponible (${err.message}). Se usará solo memoria.`);
+    db = null;
+  }
+  return db;
+}
+
+function readDisk(key) {
+  if (!initDb() || !getStmt) return null;
+  try {
+    const row = getStmt.get(key);
+    if (!row) return null;
+    return { value: JSON.parse(row.value), at: Number(row.at) };
+  } catch {
+    return null;
+  }
+}
+
+function writeDisk(key, value, at) {
+  if (!initDb() || !setStmt) return;
+  try {
+    setStmt.run(key, JSON.stringify(value), at);
+  } catch {
+    // Si no se puede serializar o guardar en disco, el dato sigue en memoria
+  }
+}
+
+export function clearMemoryCache() {
+  entries.clear();
+}
 
 export async function cached(key, ttlMs, loader, { staleMs = 24 * 3600e3, retryMs = 2 * 60e3 } = {}) {
   const now = Date.now();
-  const e = entries.get(key);
+  let e = entries.get(key);
+  if (!e) {
+    const disk = readDisk(key);
+    if (disk) {
+      e = disk;
+      entries.set(key, e);
+    }
+  }
+
   if (e?.value !== undefined && now - e.at < ttlMs) return e.value;
   if (e?.pending) return e.pending;
   if (e?.failedAt && now - e.failedAt < Math.max(retryMs, e.retryAfterMs ?? 0)) {
@@ -16,7 +92,9 @@ export async function cached(key, ttlMs, loader, { staleMs = 24 * 3600e3, retryM
 
   const pending = loader()
     .then((value) => {
-      entries.set(key, { value, at: Date.now() });
+      const at = Date.now();
+      entries.set(key, { value, at });
+      writeDisk(key, value, at);
       return value;
     })
     .catch((err) => {

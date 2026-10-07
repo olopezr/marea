@@ -131,7 +131,10 @@ async function api(req, res, url) {
   const ip = clientIp(req);
   const origin = req.headers.origin;
   const cors = origin && CORS_ORIGINS.has(origin) ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {};
-  const cache = { "Cache-Control": "public, max-age=300", ...cors };
+  const cache = {
+    "Cache-Control": "public, max-age=300, s-maxage=1800, stale-while-revalidate=3600",
+    ...cors,
+  };
 
   if (req.method === "GET" && p === "/api/health")
     return send(req, res, 200, { ok: true, uptimeS: Math.round((Date.now() - started) / 1000) });
