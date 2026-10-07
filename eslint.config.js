@@ -14,6 +14,7 @@ export default [
       "public/fonts/**",
       "public/icons/**",
       "public/js/strings.js",
+      "cloudflare-proxy/**",
     ],
   },
   js.configs.recommended,
