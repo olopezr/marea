@@ -114,13 +114,13 @@ class Api(context: Context, private val base: String = BuildConfig.API_BASE) {
     // ---------- Avisos ----------
 
     @Serializable private data class Device(val platform: String = "android", val token: String)
-    @Serializable private data class Subscribe(val device: Device, val spots: List<String>, val minScore: Double, val lang: String = L10n.lang)
+    @Serializable private data class Subscribe(val device: Device, val spots: List<String>, val minScore: Double, val prefs: Map<String, AlertPref>, val lang: String = L10n.lang)
     @Serializable private data class Endpoint(val endpoint: String)
 
     private fun endpoint(token: String) = json.encodeToString(Endpoint.serializer(), Endpoint("fcm:$token"))
 
-    suspend fun subscribe(token: String, spots: List<String>, minScore: Double): AlertState = withContext(Dispatchers.IO) {
-        val body = json.encodeToString(Subscribe.serializer(), Subscribe(Device(token = token), spots, minScore))
+    suspend fun subscribe(token: String, spots: List<String>, minScore: Double, prefs: Map<String, AlertPref> = emptyMap()): AlertState = withContext(Dispatchers.IO) {
+        val body = json.encodeToString(Subscribe.serializer(), Subscribe(Device(token = token), spots, minScore, prefs))
         json.decodeFromString(AlertState.serializer(), request("/api/push/subscribe", "POST", body))
     }
 
