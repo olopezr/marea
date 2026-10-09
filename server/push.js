@@ -131,7 +131,8 @@ const NATIVE = { ios: { kind: "apns", re: /^[0-9a-f]{64,200}$/i }, android: { ki
 
 // `subscription` (navegador) o `device: { platform, token }` (app nativa).
 function target({ subscription, device }) {
-  const n = device && NATIVE[device.platform];
+  const n =
+    device && typeof device.platform === "string" && Object.hasOwn(NATIVE, device.platform) && NATIVE[device.platform];
   if (n) {
     const token = String(device.token ?? "");
     if (!n.re.test(token)) throw Object.assign(new Error("Token de dispositivo no válido"), { status: 400 });

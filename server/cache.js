@@ -7,6 +7,9 @@ import { getDb } from "./db.js";
 
 const entries = new Map();
 
+// Fallos de carga por fuente (prefijo de la clave): se ven en /api/health.
+export const sourceErrors = {};
+
 let db = null;
 let getStmt = null;
 let setStmt = null;
@@ -95,6 +98,8 @@ export async function cached(key, ttlMs, loader, { staleMs = 24 * 3600e3, retryM
       return value;
     })
     .catch((err) => {
+      const source = key.split(":")[0];
+      sourceErrors[source] = (sourceErrors[source] ?? 0) + 1;
       const failed = { failedAt: Date.now(), error: err, retryAfterMs: err.retryAfterMs };
       if (e?.value !== undefined && now - e.at < staleMs) {
         entries.set(key, { value: e.value, at: e.at, ...failed });

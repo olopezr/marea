@@ -7,6 +7,7 @@ import { spotById } from "../public/js/spots.js";
 import { overview, detail } from "./conditions.js";
 import { nearestReading } from "./sources/portus.js";
 import * as push from "./push.js";
+import { sourceErrors } from "./cache.js";
 import { clientIp } from "./request.js";
 import { createLimiter } from "./ratelimit.js";
 
@@ -32,7 +33,9 @@ const SECURITY = {
   "Content-Security-Policy": [
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self'",
+    "style-src-elem 'self'",
+    "style-src-attr 'unsafe-inline'", // solo atributos style="" (giro de flechas, relleno de puntuación)
     "font-src 'self'",
     "img-src 'self' data: blob:",
     "connect-src 'self' https://tiles.openfreemap.org",
@@ -133,7 +136,7 @@ async function api(req, res, url) {
   if (req.method === "GET" && p.startsWith("/api/spots") && limitedReads(ip))
     return send(req, res, 429, { error: "Demasiadas peticiones. Prueba dentro de unos minutos." });
   if (req.method === "GET" && p === "/api/health")
-    return send(req, res, 200, { ok: true, uptimeS: Math.round((Date.now() - started) / 1000) });
+    return send(req, res, 200, { ok: true, uptimeS: Math.round((Date.now() - started) / 1000), sourceErrors });
   if (req.method === "GET" && p === "/api/spots") return send(req, res, 200, await overview(), cache);
   // Solo la boya de un spot: la lista la pide por tarjeta, cuando aparece en pantalla.
   const mb = p.match(/^\/api\/spots\/([\w-]+)\/boya$/);
@@ -173,6 +176,8 @@ function serveStatic(req, res, url) {
   } catch {
     return send(req, res, 400, "Petición no válida", { "Content-Type": "text/plain; charset=utf-8" });
   }
+  if (rel.includes("\0"))
+    return send(req, res, 400, "Petición no válida", { "Content-Type": "text/plain; charset=utf-8" });
   if (rel.endsWith("/")) rel += "index.html";
   const file = path.join(PUBLIC, path.normalize(rel));
   if (!file.startsWith(PUBLIC + path.sep))
@@ -194,8 +199,24 @@ function serveStatic(req, res, url) {
   });
 }
 
+// Registro de accesos (una línea JSON por petición). Sin IP ni cabeceras, y sin la ruta de las consultas.
+const LOG_REQUESTS = process.env.NODE_ENV !== "test" && process.env.LOG_REQUESTS !== "false";
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
+  if (LOG_REQUESTS && url.pathname !== "/api/health") {
+    const t0 = process.hrtime.bigint();
+    res.on("finish", () =>
+      console.log(
+        JSON.stringify({
+          m: req.method,
+          p: url.pathname.replace(/^(\/api\/spots\/)[\w-]+/, "$1:id"),
+          s: res.statusCode,
+          ms: Math.round(Number(process.hrtime.bigint() - t0) / 1e6),
+        }),
+      ),
+    );
+  }
   try {
     if (url.pathname.startsWith("/api/")) await api(req, res, url);
     else if (req.method === "GET" || req.method === "HEAD") serveStatic(req, res, url);
