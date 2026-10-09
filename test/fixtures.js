@@ -9,6 +9,14 @@ process.env.DATA_DIR ??= fs.mkdtempSync(path.join(os.tmpdir(), "marea-test-"));
 const H = 3600e3;
 const iso = (ms) => new Date(ms).toISOString().slice(0, 16);
 
+// Fechas del aviso de AEMET simulado, relativas a "ahora": así el aviso siempre está en vigor y los tests no dependen
+// del día en que se ejecutan. Formato del RSS: "14:59 09-10-2026 CEST (UTC+2)" (aquí siempre en UTC+2).
+const p2 = (n) => String(n).padStart(2, "0");
+const aemetDate = (ms) => {
+  const d = new Date(ms + 2 * H);
+  return `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())} ${p2(d.getUTCDate())}-${p2(d.getUTCMonth() + 1)}-${d.getUTCFullYear()} CEST (UTC+2)`;
+};
+
 export function installFetch(opts = {}) {
   const { ihmFail = false, buoy = {}, wave = 1.8, period = 12, wind = 4, windDir = 150 } = opts;
   const calls = [];
@@ -31,7 +39,7 @@ export function installFetch(opts = {}) {
     <title>AEMET - Avisos</title>
     <item>
       <title>Aviso. Nivel naranja. Costeros. Menorca</title>
-      <description>Aviso de costeros de nivel naranja de 00:00 09-10-2026 CEST (UTC+2) a 14:59 09-10-2026 CEST (UTC+2).</description>
+      <description>Aviso de costeros de nivel naranja de ${aemetDate(Date.now() - 2 * H)} a ${aemetDate(Date.now() + 6 * H)}.</description>
       <link>https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/cap/test_menorca.xml</link>
       <guid>test_menorca.xml</guid>
     </item>
@@ -49,8 +57,8 @@ export function installFetch(opts = {}) {
     <headline>Aviso de costeros de nivel naranja. Costa - Menorca</headline>
     <description>Viento del norte de 50 a 65 km/h (fuerza 7 a 8) y olas de 4 a 5 m.</description>
     <instruction>Esté preparado. Tome precauciones.</instruction>
-    <onset>2026-10-09T00:00:00+02:00</onset>
-    <expires>2026-10-09T14:59:59+02:00</expires>
+    <onset>${new Date(Date.now() - 2 * H).toISOString()}</onset>
+    <expires>${new Date(Date.now() + 6 * H).toISOString()}</expires>
   </info>
   <info>
     <language>en-GB</language>
@@ -58,8 +66,8 @@ export function installFetch(opts = {}) {
     <headline>Severe coastal warning. Costa - Menorca</headline>
     <description>North wind 50 to 65 km/h (force 7 to 8) and waves 4 to 5 m.</description>
     <instruction>Be prepared. Take precautions.</instruction>
-    <onset>2026-10-09T00:00:00+02:00</onset>
-    <expires>2026-10-09T14:59:59+02:00</expires>
+    <onset>${new Date(Date.now() - 2 * H).toISOString()}</onset>
+    <expires>${new Date(Date.now() + 6 * H).toISOString()}</expires>
   </info>
 </alert>`,
         { status: 200, headers: { "Content-Type": "application/xml" } },
