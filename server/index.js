@@ -7,7 +7,9 @@ import { spotById } from "../public/js/spots.js";
 import { overview, detail } from "./conditions.js";
 import { nearestReading } from "./sources/portus.js";
 import * as push from "./push.js";
+import { sourceErrors } from "./cache.js";
 import { clientIp } from "./request.js";
+import { createLimiter } from "./ratelimit.js";
 
 const PORT = +process.env.PORT || 8800;
 const PUBLIC = path.resolve(import.meta.dirname, "../public");
@@ -31,7 +33,9 @@ const SECURITY = {
   "Content-Security-Policy": [
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self'",
+    "style-src-elem 'self'",
+    "style-src-attr 'unsafe-inline'", // solo atributos style="" (giro de flechas, relleno de puntuación)
     "font-src 'self'",
     "img-src 'self' data: blob:",
     "connect-src 'self' https://tiles.openfreemap.org",
@@ -55,17 +59,9 @@ const CORS_ORIGINS = new Set(
     .filter(Boolean),
 );
 
-// Límite sencillo por IP para las rutas que escriben.
-const hits = new Map();
-function limited(ip, max = 30, windowMs = 10 * 60e3) {
-  const now = Date.now();
-  if (hits.size > 10_000) hits.clear(); // tope de memoria ante muchas IP distintas
-  const h = (hits.get(ip) ?? []).filter((t) => now - t < windowMs);
-  h.push(now);
-  hits.set(ip, h);
-  return h.length > max;
-}
-setInterval(() => hits.clear(), 60 * 60e3).unref();
+// Límites por IP: estricto para las rutas que escriben y holgado para las de lectura (las respuestas van en caché).
+const limitedWrites = createLimiter(30, 10 * 60e3);
+const limitedReads = createLimiter(3000, 10 * 60e3);
 
 // Mensajes de error en inglés para las apps y navegadores en ese idioma (Accept-Language).
 const EN_ERRORS = {
@@ -111,8 +107,9 @@ function readJSON(req, limit = 8 * 1024) {
     req.on("data", (c) => {
       size += c.length;
       if (size > limit) {
-        reject(Object.assign(new Error("Cuerpo demasiado grande"), { status: 413 }));
-        req.destroy();
+        // No se destruye el socket: así el cliente recibe el 413. El resto del cuerpo se descarta.
+        if (size - c.length <= limit) reject(Object.assign(new Error("Cuerpo demasiado grande"), { status: 413 }));
+        chunks = [];
       } else chunks.push(c);
     });
     req.on("end", () => {
@@ -136,8 +133,10 @@ async function api(req, res, url) {
     ...cors,
   };
 
+  if (req.method === "GET" && p.startsWith("/api/spots") && limitedReads(ip))
+    return send(req, res, 429, { error: "Demasiadas peticiones. Prueba dentro de unos minutos." });
   if (req.method === "GET" && p === "/api/health")
-    return send(req, res, 200, { ok: true, uptimeS: Math.round((Date.now() - started) / 1000) });
+    return send(req, res, 200, { ok: true, uptimeS: Math.round((Date.now() - started) / 1000), sourceErrors });
   if (req.method === "GET" && p === "/api/spots") return send(req, res, 200, await overview(), cache);
   // Solo la boya de un spot: la lista la pide por tarjeta, cuando aparece en pantalla.
   const mb = p.match(/^\/api\/spots\/([\w-]+)\/boya$/);
@@ -157,7 +156,8 @@ async function api(req, res, url) {
   if (req.method === "GET" && p === "/api/push/key") return send(req, res, 200, { publicKey: push.publicKey }, cors);
 
   if (req.method === "POST" && p.startsWith("/api/push/")) {
-    if (limited(ip)) return send(req, res, 429, { error: "Demasiadas peticiones. Prueba dentro de unos minutos." });
+    if (limitedWrites(ip))
+      return send(req, res, 429, { error: "Demasiadas peticiones. Prueba dentro de unos minutos." });
     const body = await readJSON(req);
     if (!body || typeof body !== "object" || Array.isArray(body))
       throw Object.assign(new Error("JSON no válido"), { status: 400 });
@@ -176,6 +176,8 @@ function serveStatic(req, res, url) {
   } catch {
     return send(req, res, 400, "Petición no válida", { "Content-Type": "text/plain; charset=utf-8" });
   }
+  if (rel.includes("\0"))
+    return send(req, res, 400, "Petición no válida", { "Content-Type": "text/plain; charset=utf-8" });
   if (rel.endsWith("/")) rel += "index.html";
   const file = path.join(PUBLIC, path.normalize(rel));
   if (!file.startsWith(PUBLIC + path.sep))
@@ -197,8 +199,24 @@ function serveStatic(req, res, url) {
   });
 }
 
+// Registro de accesos (una línea JSON por petición). Sin IP ni cabeceras, y sin la ruta de las consultas.
+const LOG_REQUESTS = process.env.NODE_ENV !== "test" && process.env.LOG_REQUESTS !== "false";
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
+  if (LOG_REQUESTS && url.pathname !== "/api/health") {
+    const t0 = process.hrtime.bigint();
+    res.on("finish", () =>
+      console.log(
+        JSON.stringify({
+          m: req.method,
+          p: url.pathname.replace(/^(\/api\/spots\/)[\w-]+/, "$1:id"),
+          s: res.statusCode,
+          ms: Math.round(Number(process.hrtime.bigint() - t0) / 1e6),
+        }),
+      ),
+    );
+  }
   try {
     if (url.pathname.startsWith("/api/")) await api(req, res, url);
     else if (req.method === "GET" || req.method === "HEAD") serveStatic(req, res, url);
@@ -213,6 +231,11 @@ const server = http.createServer(async (req, res) => {
       });
   }
 });
+
+// Tiempos máximos explícitos (antes, los de Node por defecto) frente a conexiones lentas.
+server.headersTimeout = 15e3;
+server.requestTimeout = 30e3;
+server.keepAliveTimeout = 5e3;
 
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {

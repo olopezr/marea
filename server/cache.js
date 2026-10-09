@@ -3,11 +3,12 @@
 // si la fuente falla, sirve el último valor bueno durante `staleMs`.
 // Tras un fallo no se vuelve a llamar a la fuente hasta pasados `retryMs`: así una fuente caída o que
 // limita peticiones no recibe una llamada nueva por cada visita.
-import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
-import { DATA_DIR } from "./config.js";
+import { getDb } from "./db.js";
 
 const entries = new Map();
+
+// Fallos de carga por fuente (prefijo de la clave): se ven en /api/health.
+export const sourceErrors = {};
 
 let db = null;
 let getStmt = null;
@@ -17,9 +18,8 @@ let cleanupScheduled = false;
 function initDb() {
   if (db) return db;
   try {
-    db = new DatabaseSync(path.join(DATA_DIR, "marea.db"));
+    db = getDb();
     db.exec(`
-      PRAGMA journal_mode = WAL;
       CREATE TABLE IF NOT EXISTS cache_entries (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,
@@ -98,6 +98,8 @@ export async function cached(key, ttlMs, loader, { staleMs = 24 * 3600e3, retryM
       return value;
     })
     .catch((err) => {
+      const source = key.split(":")[0];
+      sourceErrors[source] = (sourceErrors[source] ?? 0) + 1;
       const failed = { failedAt: Date.now(), error: err, retryAfterMs: err.retryAfterMs };
       if (e?.value !== undefined && now - e.at < staleMs) {
         entries.set(key, { value: e.value, at: e.at, ...failed });

@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ["**"]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Lint, Sync & Tests (Node.js)
@@ -23,6 +26,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Auditoría de dependencias
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Code style & Lint check
         run: |

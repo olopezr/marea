@@ -159,3 +159,25 @@ test("solo se aceptan endpoints de servicios push conocidos (evita SSRF)", async
     /no válida/,
   );
 });
+
+test("dos revisiones simultáneas no duplican el aviso", async () => {
+  const token = "dQw4w9WgXcQ:APA91bH-token_concurrente";
+  push.subscribe({ device: { platform: "android", token }, spots: ["somo"], minScore: 2 });
+  const t = at10() + 5 * 60e3;
+  await Promise.all([push.checkAlerts(t), push.checkAlerts(t)]);
+  const mine = sent.filter((s) => s.endpoint === `fcm:${token}`);
+  assert.ok(mine.length >= 1);
+  assert.equal(new Set(mine.map((s) => s.tag)).size, mine.length, "ningún aviso se repite");
+  push.unsubscribe(`fcm:${token}`);
+});
+
+test("un dispositivo que falla 10 veces seguidas se da de baja", async () => {
+  const token = "dQw4w9WgXcQ:APA91bH-token_fallido";
+  push.subscribe({ device: { platform: "android", token }, spots: ["somo"] });
+  failWith = 500;
+  for (let i = 0; i < 9; i++) await assert.rejects(push.sendTest(`fcm:${token}`));
+  assert.equal(push.status(`fcm:${token}`).subscribed, true);
+  await assert.rejects(push.sendTest(`fcm:${token}`));
+  failWith = null;
+  assert.equal(push.status(`fcm:${token}`).subscribed, false);
+});

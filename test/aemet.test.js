@@ -87,3 +87,38 @@ test("overview incluye warning en los spots afectados", async () => {
   assert.equal(menorca.warning.level, "naranja");
   assert.equal(menorca.warning.phenomenon, "Costeros");
 });
+
+test("el lector XML entiende CDATA, entidades, atributos y varias líneas", async () => {
+  const xml = await import("../server/sources/xml.js");
+  assert.equal(xml.tag("<a><![CDATA[<b>5 &amp; 6</b>]]></a>", "a"), "<b>5 &amp; 6</b>");
+  assert.equal(xml.tag("<a>Fuerte &amp; &lt;peligroso&gt; &#241; &#xF1;</a>", "a"), "Fuerte & <peligroso> ñ ñ");
+  assert.equal(xml.tag('<guid isPermaLink="false">x.xml</guid>', "guid"), "x.xml");
+  assert.equal(xml.tag("<a>línea 1\nlínea 2</a>", "a"), "línea 1\nlínea 2");
+  assert.equal(xml.tag("<a>1</a>", "b"), null);
+  assert.deepEqual(xml.blocks("<info>uno</info><info lang='en'>dos</info>", "info"), ["uno", "dos"]);
+  assert.equal(xml.text("&#99999999999;"), "");
+});
+
+test("parseAemetRss lee avisos con CDATA y descripción en varias líneas", () => {
+  const rss = `<rss><channel><item>
+    <title><![CDATA[Aviso. Nivel rojo. Costeros. Litoral gallego]]></title>
+    <description>Aviso de costeros
+      de 00:00 09-10-2026 CEST (UTC+2) a 14:59 09-10-2026 CEST (UTC+2).</description>
+    <link>https://www.aemet.es/x.xml</link><guid isPermaLink="false">g1</guid>
+  </item></channel></rss>`;
+  const [w] = aemet.parseAemetRss(rss);
+  assert.equal(w.level, "rojo");
+  assert.equal(w.zone, "Litoral gallego");
+  assert.equal(w.id, "g1");
+  assert.ok(w.start && w.end);
+});
+
+test("solo se piden detalles a URLs https de aemet.es", async () => {
+  for (const u of [
+    "http://www.aemet.es/x.xml",
+    "https://evil.example/x.xml",
+    "https://aemet.es.evil.example/x",
+    "ftp://aemet.es/x",
+  ])
+    assert.equal(await aemet.fetchCapDetail(u), null, u);
+});

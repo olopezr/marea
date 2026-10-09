@@ -2,6 +2,7 @@
 // Cruza los spots con las alertas activas para detectar condiciones desfavorables o peligrosas.
 // Fuente gratuita, sin clave obligatoria y actualizada en tiempo real mediante RSS/CAP.
 import { cached } from "../cache.js";
+import { blocks, tag } from "./xml.js";
 
 const RSS_URL = "https://www.aemet.es/documentos_d/eltiempo/prediccion/avisos/rss/CAP_AFAE_wah_RSS.xml";
 const UA = "MareaSurf/1.0 https://github.com/olopezr/marea";
@@ -84,14 +85,14 @@ function parseAemetDate(str) {
 
 export function parseAemetRss(xml) {
   if (!xml || typeof xml !== "string") return [];
-  const items = xml.split("<item>").slice(1);
+  const items = blocks(xml, "item");
   const out = [];
 
   for (const block of items) {
-    const title = block.match(/<title>(.*?)<\/title>/)?.[1] ?? "";
-    const desc = block.match(/<description>(.*?)<\/description>/)?.[1] ?? "";
-    const link = block.match(/<link>(.*?)<\/link>/)?.[1] ?? "";
-    const guid = block.match(/<guid.*?>(.*?)<\/guid>/)?.[1] ?? "";
+    const title = tag(block, "title") ?? "";
+    const desc = tag(block, "description") ?? "";
+    const link = tag(block, "link") ?? "";
+    const guid = tag(block, "guid") ?? "";
 
     // Ejemplo: "Aviso. Nivel naranja. Costeros. Menorca"
     const m = title.match(/^Aviso\.\s+Nivel\s+(\w+)\.\s+([^.]+)\.\s+(.+)$/i);
@@ -126,8 +127,18 @@ export function parseAemetRss(xml) {
   return out;
 }
 
+// Solo se descargan detalles de AEMET por HTTPS: la URL viene del RSS y no debe llevar al servidor a otro sitio.
+const isAemetUrl = (url) => {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && !u.port && (u.hostname === "aemet.es" || u.hostname.endsWith(".aemet.es"));
+  } catch {
+    return false;
+  }
+};
+
 export async function fetchCapDetail(url) {
-  if (!url) return null;
+  if (!url || !isAemetUrl(url)) return null;
   return cached(
     `aemet:detail:${url}`,
     60 * 60e3,
@@ -139,15 +150,14 @@ export async function fetchCapDetail(url) {
       if (!res.ok) throw new Error(`AEMET detail error: ${res.status}`);
       const xml = await res.text();
 
-      const esInfo = xml.match(/<info>([\s\S]*?)<\/info>/)?.[1] ?? "";
-      const enInfo = [...xml.matchAll(/<info>([\s\S]*?)<\/info>/g)][1]?.[1] ?? "";
+      const [esInfo = "", enInfo = ""] = blocks(xml, "info");
 
       const extract = (block) => ({
-        headline: block.match(/<headline>(.*?)<\/headline>/)?.[1] ?? null,
-        description: block.match(/<description>(.*?)<\/description>/)?.[1] ?? null,
-        instruction: block.match(/<instruction>(.*?)<\/instruction>/)?.[1] ?? null,
-        onset: block.match(/<onset>(.*?)<\/onset>/)?.[1] ?? null,
-        expires: block.match(/<expires>(.*?)<\/expires>/)?.[1] ?? null,
+        headline: tag(block, "headline"),
+        description: tag(block, "description"),
+        instruction: tag(block, "instruction"),
+        onset: tag(block, "onset"),
+        expires: tag(block, "expires"),
       });
 
       return {

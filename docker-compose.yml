@@ -21,7 +21,9 @@ services:
       timeout: 5s
       retries: 3
 
-  # Worker dedicado opcional para escalado multi-instancia
+  # Worker dedicado opcional para escalado multi-instancia.
+  # Con el worker, pon ENABLE_SCHEDULER=false en .env para que solo él revise los avisos
+  # (aunque se dejen los dos, los avisos no se duplican: cada envío se reserva en la base de datos).
   # Para arrancar ambos: docker compose --profile worker up
   worker:
     build: .
