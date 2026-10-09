@@ -123,15 +123,7 @@ fun SpotScreen(app: AppState, id: String, onBack: () -> Unit) {
                 Text(tr(R.string.detail_facing, meta?.region ?: "", Surf.cardinal(meta?.facing)), style = Type.body(13.sp), color = c.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             val context = androidx.compose.ui.platform.LocalContext.current
-            IconCircleButton(Icons.share, tr(R.string.detail_share), onClick = {
-                val sendIntent = android.content.Intent().apply {
-                    action = android.content.Intent.ACTION_SEND
-                    putExtra(android.content.Intent.EXTRA_TITLE, tr(R.string.share_title, meta?.name ?: ""))
-                    putExtra(android.content.Intent.EXTRA_TEXT, shareText(result, meta, "https://marea.onrender.com/#/spot/$id"))
-                    type = "text/plain"
-                }
-                context.startActivity(android.content.Intent.createChooser(sendIntent, tr(R.string.detail_share)))
-            })
+            IconCircleButton(Icons.share, tr(R.string.detail_share), onClick = { shareSpot(context, result, meta, id) })
             FavButton(id in app.favs) { app.toggleFav(id) }
         }
         PullToRefreshBox(isRefreshing = loading && result != null, onRefresh = { scope.launch { load(true) } }, modifier = Modifier.weight(1f)) {
@@ -575,6 +567,23 @@ private fun DaylightTile(sun: Sun?, from: Double, to: Double, tz: String) {
             }
         }
     }
+}
+
+// Comparte el texto con el enlace y, si hay datos, la tarjeta de condiciones como imagen.
+private fun shareSpot(context: android.content.Context, result: Cached<SpotDetail>?, meta: es.marea.app.data.Spot?, id: String) {
+    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        putExtra(android.content.Intent.EXTRA_TITLE, tr(R.string.share_title, meta?.name ?: ""))
+        putExtra(android.content.Intent.EXTRA_TEXT, shareText(result, meta, "https://marea.onrender.com/#/spot/$id"))
+        type = "text/plain"
+    }
+    if (result != null && meta != null) runCatching {
+        val uri = ShareCard.save(context, ShareCard.render(context, ShareCard.model(result.data, meta)), meta.id)
+        intent.type = "image/png"
+        intent.putExtra(android.content.Intent.EXTRA_STREAM, uri)
+        intent.clipData = android.content.ClipData.newRawUri("", uri)
+        intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    } // si la tarjeta falla, se comparte solo el texto
+    context.startActivity(android.content.Intent.createChooser(intent, tr(R.string.detail_share)))
 }
 
 private fun shareText(res: Cached<SpotDetail>?, meta: es.marea.app.data.Spot?, url: String): String {
