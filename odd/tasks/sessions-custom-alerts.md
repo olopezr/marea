@@ -51,3 +51,4 @@ Strategy `ask-on-risk`; forecast over 400 lines, so the branch will be sliced pe
 - 2026-10-10: exploration done (see Engram `odd/sessions-custom-alerts/tasks`); no code written yet.
 
 - 2026-10-10: T1 done. `rule` is dropped silently when invalid (same convention as `cleanPref`), so the "400 on invalid rule" acceptance line became "invalid rule fields are ignored". Known unrelated failure: `test/conditions.test.js` "detail añade coeficientes..." fails around local midnight in Madrid (clock-dependent fixture); passes later in the day.
+- 2026-10-10: T2 done (cc79c41). Native review of T1+T2 (medium, 1304 lines, base main): approved and acknowledged. Follow-ups for T5 (non-blocking): (1) strengthen the `ahead` window test in test/push-rules.test.js:129-132 (a1 assertion is only `<= 1`); (2) `normalizeRule` in public/js/rules.js keeps an ahead-only rule that the server drops; align it.
