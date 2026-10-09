@@ -12,11 +12,13 @@ final class AlertsTests: XCTestCase {
         let st = try decode(#"{"subscribed":true,"spots":["somo"],"minScore":3}"#)
         XCTAssertEqual(st.spots, ["somo"])
         XCTAssertEqual(st.prefs, [:])
+        XCTAssertFalse(st.prefsSupported, "con un servidor antiguo no se ofrecen los ajustes por spot")
     }
 
     func testStatusWithPrefsDecodes() throws {
         let st = try decode(#"{"subscribed":true,"spots":["somo"],"minScore":3,"prefs":{"somo":{"min":4,"offshore":true,"from":9,"to":20}}}"#)
         XCTAssertEqual(st.prefs["somo"], AlertPref(min: 4, offshore: true, from: 9, to: 20))
+        XCTAssertTrue(st.prefsSupported)
     }
 
     func testNormalizedDropsDefaultsAndInvalidValues() {

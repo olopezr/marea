@@ -269,6 +269,6 @@ data class AlertState(
     val subscribed: Boolean = false,
     val spots: List<String> = emptyList(),
     val minScore: Double = 3.0,
-    /** Un servidor sin ajustes por spot no envía `prefs`. */
-    val prefs: Map<String, AlertPref> = emptyMap(),
+    /** `null`: un servidor anterior a los ajustes por spot no envía `prefs` y entonces no se ofrecen en la pantalla. */
+    val prefs: Map<String, AlertPref>? = null,
 )

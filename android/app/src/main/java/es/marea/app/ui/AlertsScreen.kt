@@ -171,7 +171,7 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
                                     colors = SwitchDefaults.colors(checkedTrackColor = c.green, checkedThumbColor = c.surface, uncheckedTrackColor = c.line, uncheckedThumbColor = c.surface, uncheckedBorderColor = c.line),
                                 )
                             }
-                            if (on) {
+                            if (on && st.prefs != null) {
                                 val pref = st.prefs[sp.id] ?: AlertPref()
                                 SpotPrefs(
                                     pref = pref, open = sp.id in openPrefs, enabled = !busy,

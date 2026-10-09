@@ -16,12 +16,12 @@ class AlertsTest {
     @Test fun `un servidor sin ajustes por spot sigue decodificando`() {
         val st = decode("""{"subscribed":true,"spots":["somo"],"minScore":3}""")
         assertEquals(listOf("somo"), st.spots)
-        assertTrue(st.prefs.isEmpty())
+        assertNull(st.prefs) // con un servidor antiguo no se ofrecen los ajustes por spot
     }
 
     @Test fun `decodifica los ajustes de cada spot`() {
         val st = decode("""{"subscribed":true,"spots":["somo"],"minScore":3,"prefs":{"somo":{"min":4,"offshore":true,"from":9,"to":20}}}""")
-        assertEquals(AlertPref(min = 4, offshore = true, from = 9, to = 20), st.prefs["somo"])
+        assertEquals(AlertPref(min = 4, offshore = true, from = 9, to = 20), st.prefs?.get("somo"))
     }
 
     @Test fun `normalized descarta los valores por defecto y los no validos`() {

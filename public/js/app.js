@@ -1101,7 +1101,7 @@ async function renderAlerts() {
             sp,
             i,
           ) => `${i === 0 || SPOTS[i - 1].region !== sp.region ? `<li class="switch-head eyebrow">${esc(sp.region)}</li>` : ""}<li><label for="al-${sp.id}"><span>${esc(sp.name)}</span>
-          <input type="checkbox" role="switch" id="al-${sp.id}" data-spot="${sp.id}" ${st.spots.includes(sp.id) ? "checked" : ""}></label>${st.spots.includes(sp.id) ? prefsBlock(sp, st.prefs?.[sp.id] ?? {}) : ""}</li>`,
+          <input type="checkbox" role="switch" id="al-${sp.id}" data-spot="${sp.id}" ${st.spots.includes(sp.id) ? "checked" : ""}></label>${st.prefs && st.spots.includes(sp.id) ? prefsBlock(sp, st.prefs[sp.id] ?? {}) : ""}</li>`,
         ).join("")}
       </ul>
     </section>

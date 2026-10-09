@@ -396,12 +396,17 @@ struct AlertState: Codable, Sendable, Equatable {
     var spots: [String]
     var minScore: Double
     var prefs: [String: AlertPref]
+    /// El servidor devuelve ajustes por spot. Un servidor anterior no los guarda: entonces no se ofrecen en la pantalla.
+    var prefsSupported: Bool
 
-    init(subscribed: Bool, spots: [String], minScore: Double, prefs: [String: AlertPref] = [:]) {
+    private enum CodingKeys: String, CodingKey { case subscribed, spots, minScore, prefs }
+
+    init(subscribed: Bool, spots: [String], minScore: Double, prefs: [String: AlertPref] = [:], prefsSupported: Bool = true) {
         self.subscribed = subscribed
         self.spots = spots
         self.minScore = minScore
         self.prefs = prefs
+        self.prefsSupported = prefsSupported
     }
 
     // Un servidor sin ajustes por spot no envía `prefs`.
@@ -410,6 +415,7 @@ struct AlertState: Codable, Sendable, Equatable {
         subscribed = try c.decode(Bool.self, forKey: .subscribed)
         spots = try c.decode([String].self, forKey: .spots)
         minScore = try c.decode(Double.self, forKey: .minScore)
+        prefsSupported = c.contains(.prefs)
         prefs = try c.decodeIfPresent([String: AlertPref].self, forKey: .prefs) ?? [:]
     }
 

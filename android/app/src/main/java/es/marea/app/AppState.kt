@@ -117,7 +117,7 @@ class AlertsModel(private val context: Context, private val api: Api, private va
         val changed = token != null && token != newToken
         token = newToken
         prefs.edit { putString("fcmToken", newToken) }
-        if (changed && state.spots.isNotEmpty()) runCatching { save(state.spots, prefs = state.prefs) }
+        if (changed && state.spots.isNotEmpty()) runCatching { save(state.spots, prefs = state.prefs.orEmpty()) }
     }
 
     private suspend fun ensureToken(): String {
@@ -144,14 +144,14 @@ class AlertsModel(private val context: Context, private val api: Api, private va
         if (spots.isEmpty()) return disableAll()
         val t = ensureToken()
         // Solo los ajustes de los spots que siguen activos, sin valores por defecto.
-        val keep = (prefs ?: state.prefs).filterKeys { it in spots }.mapValues { it.value.normalized }.filterValues { !it.isDefault }
+        val keep = (prefs ?: state.prefs.orEmpty()).filterKeys { it in spots }.mapValues { it.value.normalized }.filterValues { !it.isDefault }
         state = api.subscribe(t, spots, minScore ?: state.minScore, keep)
     }
 
     /** Ajustes de un spot activo (calidad propia, solo con terral, franja horaria). */
     suspend fun setPref(id: String, pref: AlertPref) {
         if (id !in state.spots) return
-        save(state.spots, prefs = state.prefs + (id to pref))
+        save(state.spots, prefs = state.prefs.orEmpty() + (id to pref))
     }
 
     // Sin spots activos el umbral se guarda en memoria y se envía con la primera suscripción.

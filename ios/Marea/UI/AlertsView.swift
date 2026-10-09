@@ -46,7 +46,7 @@ struct AlertsView: View {
                                 Text(sp.name).font(Theme.body()).foregroundStyle(Theme.ink)
                             }
                             .tint(Theme.green).padding(.vertical, 8)
-                            if st.spots.contains(sp.id) {
+                            if st.prefsSupported, st.spots.contains(sp.id) {
                                 SpotPrefs(pref: st.prefs[sp.id] ?? AlertPref()) { new in
                                     if let f = new.from, let t = new.to, f >= t {
                                         app.show(L("alerts.hoursOrder"))
