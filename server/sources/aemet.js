@@ -126,8 +126,18 @@ export function parseAemetRss(xml) {
   return out;
 }
 
+// Solo se descargan detalles de AEMET por HTTPS: la URL viene del RSS y no debe llevar al servidor a otro sitio.
+const isAemetUrl = (url) => {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && !u.port && (u.hostname === "aemet.es" || u.hostname.endsWith(".aemet.es"));
+  } catch {
+    return false;
+  }
+};
+
 export async function fetchCapDetail(url) {
-  if (!url) return null;
+  if (!url || !isAemetUrl(url)) return null;
   return cached(
     `aemet:detail:${url}`,
     60 * 60e3,

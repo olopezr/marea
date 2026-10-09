@@ -4,6 +4,20 @@
 
 const TTL_SECONDS = 7200; // 2 horas de caché en Cloudflare
 
+// Solo los parámetros que usa Marea; el resto se descarta (incluida cualquier "apikey" del cliente).
+const ALLOWED_PARAMS = new Set([
+  "latitude",
+  "longitude",
+  "timezone",
+  "current",
+  "hourly",
+  "daily",
+  "wind_speed_unit",
+  "past_days",
+  "forecast_days",
+  "cell_selection",
+]);
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -13,6 +27,20 @@ export default {
     if (pathname === "/health" || pathname === "/") {
       return new Response(JSON.stringify({ ok: true, service: "marea-openmeteo-proxy" }), {
         status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Si hay un secreto compartido (PROXY_SECRET), solo atiende a quien lo envíe: así nadie más gasta la cuota.
+    if (env.PROXY_SECRET && request.headers.get("X-Proxy-Secret") !== env.PROXY_SECRET) {
+      return new Response(JSON.stringify({ error: "No autorizado" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (request.method !== "GET") {
+      return new Response(JSON.stringify({ error: "Método no permitido" }), {
+        status: 405,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -30,11 +58,12 @@ export default {
       });
     }
 
-    // Construye la URL de destino conservando todos los parámetros de búsqueda
-    const targetUrl = new URL(pathname + url.search, targetHost);
+    // Construye la URL de destino con los parámetros permitidos
+    const targetUrl = new URL(pathname, targetHost);
+    for (const [k, v] of url.searchParams) if (ALLOWED_PARAMS.has(k)) targetUrl.searchParams.append(k, v);
 
     // Si hay una clave configurada en los secretos de Cloudflare, la añade
-    if (env.OPEN_METEO_API_KEY && !targetUrl.searchParams.has("apikey")) {
+    if (env.OPEN_METEO_API_KEY) {
       targetUrl.searchParams.set("apikey", env.OPEN_METEO_API_KEY);
     }
 
@@ -67,7 +96,6 @@ export default {
       });
 
       const responseHeaders = new Headers(upstream.headers);
-      responseHeaders.set("Access-Control-Allow-Origin", "*");
       responseHeaders.set("X-Proxy-Cache", "MISS");
 
       if (upstream.ok) {

@@ -84,7 +84,9 @@ self.addEventListener("push", (e) => {
 
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const target = new URL(e.notification.data?.url || "/", location.origin).href;
+  let target = new URL(e.notification.data?.url || "/", location.origin);
+  if (target.origin !== location.origin) target = new URL("/", location.origin); // nunca salir del sitio
+  target = target.href;
   e.waitUntil(
     (async () => {
       const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });

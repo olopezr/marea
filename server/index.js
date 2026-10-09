@@ -111,8 +111,9 @@ function readJSON(req, limit = 8 * 1024) {
     req.on("data", (c) => {
       size += c.length;
       if (size > limit) {
-        reject(Object.assign(new Error("Cuerpo demasiado grande"), { status: 413 }));
-        req.destroy();
+        // No se destruye el socket: así el cliente recibe el 413. El resto del cuerpo se descarta.
+        if (size - c.length <= limit) reject(Object.assign(new Error("Cuerpo demasiado grande"), { status: 413 }));
+        chunks = [];
       } else chunks.push(c);
     });
     req.on("end", () => {
@@ -213,6 +214,11 @@ const server = http.createServer(async (req, res) => {
       });
   }
 });
+
+// Tiempos máximos explícitos (antes, los de Node por defecto) frente a conexiones lentas.
+server.headersTimeout = 15e3;
+server.requestTimeout = 30e3;
+server.keepAliveTimeout = 5e3;
 
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {

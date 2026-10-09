@@ -1,9 +1,11 @@
 // Previsión de oleaje y viento (Open-Meteo). Una petición por API para todos los spots.
 // Con OPEN_METEO_API_KEY se usan los servidores del plan comercial.
 // Con OPEN_METEO_BASE_URL se puede redirigir a un proxy de caché (ej. Cloudflare Worker o Nginx).
-import { cached, fetchJSON } from "../cache.js";
+import { cached, fetchJSON as get } from "../cache.js";
 
 const KEY = process.env.OPEN_METEO_API_KEY;
+// Secreto compartido con el proxy (PROXY_SECRET en el Worker). Solo se envía al proxy propio.
+const PROXY_SECRET = process.env.OPEN_METEO_PROXY_SECRET;
 const BASE_URL = process.env.OPEN_METEO_BASE_URL?.replace(/\/+$/, "");
 const MARINE = BASE_URL
   ? `${BASE_URL}/v1/marine`
@@ -23,6 +25,7 @@ const WIND_VARS = "wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_
 // actualizan más a menudo. Configurable con OPEN_METEO_TTL_HOURS.
 const TTL = Math.max(1, Number(process.env.OPEN_METEO_TTL_HOURS) || 2) * 3600e3;
 
+const fetchJSON = (u) => (BASE_URL && PROXY_SECRET ? get(u, { headers: { "X-Proxy-Secret": PROXY_SECRET } }) : get(u));
 const utc = (s) => Date.parse(s + "Z");
 
 // El oleaje se pide en un punto mar adentro, a OFFSHORE_KM en la dirección hacia la que mira la playa.
