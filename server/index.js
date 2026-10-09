@@ -8,6 +8,7 @@ import { overview, detail } from "./conditions.js";
 import { nearestReading } from "./sources/portus.js";
 import * as push from "./push.js";
 import { clientIp } from "./request.js";
+import { createLimiter } from "./ratelimit.js";
 
 const PORT = +process.env.PORT || 8800;
 const PUBLIC = path.resolve(import.meta.dirname, "../public");
@@ -55,17 +56,9 @@ const CORS_ORIGINS = new Set(
     .filter(Boolean),
 );
 
-// Límite sencillo por IP para las rutas que escriben.
-const hits = new Map();
-function limited(ip, max = 30, windowMs = 10 * 60e3) {
-  const now = Date.now();
-  if (hits.size > 10_000) hits.clear(); // tope de memoria ante muchas IP distintas
-  const h = (hits.get(ip) ?? []).filter((t) => now - t < windowMs);
-  h.push(now);
-  hits.set(ip, h);
-  return h.length > max;
-}
-setInterval(() => hits.clear(), 60 * 60e3).unref();
+// Límites por IP: estricto para las rutas que escriben y holgado para las de lectura (las respuestas van en caché).
+const limitedWrites = createLimiter(30, 10 * 60e3);
+const limitedReads = createLimiter(600, 10 * 60e3);
 
 // Mensajes de error en inglés para las apps y navegadores en ese idioma (Accept-Language).
 const EN_ERRORS = {
@@ -137,6 +130,8 @@ async function api(req, res, url) {
     ...cors,
   };
 
+  if (req.method === "GET" && p.startsWith("/api/spots") && limitedReads(ip))
+    return send(req, res, 429, { error: "Demasiadas peticiones. Prueba dentro de unos minutos." });
   if (req.method === "GET" && p === "/api/health")
     return send(req, res, 200, { ok: true, uptimeS: Math.round((Date.now() - started) / 1000) });
   if (req.method === "GET" && p === "/api/spots") return send(req, res, 200, await overview(), cache);
@@ -158,7 +153,8 @@ async function api(req, res, url) {
   if (req.method === "GET" && p === "/api/push/key") return send(req, res, 200, { publicKey: push.publicKey }, cors);
 
   if (req.method === "POST" && p.startsWith("/api/push/")) {
-    if (limited(ip)) return send(req, res, 429, { error: "Demasiadas peticiones. Prueba dentro de unos minutos." });
+    if (limitedWrites(ip))
+      return send(req, res, 429, { error: "Demasiadas peticiones. Prueba dentro de unos minutos." });
     const body = await readJSON(req);
     if (!body || typeof body !== "object" || Array.isArray(body))
       throw Object.assign(new Error("JSON no válido"), { status: 400 });

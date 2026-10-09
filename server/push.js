@@ -2,7 +2,6 @@
 // y se avisa como máximo una vez por spot y día cuando la mejor ventana supera el umbral.
 import fs from "node:fs";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import webpush from "web-push";
 import { SPOTS, spotById } from "../public/js/spots.js";
 import { rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
@@ -11,6 +10,7 @@ import { forecastFor } from "./conditions.js";
 import * as nativePush from "./native-push.js";
 
 import { DATA_DIR } from "./config.js";
+import { getDb } from "./db.js";
 
 // ---------- Claves VAPID ----------
 function vapidKeys() {
@@ -34,9 +34,8 @@ webpush.setVapidDetails(SUBJECT, VAPID.publicKey, VAPID.privateKey);
 export const publicKey = VAPID.publicKey;
 
 // ---------- Base de datos ----------
-const db = new DatabaseSync(path.join(DATA_DIR, "marea.db"));
+const db = getDb();
 db.exec(`
-  PRAGMA journal_mode = WAL;
   CREATE TABLE IF NOT EXISTS subscriptions (
     endpoint TEXT PRIMARY KEY, p256dh TEXT NOT NULL, auth TEXT NOT NULL,
     min_score REAL NOT NULL DEFAULT 3, created_at INTEGER NOT NULL
@@ -71,6 +70,17 @@ if (
   db.exec(`ALTER TABLE subscriptions ADD COLUMN lang TEXT NOT NULL DEFAULT 'es'`);
 }
 
+// Envíos fallidos seguidos de cada dispositivo: pasado el máximo se da de baja (token ya inservible).
+if (
+  !db
+    .prepare(`PRAGMA table_info(subscriptions)`)
+    .all()
+    .some((c) => c.name === "fails")
+) {
+  db.exec(`ALTER TABLE subscriptions ADD COLUMN fails INTEGER NOT NULL DEFAULT 0`);
+}
+const MAX_FAILS = 10;
+
 const q = {
   upsertSub:
     db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at, kind, lang) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -83,7 +93,10 @@ const q = {
   spotsOf: db.prepare(`SELECT spot_id FROM alerts WHERE endpoint = ?`),
   activeSpots: db.prepare(`SELECT DISTINCT spot_id FROM alerts`),
   watchers: db.prepare(`SELECT s.* FROM subscriptions s JOIN alerts a ON a.endpoint = s.endpoint WHERE a.spot_id = ?`),
-  wasSent: db.prepare(`SELECT 1 FROM sent WHERE endpoint = ? AND spot_id = ? AND day = ?`),
+  failed: db.prepare(`UPDATE subscriptions SET fails = fails + 1 WHERE endpoint = ?`),
+  delivered: db.prepare(`UPDATE subscriptions SET fails = 0 WHERE endpoint = ?`),
+  fails: db.prepare(`SELECT fails FROM subscriptions WHERE endpoint = ?`),
+  unmarkSent: db.prepare(`DELETE FROM sent WHERE endpoint = ? AND spot_id = ? AND day = ?`),
   markSent: db.prepare(`INSERT OR IGNORE INTO sent (endpoint, spot_id, day, sent_at) VALUES (?, ?, ?, ?)`),
   pruneSent: db.prepare(`DELETE FROM sent WHERE sent_at < ?`),
 };
@@ -182,12 +195,15 @@ async function send(sub, payload) {
       JSON.stringify(payload),
       { TTL: 6 * 3600 },
     );
+    q.delivered.run(sub.endpoint);
     return true;
   } catch (err) {
     if (err.gone || ((sub.kind ?? "web") === "web" && (err.statusCode === 404 || err.statusCode === 410))) {
       unsubscribe(sub.endpoint); // el navegador o el móvil ya no la acepta
     } else {
       console.warn(`[push] envío fallido (${err.statusCode ?? err.message})`);
+      q.failed.run(sub.endpoint);
+      if ((q.fails.get(sub.endpoint)?.fails ?? 0) >= MAX_FAILS) unsubscribe(sub.endpoint);
     }
     return false;
   }
@@ -263,11 +279,11 @@ export async function checkAlerts(now = Date.now()) {
       .filter(({ d }) => d.best.t > now);
     for (const sub of q.watchers.all(id)) {
       for (const { d, isToday } of candidates) {
-        if (d.best.score < sub.min_score || q.wasSent.get(sub.endpoint, id, d.key)) continue;
-        if (await send(sub, message(spot, d, isToday, sub.lang))) {
-          q.markSent.run(sub.endpoint, id, d.key, now);
-          sentCount++;
-        }
+        if (d.best.score < sub.min_score) continue;
+        // Se reserva el aviso antes de enviarlo: si otro proceso (web y worker a la vez) ya lo envió, no se repite.
+        if (!q.markSent.run(sub.endpoint, id, d.key, now).changes) continue;
+        if (await send(sub, message(spot, d, isToday, sub.lang))) sentCount++;
+        else q.unmarkSent.run(sub.endpoint, id, d.key);
         break; // un aviso por spot en cada revisión
       }
     }
