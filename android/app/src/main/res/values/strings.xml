@@ -290,10 +290,10 @@
     <string name="map_open">Ver en el mapa</string>
     <string name="map_hint">Color según la valoración de ahora. Toca un spot para ver su previsión.</string>
     <string name="map_marker">%1$s: %2$s, %3$s m</string>
-    <string name="alerts_subtitle">Te avisamos cuando tus spots se ponen buenos</string>
+    <string name="alerts_subtitle">Te avisamos cuando tus spots se ponen buenos o hay un aviso meteorológico</string>
     <string name="alerts_from">Avisar a partir de</string>
     <string name="alerts_minQuality">Calidad mínima</string>
-    <string name="alerts_help">Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana.</string>
+    <string name="alerts_help">Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana. Además, te avisamos cuando AEMET publica un aviso amarillo, naranja o rojo que afecta a uno de tus spots, sea cual sea la calidad mínima.</string>
     <string name="alerts_spots">Spots</string>
     <string name="alerts_test">Enviar un aviso de prueba</string>
     <string name="alerts_off">Desactivar todos los avisos</string>

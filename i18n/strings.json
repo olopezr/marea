@@ -439,12 +439,15 @@
   ],
   "map.marker": ["{0}: {1}, {2} m", "{0}: {1}, {2} m"],
 
-  "alerts.subtitle": ["Te avisamos cuando tus spots se ponen buenos", "We'll tell you when your spots get good"],
+  "alerts.subtitle": [
+    "Te avisamos cuando tus spots se ponen buenos o hay un aviso meteorológico",
+    "We'll tell you when your spots get good or there's a weather warning"
+  ],
   "alerts.from": ["Avisar a partir de", "Alert me from"],
   "alerts.minQuality": ["Calidad mínima", "Minimum quality"],
   "alerts.help": [
-    "Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana.",
-    "We check the forecast every hour between 7:00 and 22:00 and send at most one alert per spot per day, with the best hour today or tomorrow."
+    "Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana. Además, te avisamos cuando AEMET publica un aviso amarillo, naranja o rojo que afecta a uno de tus spots, sea cual sea la calidad mínima.",
+    "We check the forecast every hour between 7:00 and 22:00 and send at most one alert per spot per day, with the best hour today or tomorrow. We also alert you when AEMET issues a yellow, orange or red warning that affects one of your spots, whatever the minimum quality."
   ],
   "alerts.spots": ["Spots", "Spots"],
   "alerts.test": ["Enviar un aviso de prueba", "Send a test alert"],
