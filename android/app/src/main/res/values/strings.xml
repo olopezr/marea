@@ -332,6 +332,6 @@
     <string name="error_timeout">El servidor no responde</string>
     <string name="notif_channel">Avisos de spots</string>
     <string name="notif_channelDesc">Avisos cuando tus spots se ponen buenos</string>
-    <string name="meta_description">Oleaje, viento y mareas en tiempo real para los spots de surf de España.</string>
+    <string name="meta_description">Oleaje, viento y mareas en tiempo real para los spots de surf de España, Portugal y Francia.</string>
     <string name="noscript">Marea necesita JavaScript para cargar los datos del mar.</string>
 </resources>

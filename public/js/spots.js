@@ -3,7 +3,9 @@
 // `tide`: marea en la que mejor funciona (low | mid | high | all).
 // Coordenadas y orientaciones aproximadas: pendientes de validación con surfers locales.
 const PEN = "Europe/Madrid",
-  CAN = "Atlantic/Canary";
+  CAN = "Atlantic/Canary",
+  LIS = "Europe/Lisbon",
+  PAR = "Europe/Paris";
 
 export const SPOTS = [
   // Galicia
@@ -550,6 +552,125 @@ export const SPOTS = [
   },
   { id: "almaciga", name: "Almáciga", region: "Tenerife", lat: 28.572, lon: -16.193, facing: 0, tide: "mid", tz: CAN },
   { id: "medano", name: "El Médano", region: "Tenerife", lat: 28.044, lon: -16.539, facing: 130, tide: "all", tz: CAN },
+
+  // Portugal
+  {
+    id: "supertubos",
+    name: "Supertubos",
+    region: "Leiria",
+    lat: 39.3436,
+    lon: -9.3622,
+    facing: 255,
+    tide: "mid",
+    tz: LIS,
+  },
+  {
+    id: "ribeiradilhas",
+    name: "Ribeira d'Ilhas",
+    region: "Lisboa",
+    lat: 38.9877,
+    lon: -9.4191,
+    facing: 300,
+    tide: "mid",
+    tz: LIS,
+  },
+  { id: "guincho", name: "Guincho", region: "Lisboa", lat: 38.7332, lon: -9.4728, facing: 270, tide: "all", tz: LIS },
+  {
+    id: "carcavelos",
+    name: "Carcavelos",
+    region: "Lisboa",
+    lat: 38.6792,
+    lon: -9.3352,
+    facing: 190,
+    tide: "mid",
+    tz: LIS,
+  },
+  {
+    id: "beliche",
+    name: "Beliche (Sagres)",
+    region: "Algarve",
+    lat: 37.0259,
+    lon: -8.9639,
+    facing: 190,
+    tide: "all",
+    tz: LIS,
+  },
+  {
+    id: "matosinhos",
+    name: "Matosinhos",
+    region: "Oporto",
+    lat: 41.1765,
+    lon: -8.693,
+    facing: 270,
+    tide: "mid",
+    tz: LIS,
+  },
+
+  // Francia
+  {
+    id: "hossegor",
+    name: "Hossegor (La Gravière)",
+    region: "Landas",
+    lat: 43.6713,
+    lon: -1.442,
+    facing: 280,
+    tide: "mid",
+    tz: PAR,
+  },
+  {
+    id: "estagnots",
+    name: "Seignosse (Les Estagnots)",
+    region: "Landas",
+    lat: 43.6873,
+    lon: -1.4407,
+    facing: 280,
+    tide: "mid",
+    tz: PAR,
+  },
+  {
+    id: "lacanau",
+    name: "Lacanau Océan",
+    region: "Gironda",
+    lat: 45.0016,
+    lon: -1.2027,
+    facing: 280,
+    tide: "mid",
+    tz: PAR,
+  },
+  {
+    id: "cotedesbasques",
+    name: "Côte des Basques (Biarritz)",
+    region: "Pirineos Atlánticos",
+    lat: 43.4749,
+    lon: -1.5688,
+    facing: 270,
+    tide: "high",
+    tz: PAR,
+  },
+  {
+    id: "anglet",
+    name: "Anglet (Les Cavaliers)",
+    region: "Pirineos Atlánticos",
+    lat: 43.5015,
+    lon: -1.5402,
+    facing: 280,
+    tide: "mid",
+    tz: PAR,
+  },
+  {
+    id: "parlementia",
+    name: "Guéthary (Parlementia)",
+    region: "Pirineos Atlánticos",
+    lat: 43.4274,
+    lon: -1.6084,
+    facing: 310,
+    tide: "high",
+    tz: PAR,
+  },
 ];
+
+// España (península, Baleares y Canarias) frente a Portugal y Francia. Las fuentes oficiales de Puertos del Estado,
+// del IHM y de AEMET son españolas: fuera de España no se les atribuye lo que miden lejos del spot.
+export const isSpain = (spot) => spot.tz === PEN || spot.tz === CAN;
 
 export const spotById = Object.fromEntries(SPOTS.map((s) => [s.id, s]));

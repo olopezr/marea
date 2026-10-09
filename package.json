@@ -2,7 +2,7 @@
   "name": "marea",
   "version": "1.0.0",
   "private": true,
-  "description": "Oleaje, viento y mareas en tiempo real para los spots de surf de España.",
+  "description": "Oleaje, viento y mareas en tiempo real para los spots de surf de España, Portugal y Francia.",
   "type": "module",
   "engines": {
     "node": ">=22.13"

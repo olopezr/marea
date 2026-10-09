@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import { cached, limiter } from "../cache.js";
 import { km, bearing, angDiff } from "../../public/js/surf.js";
+import { isSpain } from "../../public/js/spots.js";
 
 const API = "https://portus.puertos.es/portussvr/api";
 const KN = 1.943844; // m/s → nudos
@@ -296,7 +297,11 @@ export async function nearestReading(spot) {
   };
   const result =
     (await tryList(all.filter((b) => b.distKm <= MAX_KM).slice(0, 3), false)) ??
-    (await tryList(all.filter((b) => b.deep && b.distKm > MAX_KM && b.distKm <= FAR_KM).slice(0, 2), true));
+    // Una boya lejana solo vale como referencia del mar de fondo en España; en Portugal y Francia puede estar en
+    // otro mar (Cabo Silleiro para Matosinhos, el Golfo de Cádiz para Sagres) y se descarta.
+    (isSpain(spot)
+      ? await tryList(all.filter((b) => b.deep && b.distKm > MAX_KM && b.distKm <= FAR_KM).slice(0, 2), true)
+      : null);
   // `fallback`: la boya mostrada no es la más cercana al spot (la más cercana no envía datos) o no hay
   // ninguna a menos de 100 km. En ambos casos el dato puede no representar bien la playa.
   if (result) {

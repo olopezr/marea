@@ -329,5 +329,5 @@
 "error.timeout" = "El servidor no responde";
 "notif.channel" = "Avisos de spots";
 "notif.channelDesc" = "Avisos cuando tus spots se ponen buenos";
-"meta.description" = "Oleaje, viento y mareas en tiempo real para los spots de surf de España.";
+"meta.description" = "Oleaje, viento y mareas en tiempo real para los spots de surf de España, Portugal y Francia.";
 "noscript" = "Marea necesita JavaScript para cargar los datos del mar.";

@@ -101,7 +101,7 @@ final class SurfTests: XCTestCase {
     }
 
     func testListaDeSpotsIncluida() {
-        XCTAssertEqual(Spot.all.count, 83)
+        XCTAssertEqual(Spot.all.count, 95)
         XCTAssertEqual(Spot.byId["somo"]?.region, "Cantabria")
     }
 }
