@@ -61,7 +61,7 @@ const CORS_ORIGINS = new Set(
 
 // Límites por IP: estricto para las rutas que escriben y holgado para las de lectura (las respuestas van en caché).
 const limitedWrites = createLimiter(30, 10 * 60e3);
-const limitedReads = createLimiter(600, 10 * 60e3);
+const limitedReads = createLimiter(3000, 10 * 60e3);
 
 // Mensajes de error en inglés para las apps y navegadores en ese idioma (Accept-Language).
 const EN_ERRORS = {
