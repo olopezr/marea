@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import webpush from "web-push";
 import { SPOTS, spotById } from "../public/js/spots.js";
-import { rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
+import { RATINGS, rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
 import { forecastAll } from "./forecast.js";
 import { forecastFor } from "./conditions.js";
 import * as nativePush from "./native-push.js";
@@ -119,6 +119,7 @@ const q = {
   failed: db.prepare(`UPDATE subscriptions SET fails = fails + 1 WHERE endpoint = ?`),
   delivered: db.prepare(`UPDATE subscriptions SET fails = 0 WHERE endpoint = ?`),
   fails: db.prepare(`SELECT fails FROM subscriptions WHERE endpoint = ?`),
+  levelsOf: db.prepare(`SELECT day FROM sent WHERE endpoint = ? AND spot_id = ? AND day LIKE ?`),
   unmarkSent: db.prepare(`DELETE FROM sent WHERE endpoint = ? AND spot_id = ? AND day = ?`),
   markSent: db.prepare(`INSERT OR IGNORE INTO sent (endpoint, spot_id, day, sent_at) VALUES (?, ?, ?, ?)`),
   pruneSent: db.prepare(`DELETE FROM sent WHERE sent_at < ?`),
@@ -296,7 +297,7 @@ const EN_RATING = { flat: "flat", poor: "poor", fair: "fair", good: "good", epic
 const EN_WIND = { off: "offshore", cross: "cross-shore", on: "onshore" };
 const enCardinal = (deg) => cardinal(deg).replace(/O/g, "W");
 
-function message(spot, day, isToday, lang = "es") {
+function message(spot, day, isToday, lang = "es", improved = false) {
   const b = day.best;
   const base = { url: `/#/spot/${spot.id}`, tag: `${spot.id}-${day.key}` };
   if (lang === "en") {
@@ -304,7 +305,9 @@ function message(spot, day, isToday, lang = "es") {
     const wind = b.windType === "calm" ? "no wind" : `${EN_WIND[b.windType] ?? ""} wind ${n(b.wind, 0)} kn`.trim();
     return {
       ...base,
-      title: `${spot.name} looks ${EN_RATING[rating(b.score).key]} ${isToday ? "today" : "tomorrow"}`,
+      title: improved
+        ? `${spot.name} is getting better: now ${EN_RATING[rating(b.score).key]} ${isToday ? "today" : "tomorrow"}`
+        : `${spot.name} looks ${EN_RATING[rating(b.score).key]} ${isToday ? "today" : "tomorrow"}`,
       body: `Best around ${hhmm(b.t, spot.tz)}: ${n(b.h)} m · ${n(b.T, 0)} s from ${enCardinal(b.dir)} · ${wind}`,
     };
   }
@@ -318,7 +321,9 @@ function message(spot, day, isToday, lang = "es") {
         );
   return {
     ...base,
-    title: `${spot.name} se pone ${rating(b.score).label.toLowerCase()} ${when}`,
+    title: improved
+      ? `${spot.name} mejora: ahora ${rating(b.score).label.toLowerCase()} ${when}`
+      : `${spot.name} se pone ${rating(b.score).label.toLowerCase()} ${when}`,
     body: `Mejor hacia las ${hhmm(b.t, spot.tz)}: ${fmt(b.h)} m · ${fmt(b.T, 0)} s del ${cardinal(b.dir)} · ${wind}`,
   };
 }
@@ -430,10 +435,25 @@ export async function checkAlerts(now = Date.now()) {
       for (const { d, isToday } of candidates) {
         if (d.best.score < (sub.spot_min ?? sub.min_score)) continue;
         if (sub.offshore && !["off", "calm"].includes(d.best.windType)) continue; // «solo con terral»
+        const lvl = RATINGS.findIndex((r) => r.key === rating(d.best.score).key);
+        const lvlKey = `lvl:${d.key}:${lvl}`; // nivel de calidad del que ya se avisó ese día
         // Se reserva el aviso antes de enviarlo: si otro proceso (web y worker a la vez) ya lo envió, no se repite.
-        if (!q.markSent.run(sub.endpoint, id, d.key, now).changes) continue;
+        if (!q.markSent.run(sub.endpoint, id, d.key, now).changes) {
+          // Ya se avisó de este día: solo se vuelve a avisar si ha mejorado de nivel (entra un swell, el viento rola).
+          const before = q.levelsOf.all(sub.endpoint, id, `lvl:${d.key}:%`).map((r) => +r.day.split(":").at(-1));
+          if (!before.length) q.markSent.run(sub.endpoint, id, lvlKey, now); // aviso de antes de existir esto: punto de partida
+          if (!before.length || lvl <= Math.max(...before)) continue;
+          if (!q.markSent.run(sub.endpoint, id, lvlKey, now).changes) continue;
+          if (await send(sub, message(spot, d, isToday, sub.lang, true))) sentCount++;
+          else q.unmarkSent.run(sub.endpoint, id, lvlKey);
+          break;
+        }
+        q.markSent.run(sub.endpoint, id, lvlKey, now);
         if (await send(sub, message(spot, d, isToday, sub.lang))) sentCount++;
-        else q.unmarkSent.run(sub.endpoint, id, d.key);
+        else {
+          q.unmarkSent.run(sub.endpoint, id, d.key);
+          q.unmarkSent.run(sub.endpoint, id, lvlKey);
+        }
         break; // un aviso por spot en cada revisión
       }
     }
