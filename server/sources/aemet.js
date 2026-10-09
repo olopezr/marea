@@ -250,6 +250,21 @@ export async function warningsForSpot(spot, now = Date.now(), { fetchDetails = f
   return enriched;
 }
 
+// Avisos de nivel amarillo o superior que afectan a un spot y merecen una notificación: los que están en vigor
+// o empiezan en las próximas 24 h. Los caducados no. Ordenados de más a menos relevante.
+export function alertableWarnings(spot, all, now = Date.now()) {
+  const list = (all ?? []).filter(
+    (w) => matchesSpot(w, spot) && LEVEL_RANK[w.level] && (w.end == null || w.end >= now),
+  );
+  return sortWarnings(
+    list.filter((w) => w.start == null || w.start - now <= 24 * 3600e3),
+    now,
+  ).map((w) => ({
+    ...w,
+    active: w.start != null && w.end != null ? now >= w.start && now <= w.end : true,
+  }));
+}
+
 export function activeWarningFor(spot, now = Date.now(), all = null) {
   const list = all ?? [];
   const matched = list.filter((w) => matchesSpot(w, spot));

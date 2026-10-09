@@ -287,10 +287,10 @@
 "map.open" = "View on the map";
 "map.hint" = "Coloured by the current rating. Tap a spot to see its forecast.";
 "map.marker" = "%1$@: %2$@, %3$@ m";
-"alerts.subtitle" = "We'll tell you when your spots get good";
+"alerts.subtitle" = "We'll tell you when your spots get good or there's a weather warning";
 "alerts.from" = "Alert me from";
 "alerts.minQuality" = "Minimum quality";
-"alerts.help" = "We check the forecast every hour between 7:00 and 22:00 and send at most one alert per spot per day, with the best hour today or tomorrow.";
+"alerts.help" = "We check the forecast every hour between 7:00 and 22:00 and send at most one alert per spot per day, with the best hour today or tomorrow. We also alert you when AEMET issues a yellow, orange or red warning that affects one of your spots, whatever the minimum quality.";
 "alerts.spots" = "Spots";
 "alerts.test" = "Send a test alert";
 "alerts.off" = "Turn off all alerts";

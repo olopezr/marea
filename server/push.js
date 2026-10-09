@@ -8,6 +8,7 @@ import { rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
 import { forecastAll } from "./forecast.js";
 import { forecastFor } from "./conditions.js";
 import * as nativePush from "./native-push.js";
+import * as aemet from "./sources/aemet.js";
 
 import { DATA_DIR } from "./config.js";
 import { getDb } from "./db.js";
@@ -259,14 +260,96 @@ function message(spot, day, isToday, lang = "es") {
   };
 }
 
+// ---------- Avisos meteorológicos de AEMET ----------
+const WARN_ES = { costeros: "fenómenos costeros" };
+const WARN_EN = {
+  costeros: "coastal hazards",
+  vientos: "wind",
+  lluvias: "rain",
+  tormentas: "thunderstorms",
+  galerna: "galerna squall",
+  rissaga: "rissaga",
+  "temperaturas máximas": "high temperatures",
+  "temperaturas mínimas": "low temperatures",
+  nevadas: "snow",
+  niebla: "fog",
+};
+const LEVEL_EN = { amarillo: "Yellow", naranja: "Orange", rojo: "Red" };
+
+function warningMessage(spot, w, lang = "es") {
+  const en = lang === "en";
+  const name = w.phenomenon.toLowerCase();
+  const when = (t) =>
+    new Intl.DateTimeFormat(en ? "en-GB" : "es-ES", {
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone: spot.tz,
+    }).format(t);
+  let timing = "";
+  if (w.active && w.end != null) timing = en ? `In force until ${when(w.end)}` : `En vigor hasta ${when(w.end)}`;
+  else if (!w.active && w.start != null) timing = en ? `Starts ${when(w.start)}` : `Empieza ${when(w.start)}`;
+  const body = `AEMET · ${w.zone}.${timing ? ` ${timing}.` : ""}`;
+  return {
+    url: `/#/spot/${spot.id}`,
+    tag: `${spot.id}-warning-${w.level}`,
+    title: en
+      ? `${LEVEL_EN[w.level]} warning at ${spot.name}: ${WARN_EN[name] ?? name}`
+      : `Aviso ${w.level} en ${spot.name}: ${WARN_ES[name] ?? name}`,
+    body,
+  };
+}
+
+// Un aviso de AEMET se notifica una vez por dispositivo. La clave incluye el nivel (si sube, avisa de nuevo)
+// y el día de inicio (así una corrección menor del aviso no lo repite). Usa la tabla `sent` de los avisos de oleaje.
+const warningKey = (w, now) =>
+  `w:${w.phenomenon.toLowerCase()}:${w.zone}:${w.level}:${new Date(w.start ?? now).toISOString().slice(0, 10)}`;
+
+// Avisa a quien tiene alertas en un spot cuando AEMET publica un aviso amarillo, naranja o rojo que le afecta.
+// No depende del umbral de calidad del oleaje: es información de seguridad.
+export async function checkWarnings(now = Date.now()) {
+  const ids = q.activeSpots
+    .all()
+    .map((r) => r.spot_id)
+    .filter((id) => spotById[id]);
+  if (!ids.length) return { checked: 0, sent: 0 };
+  const all = await aemet.allWarnings(); // si AEMET falla devuelve [], nunca avisos falsos
+  let sentCount = 0;
+  for (const id of ids) {
+    const spot = spotById[id];
+    const local = hourOf(now, spot.tz);
+    if (local < 7 || local >= 22) continue; // los avisos vigentes se envían por la mañana
+    const warnings = aemet.alertableWarnings(spot, all, now);
+    if (!warnings.length) continue;
+    for (const sub of q.watchers.all(id)) {
+      for (const w of warnings) {
+        const key = warningKey(w, now);
+        if (!q.markSent.run(sub.endpoint, id, key, now).changes) continue;
+        if (await send(sub, warningMessage(spot, w, sub.lang))) sentCount++;
+        else q.unmarkSent.run(sub.endpoint, id, key);
+        break; // un aviso meteorológico por spot en cada revisión
+      }
+    }
+  }
+  return { checked: ids.length, sent: sentCount };
+}
+
 export async function checkAlerts(now = Date.now()) {
   const ids = q.activeSpots
     .all()
     .map((r) => r.spot_id)
     .filter((id) => spotById[id]);
   if (!ids.length) return { checked: 0, sent: 0 };
+  // Primero los avisos de AEMET: si la previsión de oleaje falla, estos deben llegar igualmente.
+  let warned = 0;
+  try {
+    warned = (await checkWarnings(now)).sent;
+  } catch (err) {
+    console.error("[push] avisos de AEMET:", err.message);
+  }
   const fc = (await forecastAll(SPOTS)).spots;
-  let sentCount = 0;
+  let sentCount = warned;
   for (const id of ids) {
     const spot = spotById[id];
     const local = hourOf(now, spot.tz);

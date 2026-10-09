@@ -32,6 +32,7 @@ export function installFetch(opts = {}) {
     }
     if (url.host.includes("aemet.es")) {
       if (url.pathname.includes("CAP_AFAE_wah_RSS.xml")) {
+        if (opts.aemetRss) return new Response(opts.aemetRss(), { status: 200 });
         return new Response(
           `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
