@@ -1777,3 +1777,94 @@ details.history .history-body {
   color: var(--muted);
   font-family: var(--mono);
 }
+
+/* Regla de aviso personalizada */
+.al-rule {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 8px 0 0;
+  padding: 10px 0 0;
+  min-width: 0;
+}
+.al-rule legend {
+  font-weight: 600;
+  padding: 0 8px 0 0;
+}
+.al-opts input[type="number"] {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 6px;
+  width: 5.5em;
+}
+.small-btn {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+/* Diario de sesiones */
+.diary-form {
+  display: grid;
+  gap: 12px;
+}
+.diary-form[hidden] {
+  display: none;
+}
+.diary-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+.diary-form input,
+.diary-form textarea {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.diary-rate {
+  display: grid;
+  gap: 6px;
+}
+.diary-insights h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.diary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.diary-entry {
+  display: grid;
+  gap: 4px;
+}
+.diary-entry + .diary-entry {
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+.diary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.diary-row a {
+  color: var(--ink);
+}
+.diary-rating {
+  font: 600 0.8rem/1.4 var(--mono);
+  color: var(--muted);
+}
+.diary-entry .small-btn {
+  justify-self: start;
+  margin-top: 4px;
+}

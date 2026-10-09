@@ -461,6 +461,67 @@
   "alerts.spotTo": ["hasta las", "until"],
   "alerts.hoursOrder": ["La hora de inicio debe ser anterior a la final", "The start time must be before the end time"],
   "toast.prefSaved": ["Ajustes guardados", "Settings saved"],
+  "delete": ["Borrar", "Delete"],
+  "alerts.rule.any": ["Sin límite", "No limit"],
+  "toast.ruleCleared": ["Regla quitada", "Rule removed"],
+  "alerts.rule.title": ["Regla personalizada", "Custom rule"],
+  "alerts.rule.hint": [
+    "Con una regla, el aviso salta cuando alguna hora de las próximas coincide con ella. Sustituye a la calidad mínima y al terral de este spot; la franja horaria se mantiene.",
+    "With a rule, you get an alert when any upcoming hour matches it. It replaces the minimum quality and the offshore option for this spot; the time window still applies."
+  ],
+  "alerts.rule.hMin": ["Altura mínima (m)", "Minimum height (m)"],
+  "alerts.rule.hMax": ["Altura máxima (m)", "Maximum height (m)"],
+  "alerts.rule.windMax": ["Viento máximo (kn)", "Maximum wind (kn)"],
+  "alerts.rule.offshore": ["Solo con terral", "Offshore wind only"],
+  "alerts.rule.tide": ["Estado de la marea", "Tide state"],
+  "alerts.rule.tide.any": ["Cualquiera", "Any"],
+  "alerts.rule.tide.low": ["Bajamar", "Low"],
+  "alerts.rule.tide.mid": ["Media", "Mid"],
+  "alerts.rule.tide.high": ["Pleamar", "High"],
+  "alerts.rule.ahead": ["Antelación (horas)", "Look ahead (hours)"],
+  "alerts.rule.clear": ["Quitar regla", "Clear rule"],
+  "diary.link": ["Diario de sesiones", "Session diary"],
+  "diary.docTitle": ["Diario · Marea", "Diary · Marea"],
+  "diary.title": ["Diario", "Diary"],
+  "diary.subtitle": ["Tus sesiones, solo en este dispositivo", "Your sessions, only on this device"],
+  "diary.empty": [
+    "Todavía no has registrado ninguna sesión. Abre un spot y pulsa «Registrar sesión».",
+    "You have not logged any session yet. Open a spot and tap “Log session”."
+  ],
+  "diary.log": ["Registrar sesión", "Log session"],
+  "diary.date": ["Fecha", "Date"],
+  "diary.rating": ["Valoración", "Rating"],
+  "diary.ratingN": ["{0} de 5", "{0} of 5"],
+  "diary.notes": ["Notas", "Notes"],
+  "diary.save": ["Guardar sesión", "Save session"],
+  "diary.cancel": ["Cancelar", "Cancel"],
+  "diary.saved": ["Sesión guardada", "Session saved"],
+  "diary.deleted": ["Sesión borrada", "Session deleted"],
+  "diary.delete": ["Borrar la sesión de {0}", "Delete the session at {0}"],
+  "diary.snapNote": [
+    "Se guardan las condiciones actuales con la sesión.",
+    "The current conditions are saved with the session."
+  ],
+  "diary.noSnapNote": [
+    "No se guardan condiciones: solo hay datos medidos de las últimas 48 h.",
+    "Conditions are not saved: measured data only covers the last 48 h."
+  ],
+  "diary.futureDate": ["La fecha no puede ser futura", "The date cannot be in the future"],
+  "diary.noSnap": ["Sin datos de condiciones", "No conditions data"],
+  "diary.snap": [
+    "Ola {0} m · {1} s · viento {2} kn {3} · agua {4} °C",
+    "Wave {0} m · {1} s · wind {2} kn {3} · water {4} °C"
+  ],
+  "diary.snapTide": ["Marea {0} m {1}", "Tide {0} m {1}"],
+  "diary.insights.title": ["Lo que te funciona aquí", "What works for you here"],
+  "diary.insights.sub": [
+    "Media de tus {0} sesiones de 4-5 en este spot",
+    "Average of your {0} sessions rated 4-5 at this spot"
+  ],
+  "diary.insights.h": ["Ola", "Wave"],
+  "diary.insights.Tp": ["Periodo", "Period"],
+  "diary.insights.wind": ["Viento", "Wind"],
+  "diary.insights.windDir": ["Dirección del viento", "Wind direction"],
   "alerts.test": ["Enviar un aviso de prueba", "Send a test alert"],
   "alerts.off": ["Desactivar todos los avisos", "Turn off all alerts"],
   "toast.threshold": ["Umbral guardado", "Threshold saved"],
