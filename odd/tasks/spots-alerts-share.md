@@ -1,0 +1,32 @@
+# Feature: spot coordinates, per-spot alerts, improvement alerts, share card, new spots
+
+Branch: `feat/spots-alerts-share` (from `feat/aemet-push-alerts`). One commit per work unit.
+
+## Objective
+
+Deliver improvements A1, B5, B6, D9 and D10 of the improvement plan.
+
+## Scope and decisions
+
+- **A2 (reduced-forecast notice): no work needed.** Web, iOS and Android already show a bilingual banner when `forecastSource === "portus"` (3-day forecast), with tests. The earlier claim that users were not told was wrong.
+- **A1:** spots whose coordinate lies more than 150 m from the sand of their own named beach (OpenStreetMap `natural=beach`) are moved onto the sand edge. Facing is unchanged. Reef spots and OSM naming variants are left alone.
+- **B5:** per-spot alert preferences (minimum quality, offshore wind only, allowed hours). Server is backwards compatible: old clients keep the global threshold. Web UI is built; iOS and Android UI are not part of this unit.
+- **B6:** an alert when the rating level for a day improves after an alert for that day was already sent (e.g. good -> very good). No new snapshot table: levels sent are recorded in `sent`.
+- **D9:** share card rendered client-side on a canvas (no new dependency) and shared with the Web Share API, or downloaded. Native apps keep their current link sharing.
+- **D10:** new spots in Portugal and France, positioned on the sand with the same OSM check. Spain-only sources (AEMET, IHM tides, Puertos del Estado buoys) must not attribute data to a far-away place.
+
+## Tasks
+
+- [x] T1 (A1) move offshore spots onto the sand; sync native spots.json and landing; refresh buoy-sight if the script runs
+- [ ] T2 (D10) add Portuguese and French spots, verified on OSM; copy updated
+- [ ] T3 (B5) per-spot alert preferences: DB, API, web UI, tests
+- [ ] T4 (B6) improvement alerts, tests
+- [ ] T5 (D9) share card on the web, tests where runnable
+
+## Route
+
+Inline: context already held in this session; each task closes with its own commit. Test-first where a runnable deterministic test exists.
+
+## Evidence
+
+- T1: 10 spots moved onto the sand (lanzada, razo, orzan, bastiagueiro, carnota, oyambre, orinon, laarena, barrosa, lances). Re-checked against OpenStreetMap: all now 3-14 m from their named beach (were 189-439 m). 100/100 tests; native spots.json and landing synced. buoy-sight.json not regenerated for these (moves <=440 m on an 8 km line); it will be regenerated once in T2 for the new spots.
