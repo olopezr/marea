@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import webpush from "web-push";
 import { SPOTS, spotById } from "../public/js/spots.js";
-import { rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
+import { RATINGS, rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
 import { forecastAll } from "./forecast.js";
 import { forecastFor } from "./conditions.js";
 import * as nativePush from "./native-push.js";
@@ -82,21 +82,44 @@ if (
 }
 const MAX_FAILS = 10;
 
+// Ajustes de cada spot dentro de una suscripción: calidad mínima propia, «solo con terral» y franja horaria.
+for (const [col, ddl] of [
+  ["min_score", "REAL"],
+  ["offshore", "INTEGER NOT NULL DEFAULT 0"],
+  ["from_h", "INTEGER NOT NULL DEFAULT 7"],
+  ["to_h", "INTEGER NOT NULL DEFAULT 22"],
+]) {
+  if (
+    !db
+      .prepare(`PRAGMA table_info(alerts)`)
+      .all()
+      .some((c) => c.name === col)
+  )
+    db.exec(`ALTER TABLE alerts ADD COLUMN ${col} ${ddl}`);
+}
+
 const q = {
   upsertSub:
     db.prepare(`INSERT INTO subscriptions (endpoint, p256dh, auth, min_score, created_at, kind, lang) VALUES (?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, min_score = excluded.min_score, kind = excluded.kind, lang = excluded.lang`),
   clearAlerts: db.prepare(`DELETE FROM alerts WHERE endpoint = ?`),
-  addAlert: db.prepare(`INSERT OR IGNORE INTO alerts (endpoint, spot_id) VALUES (?, ?)`),
+  addAlert: db.prepare(
+    `INSERT OR IGNORE INTO alerts (endpoint, spot_id, min_score, offshore, from_h, to_h) VALUES (?, ?, ?, ?, ?, ?)`,
+  ),
+  prefsOf: db.prepare(`SELECT spot_id, min_score, offshore, from_h, to_h FROM alerts WHERE endpoint = ?`),
   deleteSub: db.prepare(`DELETE FROM subscriptions WHERE endpoint = ?`),
   deleteAlerts: db.prepare(`DELETE FROM alerts WHERE endpoint = ?`),
   getSub: db.prepare(`SELECT * FROM subscriptions WHERE endpoint = ?`),
   spotsOf: db.prepare(`SELECT spot_id FROM alerts WHERE endpoint = ?`),
   activeSpots: db.prepare(`SELECT DISTINCT spot_id FROM alerts`),
-  watchers: db.prepare(`SELECT s.* FROM subscriptions s JOIN alerts a ON a.endpoint = s.endpoint WHERE a.spot_id = ?`),
+  watchers: db.prepare(
+    `SELECT s.*, a.min_score AS spot_min, a.offshore, a.from_h, a.to_h
+     FROM subscriptions s JOIN alerts a ON a.endpoint = s.endpoint WHERE a.spot_id = ?`,
+  ),
   failed: db.prepare(`UPDATE subscriptions SET fails = fails + 1 WHERE endpoint = ?`),
   delivered: db.prepare(`UPDATE subscriptions SET fails = 0 WHERE endpoint = ?`),
   fails: db.prepare(`SELECT fails FROM subscriptions WHERE endpoint = ?`),
+  levelsOf: db.prepare(`SELECT day FROM sent WHERE endpoint = ? AND spot_id = ? AND day LIKE ?`),
   unmarkSent: db.prepare(`DELETE FROM sent WHERE endpoint = ? AND spot_id = ? AND day = ?`),
   markSent: db.prepare(`INSERT OR IGNORE INTO sent (endpoint, spot_id, day, sent_at) VALUES (?, ?, ?, ?)`),
   pruneSent: db.prepare(`DELETE FROM sent WHERE sent_at < ?`),
@@ -148,16 +171,52 @@ function target({ subscription, device }) {
   };
 }
 
-export function subscribe({ subscription, device, spots, minScore, lang }) {
+const DEFAULT_FROM = 7,
+  DEFAULT_TO = 22; // horario de avisos: nada de madrugada
+
+// Ajustes de un spot ya validados; lo que no sea válido o sea el valor por defecto se descarta.
+function cleanPref(p) {
+  const out = {};
+  if (!p || typeof p !== "object") return out;
+  if ([2, 3, 4].includes(p.min)) out.min = p.min;
+  if (p.offshore === true) out.offshore = true;
+  const ok = (h, lo, hi) => Number.isInteger(h) && h >= lo && h <= hi;
+  if (ok(p.from, DEFAULT_FROM, DEFAULT_TO - 1) && ok(p.to, DEFAULT_FROM + 1, DEFAULT_TO) && p.from < p.to) {
+    if (p.from !== DEFAULT_FROM || p.to !== DEFAULT_TO) Object.assign(out, { from: p.from, to: p.to });
+  }
+  return out;
+}
+
+// Ajustes guardados de una suscripción, solo los que se apartan de los valores por defecto.
+function prefsMap(endpoint) {
+  const out = {};
+  for (const r of q.prefsOf.all(endpoint)) {
+    const p = cleanPref({
+      min: r.min_score,
+      offshore: r.offshore === 1,
+      from: r.from_h,
+      to: r.to_h,
+    });
+    if (Object.keys(p).length) out[r.spot_id] = p;
+  }
+  return out;
+}
+
+export function subscribe({ subscription, device, spots, minScore, lang, prefs }) {
   const t = target({ subscription, device });
   const ids = (Array.isArray(spots) ? spots : []).filter((id) => spotById[id]).slice(0, 50);
   const min = [2, 3, 4].includes(+minScore) ? +minScore : 3;
   const ep = t.endpoint;
   db.exec("BEGIN");
   try {
+    // Sin `prefs` (apps antiguas) se conservan los ajustes que ya tenía cada spot.
+    const source = prefs && typeof prefs === "object" && !Array.isArray(prefs) ? prefs : prefsMap(ep);
     q.upsertSub.run(ep, t.p256dh, t.auth, min, Date.now(), t.kind, lang === "en" ? "en" : "es");
     q.clearAlerts.run(ep);
-    for (const id of ids) q.addAlert.run(ep, id);
+    for (const id of ids) {
+      const p = cleanPref(source[id]);
+      q.addAlert.run(ep, id, p.min ?? null, p.offshore ? 1 : 0, p.from ?? DEFAULT_FROM, p.to ?? DEFAULT_TO);
+    }
     db.exec("COMMIT");
   } catch (err) {
     db.exec("ROLLBACK");
@@ -174,8 +233,13 @@ export function unsubscribe(endpoint) {
 
 export function status(endpoint) {
   const sub = q.getSub.get(endpoint);
-  if (!sub) return { subscribed: false, spots: [], minScore: 3 };
-  return { subscribed: true, spots: q.spotsOf.all(endpoint).map((r) => r.spot_id), minScore: sub.min_score };
+  if (!sub) return { subscribed: false, spots: [], minScore: 3, prefs: {} };
+  return {
+    subscribed: true,
+    spots: q.spotsOf.all(endpoint).map((r) => r.spot_id),
+    minScore: sub.min_score,
+    prefs: prefsMap(endpoint),
+  };
 }
 
 // Sustituible en los tests para no depender de los servicios push reales.
@@ -233,7 +297,7 @@ const EN_RATING = { flat: "flat", poor: "poor", fair: "fair", good: "good", epic
 const EN_WIND = { off: "offshore", cross: "cross-shore", on: "onshore" };
 const enCardinal = (deg) => cardinal(deg).replace(/O/g, "W");
 
-function message(spot, day, isToday, lang = "es") {
+function message(spot, day, isToday, lang = "es", improved = false) {
   const b = day.best;
   const base = { url: `/#/spot/${spot.id}`, tag: `${spot.id}-${day.key}` };
   if (lang === "en") {
@@ -241,7 +305,9 @@ function message(spot, day, isToday, lang = "es") {
     const wind = b.windType === "calm" ? "no wind" : `${EN_WIND[b.windType] ?? ""} wind ${n(b.wind, 0)} kn`.trim();
     return {
       ...base,
-      title: `${spot.name} looks ${EN_RATING[rating(b.score).key]} ${isToday ? "today" : "tomorrow"}`,
+      title: improved
+        ? `${spot.name} is getting better: now ${EN_RATING[rating(b.score).key]} ${isToday ? "today" : "tomorrow"}`
+        : `${spot.name} looks ${EN_RATING[rating(b.score).key]} ${isToday ? "today" : "tomorrow"}`,
       body: `Best around ${hhmm(b.t, spot.tz)}: ${n(b.h)} m · ${n(b.T, 0)} s from ${enCardinal(b.dir)} · ${wind}`,
     };
   }
@@ -255,7 +321,9 @@ function message(spot, day, isToday, lang = "es") {
         );
   return {
     ...base,
-    title: `${spot.name} se pone ${rating(b.score).label.toLowerCase()} ${when}`,
+    title: improved
+      ? `${spot.name} mejora: ahora ${rating(b.score).label.toLowerCase()} ${when}`
+      : `${spot.name} se pone ${rating(b.score).label.toLowerCase()} ${when}`,
     body: `Mejor hacia las ${hhmm(b.t, spot.tz)}: ${fmt(b.h)} m · ${fmt(b.T, 0)} s del ${cardinal(b.dir)} · ${wind}`,
   };
 }
@@ -323,6 +391,7 @@ export async function checkWarnings(now = Date.now()) {
     const warnings = aemet.alertableWarnings(spot, all, now);
     if (!warnings.length) continue;
     for (const sub of q.watchers.all(id)) {
+      if (local < sub.from_h || local >= sub.to_h) continue; // fuera de la franja elegida por el usuario
       for (const w of warnings) {
         const key = warningKey(w, now);
         if (!q.markSent.run(sub.endpoint, id, key, now).changes) continue;
@@ -362,12 +431,29 @@ export async function checkAlerts(now = Date.now()) {
       .map((d, i) => ({ d, isToday: i === 0 }))
       .filter(({ d }) => d.best.t > now);
     for (const sub of q.watchers.all(id)) {
+      if (local < sub.from_h || local >= sub.to_h) continue; // fuera de la franja elegida por el usuario
       for (const { d, isToday } of candidates) {
-        if (d.best.score < sub.min_score) continue;
+        if (d.best.score < (sub.spot_min ?? sub.min_score)) continue;
+        if (sub.offshore && !["off", "calm"].includes(d.best.windType)) continue; // «solo con terral»
+        const lvl = RATINGS.findIndex((r) => r.key === rating(d.best.score).key);
+        const lvlKey = `lvl:${d.key}:${lvl}`; // nivel de calidad del que ya se avisó ese día
         // Se reserva el aviso antes de enviarlo: si otro proceso (web y worker a la vez) ya lo envió, no se repite.
-        if (!q.markSent.run(sub.endpoint, id, d.key, now).changes) continue;
+        if (!q.markSent.run(sub.endpoint, id, d.key, now).changes) {
+          // Ya se avisó de este día: solo se vuelve a avisar si ha mejorado de nivel (entra un swell, el viento rola).
+          const before = q.levelsOf.all(sub.endpoint, id, `lvl:${d.key}:%`).map((r) => +r.day.split(":").at(-1));
+          if (!before.length) q.markSent.run(sub.endpoint, id, lvlKey, now); // aviso de antes de existir esto: punto de partida
+          if (!before.length || lvl <= Math.max(...before)) continue;
+          if (!q.markSent.run(sub.endpoint, id, lvlKey, now).changes) continue;
+          if (await send(sub, message(spot, d, isToday, sub.lang, true))) sentCount++;
+          else q.unmarkSent.run(sub.endpoint, id, lvlKey);
+          break;
+        }
+        q.markSent.run(sub.endpoint, id, lvlKey, now);
         if (await send(sub, message(spot, d, isToday, sub.lang))) sentCount++;
-        else q.unmarkSent.run(sub.endpoint, id, d.key);
+        else {
+          q.unmarkSent.run(sub.endpoint, id, d.key);
+          q.unmarkSent.run(sub.endpoint, id, lvlKey);
+        }
         break; // un aviso por spot en cada revisión
       }
     }

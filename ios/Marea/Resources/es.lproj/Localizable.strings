@@ -14,6 +14,9 @@
 "detail.share" = "Compartir";
 "toast.linkCopied" = "¡Enlace copiado al portapapeles!";
 "share.title" = "%1$@ en Marea";
+"card.wind" = "Viento";
+"card.tide" = "Marea";
+"card.water" = "Agua";
 "share.text" = "%1$@: %2$@ m a %3$@ s (%4$@), %5$@ y marea %6$@. Valoración: %7$@.
 %8$@";
 "detail.webcam" = "Cámara en directo";
@@ -292,6 +295,14 @@
 "alerts.minQuality" = "Calidad mínima";
 "alerts.help" = "Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana. Además, te avisamos cuando AEMET publica un aviso amarillo, naranja o rojo que afecta a uno de tus spots, sea cual sea la calidad mínima.";
 "alerts.spots" = "Spots";
+"alerts.spotSettings" = "Ajustes de este spot";
+"alerts.spotCustom" = "Ajustes personalizados";
+"alerts.useDefault" = "Como el general";
+"alerts.spotOffshore" = "Solo con terral (viento de tierra)";
+"alerts.spotFrom" = "Avisar desde las";
+"alerts.spotTo" = "hasta las";
+"alerts.hoursOrder" = "La hora de inicio debe ser anterior a la final";
+"toast.prefSaved" = "Ajustes guardados";
 "alerts.test" = "Enviar un aviso de prueba";
 "alerts.off" = "Desactivar todos los avisos";
 "toast.threshold" = "Umbral guardado";
@@ -318,5 +329,5 @@
 "error.timeout" = "El servidor no responde";
 "notif.channel" = "Avisos de spots";
 "notif.channelDesc" = "Avisos cuando tus spots se ponen buenos";
-"meta.description" = "Oleaje, viento y mareas en tiempo real para los spots de surf de España.";
+"meta.description" = "Oleaje, viento y mareas en tiempo real para los spots de surf de España, Portugal y Francia.";
 "noscript" = "Marea necesita JavaScript para cargar los datos del mar.";

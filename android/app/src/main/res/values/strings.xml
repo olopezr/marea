@@ -17,6 +17,9 @@
     <string name="detail_share">Compartir</string>
     <string name="toast_linkCopied">¡Enlace copiado al portapapeles!</string>
     <string name="share_title">%1$s en Marea</string>
+    <string name="card_wind">Viento</string>
+    <string name="card_tide">Marea</string>
+    <string name="card_water">Agua</string>
     <string name="share_text">%1$s: %2$s m a %3$s s (%4$s), %5$s y marea %6$s. Valoración: %7$s.
 %8$s</string>
     <string name="detail_webcam">Cámara en directo</string>
@@ -295,6 +298,14 @@
     <string name="alerts_minQuality">Calidad mínima</string>
     <string name="alerts_help">Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana. Además, te avisamos cuando AEMET publica un aviso amarillo, naranja o rojo que afecta a uno de tus spots, sea cual sea la calidad mínima.</string>
     <string name="alerts_spots">Spots</string>
+    <string name="alerts_spotSettings">Ajustes de este spot</string>
+    <string name="alerts_spotCustom">Ajustes personalizados</string>
+    <string name="alerts_useDefault">Como el general</string>
+    <string name="alerts_spotOffshore">Solo con terral (viento de tierra)</string>
+    <string name="alerts_spotFrom">Avisar desde las</string>
+    <string name="alerts_spotTo">hasta las</string>
+    <string name="alerts_hoursOrder">La hora de inicio debe ser anterior a la final</string>
+    <string name="toast_prefSaved">Ajustes guardados</string>
     <string name="alerts_test">Enviar un aviso de prueba</string>
     <string name="alerts_off">Desactivar todos los avisos</string>
     <string name="toast_threshold">Umbral guardado</string>
@@ -321,6 +332,6 @@
     <string name="error_timeout">El servidor no responde</string>
     <string name="notif_channel">Avisos de spots</string>
     <string name="notif_channelDesc">Avisos cuando tus spots se ponen buenos</string>
-    <string name="meta_description">Oleaje, viento y mareas en tiempo real para los spots de surf de España.</string>
+    <string name="meta_description">Oleaje, viento y mareas en tiempo real para los spots de surf de España, Portugal y Francia.</string>
     <string name="noscript">Marea necesita JavaScript para cargar los datos del mar.</string>
 </resources>

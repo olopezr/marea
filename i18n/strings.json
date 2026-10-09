@@ -19,6 +19,9 @@
   "detail.share": ["Compartir", "Share"],
   "toast.linkCopied": ["¡Enlace copiado al portapapeles!", "Link copied to clipboard!"],
   "share.title": ["{0} en Marea", "{0} on Marea"],
+  "card.wind": ["Viento", "Wind"],
+  "card.tide": ["Marea", "Tide"],
+  "card.water": ["Agua", "Water"],
   "share.text": [
     "{0}: {1} m a {2} s ({3}), {4} y marea {5}. Valoración: {6}.\n{7}",
     "{0}: {1} m at {2} s ({3}), {4} and tide {5}. Rating: {6}.\n{7}"
@@ -450,6 +453,14 @@
     "We check the forecast every hour between 7:00 and 22:00 and send at most one alert per spot per day, with the best hour today or tomorrow. We also alert you when AEMET issues a yellow, orange or red warning that affects one of your spots, whatever the minimum quality."
   ],
   "alerts.spots": ["Spots", "Spots"],
+  "alerts.spotSettings": ["Ajustes de este spot", "Settings for this spot"],
+  "alerts.spotCustom": ["Ajustes personalizados", "Custom settings"],
+  "alerts.useDefault": ["Como el general", "Same as above"],
+  "alerts.spotOffshore": ["Solo con terral (viento de tierra)", "Only with offshore wind"],
+  "alerts.spotFrom": ["Avisar desde las", "Alert me from"],
+  "alerts.spotTo": ["hasta las", "until"],
+  "alerts.hoursOrder": ["La hora de inicio debe ser anterior a la final", "The start time must be before the end time"],
+  "toast.prefSaved": ["Ajustes guardados", "Settings saved"],
   "alerts.test": ["Enviar un aviso de prueba", "Send a test alert"],
   "alerts.off": ["Desactivar todos los avisos", "Turn off all alerts"],
   "toast.threshold": ["Umbral guardado", "Threshold saved"],
@@ -520,7 +531,7 @@
   "notif.channelDesc": ["Avisos cuando tus spots se ponen buenos", "Alerts when your spots get good"],
 
   "meta.description": [
-    "Oleaje, viento y mareas en tiempo real para los spots de surf de España.",
+    "Oleaje, viento y mareas en tiempo real para los spots de surf de España, Portugal y Francia.",
     "Live waves, wind and tides for Spain's surf spots."
   ],
   "noscript": [

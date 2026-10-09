@@ -30,13 +30,14 @@ async function currentSubscription() {
   return reg.pushManager.getSubscription();
 }
 
-let state = { subscribed: false, spots: [], minScore: 3 };
+let state = { subscribed: false, spots: [], minScore: 3, prefs: {} };
 export const getState = () => state;
 
 export async function load() {
   const sub = await currentSubscription().catch(() => null);
-  if (!sub) return (state = { subscribed: false, spots: [], minScore: state.minScore });
+  if (!sub) return (state = { subscribed: false, spots: [], minScore: state.minScore, prefs: {} });
   state = await push.status(sub.endpoint).catch(() => state);
+  state = { prefs: {}, ...state };
   return state;
 }
 
@@ -50,11 +51,22 @@ async function ensureSubscription() {
   return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(publicKey) });
 }
 
-export async function save(spots, minScore = state.minScore) {
+export async function save(spots, minScore = state.minScore, prefs = state.prefs) {
   if (!spots.length) return disableAll();
   const sub = await ensureSubscription();
-  state = await push.subscribe({ subscription: sub.toJSON(), spots, minScore, lang });
+  // Solo los ajustes de los spots que siguen activos.
+  const keep = Object.fromEntries(Object.entries(prefs ?? {}).filter(([id]) => spots.includes(id)));
+  state = { prefs: {}, ...(await push.subscribe({ subscription: sub.toJSON(), spots, minScore, prefs: keep, lang })) };
   return state;
+}
+
+// Ajustes de un spot: calidad mínima propia (`min`), solo con terral (`offshore`) y franja horaria (`from`, `to`).
+// Un valor nulo o falso quita ese ajuste.
+export async function setPref(id, patch) {
+  if (!state.spots.includes(id)) return state;
+  const next = { ...state.prefs?.[id], ...patch };
+  for (const k of Object.keys(next)) if (next[k] == null || next[k] === false) delete next[k];
+  return save(state.spots, state.minScore, { ...state.prefs, [id]: next });
 }
 
 // Sin spots activos el umbral se guarda en memoria y se envía con la primera suscripción.
@@ -75,7 +87,7 @@ export async function disableAll() {
     await push.unsubscribe(sub.endpoint).catch(() => {});
     await sub.unsubscribe().catch(() => {});
   }
-  return (state = { subscribed: false, spots: [], minScore: 3 });
+  return (state = { subscribed: false, spots: [], minScore: 3, prefs: {} });
 }
 
 export async function sendTest() {

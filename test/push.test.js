@@ -33,7 +33,7 @@ test("subscribe valida la suscripción y filtra spots desconocidos", () => {
     spots: ["somo", "no-existe"],
     minScore: 3,
   });
-  assert.deepEqual(st, { subscribed: true, spots: ["somo"], minScore: 3 });
+  assert.deepEqual(st, { subscribed: true, spots: ["somo"], minScore: 3, prefs: {} });
   assert.equal(
     push.subscribe({ subscription: sub("https://fcm.googleapis.com/fcm/send/a"), spots: ["somo"], minScore: 99 })
       .minScore,
@@ -91,6 +91,7 @@ test("subscribe acepta dispositivos de las apps y valida el token", () => {
     subscribed: true,
     spots: ["somo"],
     minScore: 2,
+    prefs: {},
   });
   assert.equal(push.status(`apns:${APNS}`).subscribed, true);
   push.subscribe({ device: { platform: "android", token: FCM }, spots: ["somo"], minScore: 2 });
@@ -125,7 +126,12 @@ test("un token nativo rechazado se borra; un fallo pasajero no", async () => {
 
 test("unsubscribe borra la suscripción", () => {
   push.unsubscribe("https://fcm.googleapis.com/fcm/send/a");
-  assert.deepEqual(push.status("https://fcm.googleapis.com/fcm/send/a"), { subscribed: false, spots: [], minScore: 3 });
+  assert.deepEqual(push.status("https://fcm.googleapis.com/fcm/send/a"), {
+    subscribed: false,
+    spots: [],
+    minScore: 3,
+    prefs: {},
+  });
 });
 
 test("los avisos llegan en el idioma del dispositivo", async () => {
