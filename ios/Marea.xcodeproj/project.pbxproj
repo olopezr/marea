@@ -11,6 +11,7 @@
 		087F63A81F52AB0925A2DAFD /* jetbrainsmono_semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AB76D6E813B82B572484A68B /* jetbrainsmono_semibold.ttf */; };
 		0B96E6E01118D9F070DB6732 /* archivo_expanded_extrabold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 981BE412D9DABA873CB21A90 /* archivo_expanded_extrabold.ttf */; };
 		18694193E6DC3F16296A51E8 /* SurfTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2539C9026DB0A20145EF3B6F /* SurfTests.swift */; };
+		1CD2A25F0D243040A66C09F6 /* ShareCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD927275C63E5C0D58946202 /* ShareCardTests.swift */; };
 		1F8D995CCA317C2450DC32C8 /* es in Resources */ = {isa = PBXBuildFile; fileRef = 153EA0412852F6C283591D2B /* es */; };
 		219E818A2F3442D9E76A4B7D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B78BAF8A7FE946E45414D942 /* Assets.xcassets */; };
 		2C0630C39E7A187C4280F93B /* MareaWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7D3894CA8F9FCC224BEC7FB6 /* MareaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -27,6 +28,7 @@
 		725C36673CF909D3F62C4954 /* MareaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F029246F979C39397829415 /* MareaWidget.swift */; };
 		777AE5248951454B0A865FA7 /* archivo_bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D8F79160A0F78706E0CD3E52 /* archivo_bold.ttf */; };
 		7D6567A1EE1FE0A171F6CBE8 /* spots.json in Resources */ = {isa = PBXBuildFile; fileRef = F73C12D79D905492551DC8E3 /* spots.json */; };
+		888939EE4670C2F9277CB090 /* ShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4DB88D09C693A85A5ED0BF /* ShareCard.swift */; };
 		8D423EC13A83A8C838341621 /* BuoyPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D4A362900418CD714ED8AB /* BuoyPanel.swift */; };
 		9CC88C467F89B2C415EE7266 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6B2E0EBDD33613AA65E06E /* Help.swift */; };
 		AA8D7F13A20C879CF65263D1 /* figtree_semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DEFF00B7B65C01CDE68D244D /* figtree_semibold.ttf */; };
@@ -37,6 +39,7 @@
 		CA63E144778F14BAA4A71814 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C228E33BD533C06B23168222 /* APIClient.swift */; };
 		D02CE8D28D28362AAA2428B4 /* SpotsMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22196642C6DFE751A6E38E9 /* SpotsMapView.swift */; };
 		D132FC9AC77E47DAAE87617E /* overview.json in Resources */ = {isa = PBXBuildFile; fileRef = 957EBA19254A90A5D1DC25AD /* overview.json */; };
+		D4EC7A7282081198B051C3AD /* AlertsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B146DBEB794ABF4E89911BA2 /* AlertsTests.swift */; };
 		DCA99808303D4DF3486304B2 /* MareaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A711F4B677C2FC7F77B72F8 /* MareaApp.swift */; };
 		E16C81FBC211D70D2E2A9C30 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA54C16ABE08FDE05FE9D779 /* L10n.swift */; };
 		E1C5C8F50F8B474BAB98B379 /* en in Resources */ = {isa = PBXBuildFile; fileRef = 8D0617B4A68BBEA18445845B /* en */; };
@@ -102,10 +105,12 @@
 		957EBA19254A90A5D1DC25AD /* overview.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = overview.json; sourceTree = "<group>"; };
 		981BE412D9DABA873CB21A90 /* archivo_expanded_extrabold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = archivo_expanded_extrabold.ttf; sourceTree = "<group>"; };
 		AB76D6E813B82B572484A68B /* jetbrainsmono_semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = jetbrainsmono_semibold.ttf; sourceTree = "<group>"; };
+		B146DBEB794ABF4E89911BA2 /* AlertsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsTests.swift; sourceTree = "<group>"; };
 		B22196642C6DFE751A6E38E9 /* SpotsMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotsMapView.swift; sourceTree = "<group>"; };
 		B3D4A362900418CD714ED8AB /* BuoyPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuoyPanel.swift; sourceTree = "<group>"; };
 		B78BAF8A7FE946E45414D942 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BA54C16ABE08FDE05FE9D779 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
+		BD927275C63E5C0D58946202 /* ShareCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardTests.swift; sourceTree = "<group>"; };
 		C228E33BD533C06B23168222 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		C79270814514148B56281753 /* MareaSinPush.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MareaSinPush.entitlements; sourceTree = "<group>"; };
 		CF59A4923543D78F702D82D0 /* SpotListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotListView.swift; sourceTree = "<group>"; };
@@ -116,6 +121,7 @@
 		F650A63CE34FCC108B5E668D /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		F65420AEC648AE79189DC537 /* AlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsView.swift; sourceTree = "<group>"; };
 		F73C12D79D905492551DC8E3 /* spots.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = spots.json; sourceTree = "<group>"; };
+		FD4DB88D09C693A85A5ED0BF /* ShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -140,6 +146,8 @@
 		3572A74B12D0E61C574DEA69 /* MareaTests */ = {
 			isa = PBXGroup;
 			children = (
+				B146DBEB794ABF4E89911BA2 /* AlertsTests.swift */,
+				BD927275C63E5C0D58946202 /* ShareCardTests.swift */,
 				2539C9026DB0A20145EF3B6F /* SurfTests.swift */,
 				E043E36EBD71274E943BC099 /* Fixtures */,
 			);
@@ -217,6 +225,7 @@
 				6B6B2E0EBDD33613AA65E06E /* Help.swift */,
 				6C1EC014CFFCA58A578F314C /* HistoryPanel.swift */,
 				69FB97C27F03F9158E2C8A40 /* LocationPanel.swift */,
+				FD4DB88D09C693A85A5ED0BF /* ShareCard.swift */,
 				75FD649597B13B0DC90BA1CD /* SpotDetailView.swift */,
 				CF59A4923543D78F702D82D0 /* SpotListView.swift */,
 				B22196642C6DFE751A6E38E9 /* SpotsMapView.swift */,
@@ -417,6 +426,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4EC7A7282081198B051C3AD /* AlertsTests.swift in Sources */,
+				1CD2A25F0D243040A66C09F6 /* ShareCardTests.swift in Sources */,
 				18694193E6DC3F16296A51E8 /* SurfTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -435,6 +446,7 @@
 				715FFCE70991D9EC1EAF9DA6 /* LocationPanel.swift in Sources */,
 				DCA99808303D4DF3486304B2 /* MareaApp.swift in Sources */,
 				6F16C6321FAB311FD5F6825D /* Models.swift in Sources */,
+				888939EE4670C2F9277CB090 /* ShareCard.swift in Sources */,
 				FE1D8D80C9748203F41C0492 /* SpotDetailView.swift in Sources */,
 				40448F3737A3EEB4EEB86F6A /* SpotListView.swift in Sources */,
 				D02CE8D28D28362AAA2428B4 /* SpotsMapView.swift in Sources */,

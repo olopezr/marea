@@ -239,5 +239,36 @@ data class SpotDetail(
     val days: List<Day>,
 )
 
+/** Ajustes de avisos de un spot (equivale a `prefs` de la API): calidad mínima propia, solo con terral y franja horaria. */
 @Serializable
-data class AlertState(val subscribed: Boolean = false, val spots: List<String> = emptyList(), val minScore: Double = 3.0)
+data class AlertPref(val min: Int? = null, val offshore: Boolean? = null, val from: Int? = null, val to: Int? = null) {
+    /** Sin ajustes propios: se usan los valores generales. */
+    val isDefault get() = min == null && offshore != true && from == null && to == null
+
+    /** Lo que se envía al servidor: sin valores por defecto, y la franja solo si es válida y distinta de 7-22. */
+    val normalized: AlertPref
+        get() {
+            val validHours = from != null && to != null && from >= DEFAULT_FROM && to <= DEFAULT_TO && from < to &&
+                !(from == DEFAULT_FROM && to == DEFAULT_TO)
+            return AlertPref(
+                min = min?.takeIf { it in 2..4 },
+                offshore = if (offshore == true) true else null,
+                from = if (validHours) from else null,
+                to = if (validHours) to else null,
+            )
+        }
+
+    companion object {
+        const val DEFAULT_FROM = 7
+        const val DEFAULT_TO = 22
+    }
+}
+
+@Serializable
+data class AlertState(
+    val subscribed: Boolean = false,
+    val spots: List<String> = emptyList(),
+    val minScore: Double = 3.0,
+    /** `null`: un servidor anterior a los ajustes por spot no envía `prefs` y entonces no se ofrecen en la pantalla. */
+    val prefs: Map<String, AlertPref>? = null,
+)

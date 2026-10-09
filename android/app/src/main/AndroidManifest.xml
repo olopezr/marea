@@ -51,6 +51,17 @@
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/accent" />
 
+        <!-- Tarjeta de condiciones que se comparte como imagen (caché de la app, solo lectura temporal). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <receiver
             android:name=".widget.SpotWidgetProvider"
             android:exported="true">

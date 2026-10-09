@@ -110,14 +110,14 @@ actor APIClient {
     // ---------- Avisos ----------
 
     private struct Device: Encodable { let platform = "ios"; let token: String }
-    private struct Subscribe: Encodable { let device: Device; let spots: [String]; let minScore: Double; let lang = L10n.lang }
+    private struct Subscribe: Encodable { let device: Device; let spots: [String]; let minScore: Double; let prefs: [String: AlertPref]; let lang = L10n.lang }
     private struct Endpoint: Encodable { let endpoint: String }
     struct OK: Decodable { let ok: Bool? }
 
     static func endpoint(for token: String) -> String { "apns:\(token)" }
 
-    func subscribe(token: String, spots: [String], minScore: Double) async throws -> AlertState {
-        try await request("/api/push/subscribe", method: "POST", body: Subscribe(device: Device(token: token), spots: spots, minScore: minScore))
+    func subscribe(token: String, spots: [String], minScore: Double, prefs: [String: AlertPref] = [:]) async throws -> AlertState {
+        try await request("/api/push/subscribe", method: "POST", body: Subscribe(device: Device(token: token), spots: spots, minScore: minScore, prefs: prefs))
     }
 
     func status(token: String) async throws -> AlertState {

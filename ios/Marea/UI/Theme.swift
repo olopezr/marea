@@ -405,7 +405,7 @@ final class ShareActivityItemSource: NSObject, UIActivityItemSource, @unchecked 
 
 @MainActor
 enum SharePresenter {
-    static func present(url: URL, subject: String, message: String) {
+    static func present(url: URL, subject: String, message: String, image: UIImage? = nil) {
         guard let windowScene = UIApplication.shared.connectedScenes
             .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
             let window = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first,
@@ -420,7 +420,8 @@ enum SharePresenter {
         }
 
         let itemSource = ShareActivityItemSource(subject: subject, message: message, url: url)
-        let activityVC = UIActivityViewController(activityItems: [itemSource], applicationActivities: nil)
+        // Con tarjeta de condiciones, va la imagen junto al texto y el enlace.
+        let activityVC = UIActivityViewController(activityItems: [itemSource] + (image.map { [$0] } ?? []), applicationActivities: nil)
         if let popover = activityVC.popoverPresentationController {
             popover.sourceView = topVC.view
             popover.sourceRect = CGRect(x: topVC.view.bounds.maxX - 60, y: 60, width: 0, height: 0)
@@ -434,10 +435,12 @@ struct ShareButton: View {
     let url: URL
     let subject: String
     let message: String
+    /// Tarjeta con las condiciones, que se dibuja al pulsar.
+    var card: (@MainActor () -> UIImage?)? = nil
 
     var body: some View {
         Button {
-            SharePresenter.present(url: url, subject: subject, message: message)
+            SharePresenter.present(url: url, subject: subject, message: message, image: card?())
         } label: {
             Image(systemName: "square.and.arrow.up")
                 .font(.system(size: 17, weight: .semibold))

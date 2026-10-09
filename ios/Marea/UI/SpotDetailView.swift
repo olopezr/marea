@@ -34,7 +34,8 @@ struct SpotDetailView: View {
                         ShareButton(
                             url: APIClient.spotWebURL(id),
                             subject: L("share.title", meta.name),
-                            message: shareText(res: result, meta: meta)
+                            message: shareText(res: result, meta: meta),
+                            card: shareCard(for: meta)
                         )
                     }
                     FavButton(on: app.favs.contains(id), circular: true) { app.toggleFav(id) }
@@ -67,6 +68,12 @@ struct SpotDetailView: View {
         } catch {
             if result == nil { self.error = error.localizedDescription }
         }
+    }
+
+    // La tarjeta con las condiciones se dibuja al pulsar «compartir».
+    private func shareCard(for meta: Spot) -> (@MainActor () -> UIImage?)? {
+        guard let res = result else { return nil }
+        return { ShareCard.image(.make(res.data, meta: meta)) }
     }
 
     private func shareText(res: Cached<SpotDetail>?, meta: Spot) -> String {

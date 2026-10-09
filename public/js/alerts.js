@@ -36,8 +36,8 @@ export const getState = () => state;
 export async function load() {
   const sub = await currentSubscription().catch(() => null);
   if (!sub) return (state = { subscribed: false, spots: [], minScore: state.minScore, prefs: {} });
+  // Un servidor anterior a los ajustes por spot no devuelve `prefs`: entonces no se ofrecen en la pantalla.
   state = await push.status(sub.endpoint).catch(() => state);
-  state = { prefs: {}, ...state };
   return state;
 }
 
@@ -56,7 +56,7 @@ export async function save(spots, minScore = state.minScore, prefs = state.prefs
   const sub = await ensureSubscription();
   // Solo los ajustes de los spots que siguen activos.
   const keep = Object.fromEntries(Object.entries(prefs ?? {}).filter(([id]) => spots.includes(id)));
-  state = { prefs: {}, ...(await push.subscribe({ subscription: sub.toJSON(), spots, minScore, prefs: keep, lang })) };
+  state = await push.subscribe({ subscription: sub.toJSON(), spots, minScore, prefs: keep, lang });
   return state;
 }
 
