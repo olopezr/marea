@@ -1,5 +1,6 @@
 package es.marea.app.ui
 
+import es.marea.app.data.AlertPref
 import es.marea.app.data.Rating
 
 import es.marea.app.R
@@ -13,6 +14,8 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,11 +27,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -47,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -79,6 +86,8 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
     val st = app.alerts.state
     var busy by remember { mutableStateOf(false) }
     var allowed by remember { mutableStateOf(app.alerts.notificationsAllowed()) }
+    // Spots con los ajustes desplegados: se recuerdan porque el estado se recompone al guardar.
+    var openPrefs by remember { mutableStateOf(setOf<String>()) }
     val permission = rememberNotificationPermission()
 
     LaunchedEffect(Unit) { app.alerts.load() }
@@ -162,6 +171,17 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
                                     colors = SwitchDefaults.colors(checkedTrackColor = c.green, checkedThumbColor = c.surface, uncheckedTrackColor = c.line, uncheckedThumbColor = c.surface, uncheckedBorderColor = c.line),
                                 )
                             }
+                            if (on) {
+                                val pref = st.prefs[sp.id] ?: AlertPref()
+                                SpotPrefs(
+                                    pref = pref, open = sp.id in openPrefs, enabled = !busy,
+                                    onToggle = { openPrefs = if (sp.id in openPrefs) openPrefs - sp.id else openPrefs + sp.id },
+                                    onChange = { new ->
+                                        if (new.from != null && new.to != null && new.from >= new.to) app.show(tr(R.string.alerts_hoursOrder))
+                                        else run(tr(R.string.toast_prefSaved)) { app.alerts.setPref(sp.id, new) }
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -174,6 +194,66 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
             }
             item { Footer(app.api::legalUrl) }
             item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)) }
+        }
+    }
+}
+
+// Ajustes de un spot con avisos activados (el bloque `prefsBlock` de la web): calidad mínima propia,
+// solo con terral y franja horaria.
+@Composable
+private fun SpotPrefs(pref: AlertPref, open: Boolean, enabled: Boolean, onToggle: () -> Unit, onChange: (AlertPref) -> Unit) {
+    val c = LocalColors.current
+    Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        Row(Modifier.clickable(onClick = onToggle).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text((if (open) "▾ " else "▸ ") + tr(R.string.alerts_spotSettings), style = Type.body(14.sp), color = c.muted)
+            if (!pref.isDefault) Box(Modifier.size(8.dp).background(c.accent, CircleShape).semantics { contentDescription = tr(R.string.alerts_spotCustom) })
+        }
+        if (open) {
+            Column(Modifier.padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val qualities = listOf(null to tr(R.string.alerts_useDefault), 2 to Rating.Fair.label, 3 to Rating.Good.label, 4 to Rating.Epic.label)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text(tr(R.string.alerts_minQuality), style = Type.body(14.sp), color = c.ink)
+                    Menu(qualities.first { it.first == pref.min }.second, qualities.map { it.second }, enabled) { i -> onChange(pref.copy(min = qualities[i].first)) }
+                }
+                Row(
+                    Modifier.fillMaxWidth().toggleable(pref.offshore == true, enabled = enabled, role = Role.Switch) { on -> onChange(pref.copy(offshore = if (on) true else null)) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(tr(R.string.alerts_spotOffshore), style = Type.body(14.sp), color = c.ink, modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = pref.offshore == true, onCheckedChange = null, enabled = enabled,
+                        colors = SwitchDefaults.colors(checkedTrackColor = c.green, checkedThumbColor = c.surface, uncheckedTrackColor = c.line, uncheckedThumbColor = c.surface, uncheckedBorderColor = c.line),
+                    )
+                }
+                val from = pref.from ?: AlertPref.DEFAULT_FROM
+                val to = pref.to ?: AlertPref.DEFAULT_TO
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(tr(R.string.alerts_spotFrom), style = Type.body(14.sp), color = c.ink)
+                    val fromHours = (AlertPref.DEFAULT_FROM..21).toList()
+                    Menu("%02d:00".format(from), fromHours.map { "%02d:00".format(it) }, enabled) { i -> onChange(pref.copy(from = fromHours[i], to = to)) }
+                    Text(tr(R.string.alerts_spotTo), style = Type.body(14.sp), color = c.ink)
+                    val toHours = (AlertPref.DEFAULT_FROM + 1..AlertPref.DEFAULT_TO).toList()
+                    Menu("%02d:00".format(to), toHours.map { "%02d:00".format(it) }, enabled) { i -> onChange(pref.copy(from = from, to = toHours[i])) }
+                }
+            }
+        }
+    }
+}
+
+/** Botón de texto que despliega una lista de opciones; devuelve la posición elegida. */
+@Composable
+private fun Menu(selected: String, options: List<String>, enabled: Boolean, onSelect: (Int) -> Unit) {
+    val c = LocalColors.current
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Text(
+            "$selected ▾", style = Type.bodySemibold(14.sp), color = if (enabled) c.accent else c.muted,
+            modifier = Modifier.clickable(enabled = enabled) { expanded = true }.padding(horizontal = 8.dp, vertical = 6.dp),
+        )
+        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            options.forEachIndexed { i, label ->
+                DropdownMenuItem(text = { Text(label, style = Type.body(14.sp), color = c.ink) }, onClick = { expanded = false; onSelect(i) })
+            }
         }
     }
 }
