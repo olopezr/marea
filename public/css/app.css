@@ -1047,6 +1047,51 @@ main .foot {
 .switch-list .switch-head + li {
   border-top: 0;
 }
+/* Ajustes de cada spot con avisos: calidad, terral y franja horaria. */
+.al-opts {
+  padding: 0 0 12px;
+  font-size: 0.9rem;
+}
+.al-opts summary {
+  cursor: pointer;
+  color: var(--muted);
+  list-style-position: inside;
+}
+.al-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+.al-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  margin-top: 8px;
+}
+.switch-list .al-opts label {
+  padding: 6px 0;
+  gap: 8px;
+}
+.al-check {
+  grid-column: 1 / -1;
+  justify-content: flex-start !important;
+}
+.al-opts select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 6px;
+}
+@media (max-width: 420px) {
+  .al-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .switch-list label {
   display: flex;
   justify-content: space-between;

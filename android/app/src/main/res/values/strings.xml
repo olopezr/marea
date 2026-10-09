@@ -295,6 +295,14 @@
     <string name="alerts_minQuality">Calidad mínima</string>
     <string name="alerts_help">Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana. Además, te avisamos cuando AEMET publica un aviso amarillo, naranja o rojo que afecta a uno de tus spots, sea cual sea la calidad mínima.</string>
     <string name="alerts_spots">Spots</string>
+    <string name="alerts_spotSettings">Ajustes de este spot</string>
+    <string name="alerts_spotCustom">Ajustes personalizados</string>
+    <string name="alerts_useDefault">Como el general</string>
+    <string name="alerts_spotOffshore">Solo con terral (viento de tierra)</string>
+    <string name="alerts_spotFrom">Avisar desde las</string>
+    <string name="alerts_spotTo">hasta las</string>
+    <string name="alerts_hoursOrder">La hora de inicio debe ser anterior a la final</string>
+    <string name="toast_prefSaved">Ajustes guardados</string>
     <string name="alerts_test">Enviar un aviso de prueba</string>
     <string name="alerts_off">Desactivar todos los avisos</string>
     <string name="toast_threshold">Umbral guardado</string>

@@ -292,6 +292,14 @@
 "alerts.minQuality" = "Minimum quality";
 "alerts.help" = "We check the forecast every hour between 7:00 and 22:00 and send at most one alert per spot per day, with the best hour today or tomorrow. We also alert you when AEMET issues a yellow, orange or red warning that affects one of your spots, whatever the minimum quality.";
 "alerts.spots" = "Spots";
+"alerts.spotSettings" = "Settings for this spot";
+"alerts.spotCustom" = "Custom settings";
+"alerts.useDefault" = "Same as above";
+"alerts.spotOffshore" = "Only with offshore wind";
+"alerts.spotFrom" = "Alert me from";
+"alerts.spotTo" = "until";
+"alerts.hoursOrder" = "The start time must be before the end time";
+"toast.prefSaved" = "Settings saved";
 "alerts.test" = "Send a test alert";
 "alerts.off" = "Turn off all alerts";
 "toast.threshold" = "Threshold saved";

@@ -19,7 +19,7 @@ Deliver improvements A1, B5, B6, D9 and D10 of the improvement plan.
 
 - [x] T1 (A1) move offshore spots onto the sand; sync native spots.json and landing; refresh buoy-sight if the script runs
 - [ ] T2 (D10) add Portuguese and French spots, verified on OSM; copy updated
-- [ ] T3 (B5) per-spot alert preferences: DB, API, web UI, tests
+- [x] T3 (B5) per-spot alert preferences: DB, API, web UI, tests
 - [ ] T4 (B6) improvement alerts, tests
 - [ ] T5 (D9) share card on the web, tests where runnable
 
@@ -30,3 +30,4 @@ Inline: context already held in this session; each task closes with its own comm
 ## Evidence
 
 - T1: 10 spots moved onto the sand (lanzada, razo, orzan, bastiagueiro, carnota, oyambre, orinon, laarena, barrosa, lances). Re-checked against OpenStreetMap: all now 3-14 m from their named beach (were 189-439 m). 100/100 tests; native spots.json and landing synced. buoy-sight.json not regenerated for these (moves <=440 m on an 8 km line); it will be regenerated once in T2 for the new spots.
+- T3: RED 5/5 (test/push-prefs.test.js) then GREEN. Server: alerts table gets min_score/offshore/from_h/to_h (migrated in place), `prefs` accepted by subscribe and returned by status, preserved when an old client omits it, applied in checkAlerts and checkWarnings. Web UI verified in headless Edge with a simulated push subscription: change quality, offshore and hours -> persisted on the server, block stays open after redraw, no console errors. Old status tests updated for the new `prefs` field; Android (`ignoreUnknownKeys`) and iOS (Codable) tolerate it. iOS and Android screens for per-spot settings are not built.

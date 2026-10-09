@@ -292,6 +292,14 @@
 "alerts.minQuality" = "Calidad mínima";
 "alerts.help" = "Revisamos la previsión cada hora entre las 7:00 y las 22:00 y te mandamos como mucho un aviso por spot y día, con la mejor hora de hoy o de mañana. Además, te avisamos cuando AEMET publica un aviso amarillo, naranja o rojo que afecta a uno de tus spots, sea cual sea la calidad mínima.";
 "alerts.spots" = "Spots";
+"alerts.spotSettings" = "Ajustes de este spot";
+"alerts.spotCustom" = "Ajustes personalizados";
+"alerts.useDefault" = "Como el general";
+"alerts.spotOffshore" = "Solo con terral (viento de tierra)";
+"alerts.spotFrom" = "Avisar desde las";
+"alerts.spotTo" = "hasta las";
+"alerts.hoursOrder" = "La hora de inicio debe ser anterior a la final";
+"toast.prefSaved" = "Ajustes guardados";
 "alerts.test" = "Enviar un aviso de prueba";
 "alerts.off" = "Desactivar todos los avisos";
 "toast.threshold" = "Umbral guardado";

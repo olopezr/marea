@@ -1013,6 +1013,33 @@ function bindHourStrip() {
 let onStripResize = () => {};
 
 // ---------- Avisos ----------
+// Spots cuyos ajustes están desplegados: se recuerdan porque la pantalla se redibuja al guardar.
+const openPrefs = new Set();
+
+// Ajustes propios de un spot con avisos activados: calidad mínima, solo con terral y franja horaria.
+function prefsBlock(sp, pr) {
+  const hours = (kind, selected, lo, hi) =>
+    `<select data-pref="${kind}" data-spot-id="${sp.id}">${Array.from({ length: hi - lo + 1 }, (_, i) => lo + i)
+      .map((h) => `<option value="${h}" ${h === selected ? "selected" : ""}>${String(h).padStart(2, "0")}:00</option>`)
+      .join("")}</select>`;
+  const quality = [
+    [2, "fair"],
+    [3, "good"],
+    [4, "epic"],
+  ]
+    .map(([v, k]) => `<option value="${v}" ${pr.min === v ? "selected" : ""}>${ratingLabel(k)}</option>`)
+    .join("");
+  return `<details class="al-opts" data-opts="${sp.id}" ${openPrefs.has(sp.id) ? "open" : ""}>
+    <summary>${t("alerts.spotSettings")}${Object.keys(pr).length ? ` <span class="al-dot" title="${t("alerts.spotCustom")}"></span>` : ""}</summary>
+    <div class="al-grid">
+      <label>${t("alerts.minQuality")}<select data-pref="min" data-spot-id="${sp.id}"><option value="">${t("alerts.useDefault")}</option>${quality}</select></label>
+      <label class="al-check"><input type="checkbox" data-pref="offshore" data-spot-id="${sp.id}" ${pr.offshore ? "checked" : ""}> ${t("alerts.spotOffshore")}</label>
+      <label>${t("alerts.spotFrom")}${hours("from", pr.from ?? 7, 7, 21)}</label>
+      <label>${t("alerts.spotTo")}${hours("to", pr.to ?? 22, 8, 22)}</label>
+    </div>
+  </details>`;
+}
+
 async function renderAlerts() {
   document.title = t("alerts.docTitle");
   app.innerHTML = `
@@ -1060,7 +1087,7 @@ async function renderAlerts() {
             sp,
             i,
           ) => `${i === 0 || SPOTS[i - 1].region !== sp.region ? `<li class="switch-head eyebrow">${esc(sp.region)}</li>` : ""}<li><label for="al-${sp.id}"><span>${esc(sp.name)}</span>
-          <input type="checkbox" role="switch" id="al-${sp.id}" data-spot="${sp.id}" ${st.spots.includes(sp.id) ? "checked" : ""}></label></li>`,
+          <input type="checkbox" role="switch" id="al-${sp.id}" data-spot="${sp.id}" ${st.spots.includes(sp.id) ? "checked" : ""}></label>${st.spots.includes(sp.id) ? prefsBlock(sp, st.prefs?.[sp.id] ?? {}) : ""}</li>`,
         ).join("")}
       </ul>
     </section>
@@ -1096,6 +1123,30 @@ async function renderAlerts() {
             c.checked ? t("toast.spotOn", spotById[c.dataset.spot].name) : t("toast.spotOff"),
           )),
     );
+  root
+    .querySelectorAll("details[data-opts]")
+    .forEach((d) =>
+      d.addEventListener("toggle", () => (d.open ? openPrefs.add(d.dataset.opts) : openPrefs.delete(d.dataset.opts))),
+    );
+  root.querySelectorAll("[data-pref]").forEach(
+    (el) =>
+      (el.onchange = () => {
+        const box = el.closest(".al-opts");
+        let patch;
+        if (el.dataset.pref === "min") patch = { min: el.value ? +el.value : null };
+        else if (el.dataset.pref === "offshore") patch = { offshore: el.checked };
+        else {
+          const from = +box.querySelector('[data-pref="from"]').value;
+          const to = +box.querySelector('[data-pref="to"]').value;
+          if (from >= to) {
+            toast(t("alerts.hoursOrder"));
+            return renderAlerts();
+          }
+          patch = { from, to };
+        }
+        run(() => alerts.setPref(el.dataset.spotId, patch), t("toast.prefSaved"));
+      }),
+  );
   root.querySelector("#test").onclick = () => run(() => alerts.sendTest(), t("toast.testSent"));
   root.querySelector("#off").onclick = () => run(() => alerts.disableAll(), t("toast.allOff"));
 }
