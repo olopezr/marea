@@ -166,6 +166,7 @@ cd android
 
 - **URL del servidor**: `mareaApiBaseDebug` y `mareaApiBaseRelease` en `gradle.properties` (`10.0.2.2` es el Mac visto desde el emulador).
 - **Avisos**: crea un proyecto de Firebase con la app `es.marea.app`, descarga `google-services.json` a `android/app/` (no se sube al repositorio) y define `FCM_SERVICE_ACCOUNT` en el servidor. Sin ese archivo la app compila igual; en Debug usa un token de prueba y en Release los avisos quedan desactivados.
+- **Bundle firmado para Google Play**: con `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` y `KEY_PASSWORD` definidos, `scripts/release-android.sh` compila y verifica el `.aab` (Play no acepta `.apk`). Guarda el keystore fuera del repositorio y con copia de seguridad: sin él no puedes actualizar la app.
 - **Automatización (Fastlane)**: `cd android && bundle exec fastlane test` para tests o `bundle exec fastlane beta` para publicar en el canal interno de Google Play.
 
 ## Mapas
