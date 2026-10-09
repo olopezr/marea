@@ -8,7 +8,7 @@ App web instalable (PWA) que reúne en un solo sitio el estado del mar para 95 s
 - **Curva de marea deslizable** con hora, altura, coeficiente, efecto de la meteorología y nivel medido.
 - **Valoración** de 0 a 5 por spot y hora, según ola, periodo, exposición, viento y marea.
 - **Avisos oficiales de AEMET** (Plan Meteoalerta en formato CAP): alertas en tiempo real por fenómenos costeros, viento, tormentas o galernas cruzados por spot.
-- **Avisos push** cuando un spot elegido supera el umbral de calidad, como máximo uno por spot y día, y de nuevo si ese día mejora de nivel. Cada spot admite sus propios ajustes (calidad mínima, solo con terral, franja horaria; en la web). También avisan de los avisos amarillos, naranjas y rojos de AEMET que afectan al spot (de calor, lluvia o niebla, solo naranjas y rojos).
+- **Avisos push** cuando un spot elegido supera el umbral de calidad, como máximo uno por spot y día, y de nuevo si ese día mejora de nivel. Cada spot admite sus propios ajustes (calidad mínima, solo con terral, franja horaria; en la web). Opcionalmente una regla propia por spot (`prefs[spot].rule`: `hMin`, `hMax`, `windMax`, `wind`, `tide`, `ahead`) que sustituye al umbral de calidad y avisa cuando una hora prevista cumple todo lo configurado. También avisan de los avisos amarillos, naranjas y rojos de AEMET que afectan al spot (de calor, lluvia o niebla, solo naranjas y rojos).
 - **Tarjeta para compartir** con las condiciones del spot (imagen que se genera en el navegador).
 - Favoritos, ordenar por cercanía, modo sin conexión, tema claro y oscuro, e instalable en iOS y Android.
 - **Apps nativas** para iOS (SwiftUI) y Android (Jetpack Compose) con los mismos datos y avisos push nativos (ver [Apps nativas](#apps-nativas)).
