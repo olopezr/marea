@@ -21,7 +21,7 @@ Deliver improvements A1, B5, B6, D9 and D10 of the improvement plan.
 - [ ] T2 (D10) add Portuguese and French spots, verified on OSM; copy updated
 - [x] T3 (B5) per-spot alert preferences: DB, API, web UI, tests
 - [x] T4 (B6) improvement alerts, tests
-- [ ] T5 (D9) share card on the web, tests where runnable
+- [x] T5 (D9) share card on the web, tests where runnable
 
 ## Route
 
@@ -32,3 +32,4 @@ Inline: context already held in this session; each task closes with its own comm
 - T1: 10 spots moved onto the sand (lanzada, razo, orzan, bastiagueiro, carnota, oyambre, orinon, laarena, barrosa, lances). Re-checked against OpenStreetMap: all now 3-14 m from their named beach (were 189-439 m). 100/100 tests; native spots.json and landing synced. buoy-sight.json not regenerated for these (moves <=440 m on an 8 km line); it will be regenerated once in T2 for the new spots.
 - T3: RED 5/5 (test/push-prefs.test.js) then GREEN. Server: alerts table gets min_score/offshore/from_h/to_h (migrated in place), `prefs` accepted by subscribe and returned by status, preserved when an old client omits it, applied in checkAlerts and checkWarnings. Web UI verified in headless Edge with a simulated push subscription: change quality, offshore and hours -> persisted on the server, block stays open after redraw, no console errors. Old status tests updated for the new `prefs` field; Android (`ignoreUnknownKeys`) and iOS (Codable) tolerate it. iOS and Android screens for per-spot settings are not built.
 - T4: RED then GREEN (test/push-improve.test.js, 5 tests). Level reached per day is stored in `sent` as `lvl:<day>:<n>`; an improvement alert is sent only when the level rises above every level already alerted that day and the user's per-spot rules still pass; same notification tag as the original alert so it replaces it on the phone. A day alerted before this change is taken as a silent baseline (no false improvement on deploy). Worsening never alerts.
+- T5: `public/js/sharecard.js` (pure `cardModel` + `fitSize` tested in test/sharecard.test.js; canvas drawing is browser-only). The card is pre-rendered when a spot opens and shared with `navigator.share({files})` where `canShare` allows it; otherwise the previous text/link sharing runs. Verified in headless Edge with `navigator.share` stubbed: a 1080x1350 PNG (~300 KB) is produced for Somo and for a long name (Nazaré (Praia do Norte)); no console errors. The model tests were written after the module (not strict test-first); the drawing itself has no automated test. Native apps keep link sharing.

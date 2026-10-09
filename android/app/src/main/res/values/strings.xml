@@ -17,6 +17,9 @@
     <string name="detail_share">Compartir</string>
     <string name="toast_linkCopied">¡Enlace copiado al portapapeles!</string>
     <string name="share_title">%1$s en Marea</string>
+    <string name="card_wind">Viento</string>
+    <string name="card_tide">Marea</string>
+    <string name="card_water">Agua</string>
     <string name="share_text">%1$s: %2$s m a %3$s s (%4$s), %5$s y marea %6$s. Valoración: %7$s.
 %8$s</string>
     <string name="detail_webcam">Cámara en directo</string>

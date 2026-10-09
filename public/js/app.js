@@ -4,6 +4,7 @@ import { getOverview, getSpot, getBuoy } from "./api.js";
 import * as alerts from "./alerts.js";
 import { rating, RATINGS, cardinal, windType, hhmm, hourOf, km, fmt, dayLabel, moonPhase, sunTimes } from "./surf.js";
 import { tideChartHTML, bindTideChart } from "./tidechart.js";
+import { cardModel, renderCard } from "./sharecard.js";
 
 const app = document.getElementById("app");
 
@@ -28,6 +29,18 @@ let query = ""; // búsqueda en la lista; se conserva al volver de un spot
 let home = null; // última respuesta de la lista, para filtrar sin volver a pedir datos
 let position = null;
 let currentSpotData = null;
+
+// La tarjeta de condiciones se dibuja al abrir el spot, en un momento libre: al pulsar «compartir» tiene que
+// estar lista, porque el navegador solo deja compartir archivos justo después del toque.
+function prepareShareCard(data) {
+  const draw = async () => {
+    const model = cardModel(data, { t, fmt, cardinal, windPhrase, ratingLabel, lang, host: location.host });
+    const color = getComputedStyle(document.documentElement).getPropertyValue(`--q-${data.r.key}`).trim() || undefined;
+    const blob = await renderCard(model, color);
+    data.card = new File([blob], `marea-${data.meta.id}.png`, { type: "image/png" });
+  };
+  (window.requestIdleCallback ?? setTimeout)(() => draw().catch(() => {}));
+}
 
 function toggleFav(id) {
   favs.has(id) ? favs.delete(id) : favs.add(id);
@@ -911,7 +924,8 @@ async function renderSpot(id, force = false) {
   const sun = s.sun ? { ...s.sun, dawn: s.sun.dawn ?? st?.dawn, dusk: s.sun.dusk ?? st?.dusk } : st;
   const moon = moonPhase(now);
   const bs = bestSession(s, now, sun, meta);
-  currentSpotData = { meta, s, n, r, tide };
+  currentSpotData = { meta, s, n, r, tide, card: null };
+  prepareShareCard(currentSpotData);
 
   app.querySelector("#detail").innerHTML = `
     ${dataBanners(res)}
@@ -1185,7 +1199,11 @@ app.addEventListener("click", async (e) => {
       text,
       url,
     };
-    if (navigator.share) {
+    // Si el navegador puede compartir archivos, va la tarjeta con las condiciones.
+    const card = currentSpotData?.meta?.id === meta.id ? currentSpotData.card : null;
+    if (card && navigator.canShare?.({ files: [card] })) {
+      navigator.share({ ...shareData, files: [card] }).catch(() => {});
+    } else if (navigator.share) {
       navigator.share(shareData).catch(() => {});
     } else if (navigator.clipboard?.writeText) {
       navigator.clipboard

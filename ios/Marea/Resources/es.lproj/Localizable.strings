@@ -14,6 +14,9 @@
 "detail.share" = "Compartir";
 "toast.linkCopied" = "¡Enlace copiado al portapapeles!";
 "share.title" = "%1$@ en Marea";
+"card.wind" = "Viento";
+"card.tide" = "Marea";
+"card.water" = "Agua";
 "share.text" = "%1$@: %2$@ m a %3$@ s (%4$@), %5$@ y marea %6$@. Valoración: %7$@.
 %8$@";
 "detail.webcam" = "Cámara en directo";

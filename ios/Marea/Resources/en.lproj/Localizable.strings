@@ -14,6 +14,9 @@
 "detail.share" = "Share";
 "toast.linkCopied" = "Link copied to clipboard!";
 "share.title" = "%1$@ on Marea";
+"card.wind" = "Wind";
+"card.tide" = "Tide";
+"card.water" = "Water";
 "share.text" = "%1$@: %2$@ m at %3$@ s (%4$@), %5$@ and tide %6$@. Rating: %7$@.
 %8$@";
 "detail.webcam" = "Live webcam";

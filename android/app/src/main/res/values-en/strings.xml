@@ -16,6 +16,9 @@
     <string name="detail_share">Share</string>
     <string name="toast_linkCopied">Link copied to clipboard!</string>
     <string name="share_title">%1$s on Marea</string>
+    <string name="card_wind">Wind</string>
+    <string name="card_tide">Tide</string>
+    <string name="card_water">Water</string>
     <string name="share_text">%1$s: %2$s m at %3$s s (%4$s), %5$s and tide %6$s. Rating: %7$s.
 %8$s</string>
     <string name="detail_webcam">Live webcam</string>

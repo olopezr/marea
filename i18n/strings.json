@@ -19,6 +19,9 @@
   "detail.share": ["Compartir", "Share"],
   "toast.linkCopied": ["¡Enlace copiado al portapapeles!", "Link copied to clipboard!"],
   "share.title": ["{0} en Marea", "{0} on Marea"],
+  "card.wind": ["Viento", "Wind"],
+  "card.tide": ["Marea", "Tide"],
+  "card.water": ["Agua", "Water"],
   "share.text": [
     "{0}: {1} m a {2} s ({3}), {4} y marea {5}. Valoración: {6}.\n{7}",
     "{0}: {1} m at {2} s ({3}), {4} and tide {5}. Rating: {6}.\n{7}"
