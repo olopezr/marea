@@ -37,6 +37,7 @@
 		CA63E144778F14BAA4A71814 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C228E33BD533C06B23168222 /* APIClient.swift */; };
 		D02CE8D28D28362AAA2428B4 /* SpotsMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22196642C6DFE751A6E38E9 /* SpotsMapView.swift */; };
 		D132FC9AC77E47DAAE87617E /* overview.json in Resources */ = {isa = PBXBuildFile; fileRef = 957EBA19254A90A5D1DC25AD /* overview.json */; };
+		D4EC7A7282081198B051C3AD /* AlertsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B146DBEB794ABF4E89911BA2 /* AlertsTests.swift */; };
 		DCA99808303D4DF3486304B2 /* MareaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A711F4B677C2FC7F77B72F8 /* MareaApp.swift */; };
 		E16C81FBC211D70D2E2A9C30 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA54C16ABE08FDE05FE9D779 /* L10n.swift */; };
 		E1C5C8F50F8B474BAB98B379 /* en in Resources */ = {isa = PBXBuildFile; fileRef = 8D0617B4A68BBEA18445845B /* en */; };
@@ -102,6 +103,7 @@
 		957EBA19254A90A5D1DC25AD /* overview.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = overview.json; sourceTree = "<group>"; };
 		981BE412D9DABA873CB21A90 /* archivo_expanded_extrabold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = archivo_expanded_extrabold.ttf; sourceTree = "<group>"; };
 		AB76D6E813B82B572484A68B /* jetbrainsmono_semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = jetbrainsmono_semibold.ttf; sourceTree = "<group>"; };
+		B146DBEB794ABF4E89911BA2 /* AlertsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsTests.swift; sourceTree = "<group>"; };
 		B22196642C6DFE751A6E38E9 /* SpotsMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotsMapView.swift; sourceTree = "<group>"; };
 		B3D4A362900418CD714ED8AB /* BuoyPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuoyPanel.swift; sourceTree = "<group>"; };
 		B78BAF8A7FE946E45414D942 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 		3572A74B12D0E61C574DEA69 /* MareaTests */ = {
 			isa = PBXGroup;
 			children = (
+				B146DBEB794ABF4E89911BA2 /* AlertsTests.swift */,
 				2539C9026DB0A20145EF3B6F /* SurfTests.swift */,
 				E043E36EBD71274E943BC099 /* Fixtures */,
 			);
@@ -417,6 +420,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4EC7A7282081198B051C3AD /* AlertsTests.swift in Sources */,
 				18694193E6DC3F16296A51E8 /* SurfTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

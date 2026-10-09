@@ -368,10 +368,50 @@ struct SpotWarning: Codable, Sendable, Hashable, Identifiable {
     }
 }
 
+// Ajustes de avisos de un spot (equivale a `prefs` de la API): calidad mínima propia, solo con terral y franja horaria.
+struct AlertPref: Codable, Sendable, Equatable {
+    static let defaultFrom = 7, defaultTo = 22
+
+    var min: Int?
+    var offshore: Bool?
+    var from: Int?
+    var to: Int?
+
+    // Sin ajustes propios: se usan los valores generales.
+    var isDefault: Bool { min == nil && offshore != true && from == nil && to == nil }
+
+    // Lo que se envía al servidor: sin valores por defecto, y la franja solo si es válida y distinta de 7-22.
+    var normalized: AlertPref {
+        var p = AlertPref(min: [2, 3, 4].contains(min ?? 0) ? min : nil, offshore: offshore == true ? true : nil)
+        if let f = from, let t = to, f >= Self.defaultFrom, t <= Self.defaultTo, f < t, !(f == Self.defaultFrom && t == Self.defaultTo) {
+            p.from = f
+            p.to = t
+        }
+        return p
+    }
+}
+
 struct AlertState: Codable, Sendable, Equatable {
     var subscribed: Bool
     var spots: [String]
     var minScore: Double
+    var prefs: [String: AlertPref]
+
+    init(subscribed: Bool, spots: [String], minScore: Double, prefs: [String: AlertPref] = [:]) {
+        self.subscribed = subscribed
+        self.spots = spots
+        self.minScore = minScore
+        self.prefs = prefs
+    }
+
+    // Un servidor sin ajustes por spot no envía `prefs`.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        subscribed = try c.decode(Bool.self, forKey: .subscribed)
+        spots = try c.decode([String].self, forKey: .spots)
+        minScore = try c.decode(Double.self, forKey: .minScore)
+        prefs = try c.decodeIfPresent([String: AlertPref].self, forKey: .prefs) ?? [:]
+    }
 
     static let empty = AlertState(subscribed: false, spots: [], minScore: 3)
 }

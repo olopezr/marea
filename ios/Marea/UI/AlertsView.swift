@@ -46,6 +46,15 @@ struct AlertsView: View {
                                 Text(sp.name).font(Theme.body()).foregroundStyle(Theme.ink)
                             }
                             .tint(Theme.green).padding(.vertical, 8)
+                            if st.spots.contains(sp.id) {
+                                SpotPrefs(pref: st.prefs[sp.id] ?? AlertPref()) { new in
+                                    if let f = new.from, let t = new.to, f >= t {
+                                        app.show(L("alerts.hoursOrder"))
+                                        return
+                                    }
+                                    run(L("toast.prefSaved")) { try await app.alerts.setPref(sp.id, new) }
+                                }
+                            }
                         }
                     }
                 }
@@ -87,5 +96,72 @@ struct AlertsView: View {
             }
             busy = false
         }
+    }
+}
+
+// Ajustes de un spot con avisos activados (el bloque `prefsBlock` de la web): calidad mínima propia,
+// solo con terral y franja horaria.
+private struct SpotPrefs: View {
+    let pref: AlertPref
+    let onChange: (AlertPref) -> Void
+    @State private var open = false
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $open) {
+            VStack(alignment: .leading, spacing: 10) {
+                Picker(L("alerts.minQuality"), selection: Binding(get: { pref.min ?? 0 }, set: { v in
+                    var p = pref
+                    p.min = v == 0 ? nil : v
+                    onChange(p)
+                })) {
+                    Text(L("alerts.useDefault")).tag(0)
+                    Text(Rating.fair.label).tag(2)
+                    Text(Rating.good.label).tag(3)
+                    Text(Rating.epic.label).tag(4)
+                }
+                .pickerStyle(.menu).tint(Theme.accent)
+                Toggle(L("alerts.spotOffshore"), isOn: Binding(get: { pref.offshore == true }, set: { on in
+                    var p = pref
+                    p.offshore = on ? true : nil
+                    onChange(p)
+                }))
+                .tint(Theme.green)
+                HStack {
+                    Text(L("alerts.spotFrom"))
+                    hours(selection: pref.from ?? AlertPref.defaultFrom, range: 7...21) { h in
+                        var p = pref
+                        p.from = h
+                        p.to = pref.to ?? AlertPref.defaultTo
+                        onChange(p)
+                    }
+                    Text(L("alerts.spotTo"))
+                    hours(selection: pref.to ?? AlertPref.defaultTo, range: 8...22) { h in
+                        var p = pref
+                        p.from = pref.from ?? AlertPref.defaultFrom
+                        p.to = h
+                        onChange(p)
+                    }
+                }
+            }
+            .font(Theme.body(14)).foregroundStyle(Theme.ink)
+            .padding(.top, 6)
+        } label: {
+            HStack(spacing: 6) {
+                Text(L("alerts.spotSettings"))
+                if !pref.isDefault {
+                    Circle().fill(Theme.accent).frame(width: 8, height: 8)
+                        .accessibilityLabel(L("alerts.spotCustom"))
+                }
+            }
+            .font(Theme.body(14)).foregroundStyle(Theme.muted)
+        }
+        .tint(Theme.muted).padding(.bottom, 8)
+    }
+
+    private func hours(selection: Int, range: ClosedRange<Int>, set: @escaping (Int) -> Void) -> some View {
+        Picker("", selection: Binding(get: { selection }, set: set)) {
+            ForEach(Array(range), id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
+        }
+        .pickerStyle(.menu).tint(Theme.accent).labelsHidden()
     }
 }

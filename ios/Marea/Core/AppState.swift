@@ -140,8 +140,8 @@ final class AlertsModel {
         tokenWaiters = []
         // Si Apple renueva el token, se vuelve a suscribir con los mismos spots.
         if changed, !state.spots.isEmpty {
-            let (spots, min) = (state.spots, state.minScore)
-            Task { try? await self.save(spots, minScore: min) }
+            let (spots, min, prefs) = (state.spots, state.minScore, state.prefs)
+            Task { try? await self.save(spots, minScore: min, prefs: prefs) }
         }
     }
 
@@ -175,10 +175,20 @@ final class AlertsModel {
         return current
     }
 
-    func save(_ spots: [String], minScore: Double? = nil) async throws {
+    func save(_ spots: [String], minScore: Double? = nil, prefs: [String: AlertPref]? = nil) async throws {
         if spots.isEmpty { return try await disableAll() }
         let t = try await ensureToken()
-        state = try await APIClient.shared.subscribe(token: t, spots: spots, minScore: minScore ?? state.minScore)
+        // Solo los ajustes de los spots que siguen activos, sin valores por defecto.
+        let keep = (prefs ?? state.prefs).filter { spots.contains($0.key) }.mapValues(\.normalized).filter { !$0.value.isDefault }
+        state = try await APIClient.shared.subscribe(token: t, spots: spots, minScore: minScore ?? state.minScore, prefs: keep)
+    }
+
+    // Ajustes de un spot activo (calidad propia, solo con terral, franja horaria).
+    func setPref(_ id: String, _ pref: AlertPref) async throws {
+        guard state.spots.contains(id) else { return }
+        var all = state.prefs
+        all[id] = pref
+        try await save(state.spots, prefs: all)
     }
 
     // Sin spots activos el umbral se guarda en memoria y se envía con la primera suscripción.
