@@ -122,3 +122,49 @@ test("solo se piden detalles a URLs https de aemet.es", async () => {
   ])
     assert.equal(await aemet.fetchCapDetail(u), null, u);
 });
+
+test("alertableWarnings: fenómenos de mar y viento en cualquier nivel; el resto solo en naranja o rojo", () => {
+  const now = Date.now();
+  const w = (level, phenomenon) => ({
+    id: `${level}-${phenomenon}`,
+    level,
+    phenomenon,
+    zone: "Litoral cántabro",
+    start: now - 3600e3,
+    end: now + 3600e3,
+  });
+  const all = [
+    w("amarillo", "Costeros"),
+    w("amarillo", "Vientos"),
+    w("amarillo", "Tormentas"),
+    w("amarillo", "Galerna"),
+    w("amarillo", "Rissaga"),
+    w("amarillo", "Lluvias"),
+    w("amarillo", "Temperaturas máximas"),
+    w("amarillo", "Niebla"),
+    w("naranja", "Lluvias"),
+    w("rojo", "Temperaturas máximas"),
+  ];
+  const got = aemet
+    .alertableWarnings(spotById.somo, all, now)
+    .map((x) => x.id)
+    .sort();
+  assert.deepEqual(
+    got,
+    [
+      "amarillo-Costeros",
+      "amarillo-Galerna",
+      "amarillo-Rissaga",
+      "amarillo-Tormentas",
+      "amarillo-Vientos",
+      "naranja-Lluvias",
+      "rojo-Temperaturas máximas",
+    ].sort(),
+  );
+});
+
+test("isRss distingue un feed real de una página de rechazo con HTTP 200", () => {
+  assert.equal(aemet.isRss(SAMPLE_RSS), true);
+  assert.equal(aemet.isRss("<html><head><title>Request Rejected</title></head></html>"), false);
+  assert.equal(aemet.isRss(""), false);
+});

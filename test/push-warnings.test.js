@@ -28,7 +28,7 @@ installFetch({
   period: 13,
   wind: 4,
   windDir: 165,
-  aemetRss: () => `<rss><channel>${warnings.join("")}</channel></rss>`,
+  aemetRss: () => (typeof warnings === "string" ? warnings : `<rss><channel>${warnings.join("")}</channel></rss>`),
 });
 process.env.VAPID_SUBJECT = "mailto:test@example.com";
 const push = await import("../server/push.js");
@@ -134,4 +134,26 @@ test("si el envío falla, el aviso se reintenta en la siguiente revisión", asyn
   assert.equal(mine().filter((s) => /lluvias/i.test(s.title)).length, 0);
   await push.checkAlerts(NOW + 8 * 60e3);
   assert.equal(mine().filter((s) => /lluvias/i.test(s.title)).length, 1);
+});
+
+test("si AEMET responde con una página de rechazo, no avisa y lo cuenta como fallo de la fuente", async () => {
+  const { sourceErrors } = await import("../server/cache.js");
+  const before = sourceErrors.aemet ?? 0;
+  await setWarnings("<html><head><title>Request Rejected</title></head></html>");
+  const warns = () => mine().filter((s) => /^Aviso /.test(s.title)).length;
+  const n = warns();
+  await push.checkAlerts(NOW + 9 * 60e3);
+  assert.equal(warns(), n);
+  assert.ok((sourceErrors.aemet ?? 0) > before);
+});
+
+test("un aviso amarillo de calor o lluvia no genera notificación", async () => {
+  await setWarnings([
+    item("amarillo", "Temperaturas máximas", "Litoral cántabro", NOW - H, NOW + 5 * H, "h1"),
+    item("amarillo", "Lluvias", "Litoral cántabro", NOW - H, NOW + 5 * H, "h2"),
+  ]);
+  const warns = () => mine().filter((s) => /^Aviso /.test(s.title)).length;
+  const n = warns();
+  await push.checkAlerts(NOW + 10 * 60e3);
+  assert.equal(warns(), n);
 });

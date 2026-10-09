@@ -172,6 +172,9 @@ export async function fetchCapDetail(url) {
   });
 }
 
+// Un cortafuegos o un error pueden devolver una página HTML con HTTP 200: eso no es un feed vacío, es un fallo.
+export const isRss = (xml) => typeof xml === "string" && /<rss[\s>]/.test(xml);
+
 export async function allWarnings() {
   return cached(
     "aemet:all",
@@ -183,6 +186,7 @@ export async function allWarnings() {
       });
       if (!res.ok) throw new Error(`AEMET RSS error: ${res.status}`);
       const xml = await res.text();
+      if (!isRss(xml)) throw new Error("AEMET no devolvió un RSS (¿bloqueo del cortafuegos?)");
       return parseAemetRss(xml);
     },
     { staleMs: 2 * 3600e3 },
@@ -250,11 +254,16 @@ export async function warningsForSpot(spot, now = Date.now(), { fetchDetails = f
   return enriched;
 }
 
-// Avisos de nivel amarillo o superior que afectan a un spot y merecen una notificación: los que están en vigor
-// o empiezan en las próximas 24 h. Los caducados no. Ordenados de más a menos relevante.
+// Fenómenos que afectan a quien va a surfear: de estos avisa cualquier nivel. De los demás (calor, lluvia, niebla,
+// nevadas…) solo los naranjas y rojos: un amarillo es muy frecuente y no cambia nada en el agua.
+const SEA_PHENOMENA = new Set(["costeros", "vientos", "galerna", "rissaga", "tormentas"]);
+const worthAlerting = (w) => SEA_PHENOMENA.has(w.phenomenon.toLowerCase()) || LEVEL_RANK[w.level] >= LEVEL_RANK.naranja;
+
+// Avisos que afectan a un spot y merecen una notificación: los que están en vigor o empiezan en las próximas 24 h
+// (los caducados no), filtrados por fenómeno y nivel. Ordenados de más a menos relevante.
 export function alertableWarnings(spot, all, now = Date.now()) {
   const list = (all ?? []).filter(
-    (w) => matchesSpot(w, spot) && LEVEL_RANK[w.level] && (w.end == null || w.end >= now),
+    (w) => matchesSpot(w, spot) && LEVEL_RANK[w.level] && worthAlerting(w) && (w.end == null || w.end >= now),
   );
   return sortWarnings(
     list.filter((w) => w.start == null || w.start - now <= 24 * 3600e3),

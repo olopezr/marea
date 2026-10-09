@@ -19,6 +19,12 @@ Send a push notification when AEMET publishes a yellow, orange or red warning (a
 - [x] T2 push.js: `checkWarnings`, message es/en, wired at start of `checkAlerts`
 - [x] T3 tests (separate file, own data dir, relative dates) + fixture hook for custom RSS
 - [x] T4 alerts screen copy mentions warnings (i18n source + sync)
+- [x] T5 filter by phenomenon: coastal/wind/thunderstorm family at any level, other phenomena only orange/red (push only; banner unchanged)
+- [x] T6 AEMET feed: a non-RSS reply (e.g. WAF "Request Rejected" with HTTP 200) is a failure, counted in sourceErrors.aemet, never cached as an empty feed
+
+## Decisions (user-approved)
+
+- T5/T6 added after a side note: yellow heat/rain/fog warnings would flood users. AEMET feed was unreachable from the dev machine (WAF), so real frequency is unmeasured.
 
 ## Route
 
@@ -29,4 +35,5 @@ Inline. Context already held (files read in this session); delegating would re-d
 - RED: 7 of 8 new tests failed before implementation (the 8th is the negative case).
 - GREEN: `npm test` 96/96 (88 existing + 8 new in test/push-warnings.test.js); eslint clean; prettier clean on tracked files.
 - i18n sources regenerated (web, iOS, Android) with `node scripts/i18n.mjs`; sw.js VERSION bumped.
+- T5/T6: RED 4 new tests, then GREEN: `npm test` 100/100, eslint clean.
 - Not verified: real delivery to a device (needs deployed server + AEMET live warning); native apps need no client change.
