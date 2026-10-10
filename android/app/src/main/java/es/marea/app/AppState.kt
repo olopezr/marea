@@ -19,6 +19,10 @@ import es.marea.app.data.AlertPref
 import es.marea.app.data.AlertState
 import es.marea.app.data.Api
 import es.marea.app.data.ApiException
+import es.marea.app.data.DiaryEntry
+import es.marea.app.data.DiarySnap
+import es.marea.app.data.DiaryStorage
+import es.marea.app.data.DiaryStore
 import es.marea.app.data.tr
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +57,23 @@ class AppState(private val context: Context, val api: Api) {
     var pendingSpot by mutableStateOf<String?>(null)
 
     val alerts = AlertsModel(context, api, prefs)
+
+    // Diario de sesiones: solo en este dispositivo, en la clave `diary` de las preferencias.
+    val diary = DiaryStore(object : DiaryStorage {
+        override fun read() = prefs.getString("diary", null)
+        override fun write(text: String) = prefs.edit { putString("diary", text) }
+    })
+    /** Las entradas como estado de Compose: la pantalla se recompone al añadir o borrar. */
+    var diaryEntries by mutableStateOf(diary.entries)
+        private set
+
+    fun addDiary(spotId: String, date: String, rating: Int, notes: String, snap: DiarySnap?): DiaryEntry? =
+        diary.add(spotId, date, rating, notes, snap).also { diaryEntries = diary.entries }
+
+    fun removeDiary(id: String) {
+        diary.remove(id)
+        diaryEntries = diary.entries
+    }
 
     fun toggleFav(id: String) {
         favs = if (id in favs) favs - id else favs + id

@@ -239,13 +239,60 @@ data class SpotDetail(
     val days: List<Day>,
 )
 
-/** Ajustes de avisos de un spot (equivale a `prefs` de la API): calidad mínima propia, solo con terral y franja horaria. */
+/**
+ * Regla personalizada de un spot (`rule` de la API): rango de altura, viento máximo, solo con terral,
+ * estado de la marea y antelación. Misma normalización que public/js/rules.js y el servidor (cleanRule).
+ */
 @Serializable
-data class AlertPref(val min: Int? = null, val offshore: Boolean? = null, val from: Int? = null, val to: Int? = null) {
-    /** Sin ajustes propios: se usan los valores generales. */
-    val isDefault get() = min == null && offshore != true && from == null && to == null
+data class AlertRule(
+    val hMin: Double? = null,
+    val hMax: Double? = null,
+    val windMax: Int? = null,
+    /** "off" (solo con terral); "any" equivale a no poner la clave. */
+    val wind: String? = null,
+    /** "low", "mid" o "high"; "any" equivale a no poner la clave. */
+    val tide: String? = null,
+    val ahead: Int? = null,
+) {
+    /**
+     * Valores acotados y sin los de por defecto. `null` si no queda ninguna condición: la antelación sola
+     * no lo es, y el servidor descartaría esa regla.
+     */
+    val normalized: AlertRule?
+        get() {
+            fun tenth(v: Double?) = v?.takeIf { it.isFinite() }?.let { Math.round(it.coerceIn(0.0, 10.0) * 10) / 10.0 }
+            var lo = tenth(hMin)
+            var hi = tenth(hMax)
+            if (lo != null && hi != null && lo > hi) lo = hi.also { hi = lo }
+            val r = AlertRule(
+                hMin = lo?.takeIf { it != 0.0 },
+                hMax = hi?.takeIf { it != 10.0 },
+                windMax = windMax?.coerceIn(0, 60)?.takeIf { it != 60 },
+                wind = if (wind == "off") "off" else null,
+                tide = tide?.takeIf { it in listOf("low", "mid", "high") },
+            )
+            if (r == AlertRule()) return null
+            return r.copy(ahead = ahead?.coerceIn(MIN_AHEAD, MAX_AHEAD)?.takeIf { it != DEFAULT_AHEAD })
+        }
 
-    /** Lo que se envía al servidor: sin valores por defecto, y la franja solo si es válida y distinta de 7-22. */
+    companion object {
+        const val MIN_AHEAD = 6
+        const val MAX_AHEAD = 48
+        const val DEFAULT_AHEAD = 24
+        val TIDES = listOf("any", "low", "mid", "high")
+    }
+}
+
+/** Ajustes de avisos de un spot (equivale a `prefs` de la API): calidad mínima propia, solo con terral, franja horaria y regla. */
+@Serializable
+data class AlertPref(val min: Int? = null, val offshore: Boolean? = null, val from: Int? = null, val to: Int? = null, val rule: AlertRule? = null) {
+    /** Sin ajustes propios: se usan los valores generales. */
+    val isDefault get() = min == null && offshore != true && from == null && to == null && rule?.normalized == null
+
+    /**
+     * Lo que se envía al servidor: sin valores por defecto, y la franja solo si es válida y distinta de 7-22.
+     * Una pref sin regla se envía sin `rule`: el servidor sustituye todo el conjunto y así la quita.
+     */
     val normalized: AlertPref
         get() {
             val validHours = from != null && to != null && from >= DEFAULT_FROM && to <= DEFAULT_TO && from < to &&
@@ -255,6 +302,7 @@ data class AlertPref(val min: Int? = null, val offshore: Boolean? = null, val fr
                 offshore = if (offshore == true) true else null,
                 from = if (validHours) from else null,
                 to = if (validHours) to else null,
+                rule = rule?.normalized,
             )
         }
 

@@ -246,6 +246,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
     }
     item { Glossary() }
     item { LocationPanel(s.name, s.lat, s.lon) }
+    item { DiaryPanel(app, id, s) }
     item {
         Text(tr(R.string.updated, Surf.ago(s.updatedAt)), style = Type.body(13.sp), color = LocalColors.current.muted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
     }

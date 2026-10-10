@@ -1,6 +1,7 @@
 package es.marea.app.ui
 
 import es.marea.app.data.AlertPref
+import es.marea.app.data.AlertRule
 import es.marea.app.data.Rating
 
 import es.marea.app.R
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +41,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -56,6 +60,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -64,6 +69,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import es.marea.app.AppState
+import es.marea.app.data.Surf
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Pide el permiso de notificaciones (Android 13+) y después ejecuta la acción, se conceda o no. */
@@ -174,11 +181,14 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
                             if (on && st.prefs != null) {
                                 val pref = st.prefs[sp.id] ?: AlertPref()
                                 SpotPrefs(
-                                    pref = pref, open = sp.id in openPrefs, enabled = !busy,
+                                    pref = pref, open = sp.id in openPrefs, enabled = !busy, busy = busy,
                                     onToggle = { openPrefs = if (sp.id in openPrefs) openPrefs - sp.id else openPrefs + sp.id },
                                     onChange = { new ->
                                         if (new.from != null && new.to != null && new.from >= new.to) app.show(tr(R.string.alerts_hoursOrder))
-                                        else run(tr(R.string.toast_prefSaved)) { app.alerts.setPref(sp.id, new) }
+                                        else {
+                                            val cleared = new.rule == null && pref.rule != null
+                                            run(tr(if (cleared) R.string.toast_ruleCleared else R.string.toast_prefSaved)) { app.alerts.setPref(sp.id, new) }
+                                        }
                                     },
                                 )
                             }
@@ -201,7 +211,7 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
 // Ajustes de un spot con avisos activados (el bloque `prefsBlock` de la web): calidad mínima propia,
 // solo con terral y franja horaria.
 @Composable
-private fun SpotPrefs(pref: AlertPref, open: Boolean, enabled: Boolean, onToggle: () -> Unit, onChange: (AlertPref) -> Unit) {
+private fun SpotPrefs(pref: AlertPref, open: Boolean, enabled: Boolean, busy: Boolean, onToggle: () -> Unit, onChange: (AlertPref) -> Unit) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
         Row(Modifier.clickable(onClick = onToggle).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -235,6 +245,7 @@ private fun SpotPrefs(pref: AlertPref, open: Boolean, enabled: Boolean, onToggle
                     val toHours = (AlertPref.DEFAULT_FROM + 1..AlertPref.DEFAULT_TO).toList()
                     Menu("%02d:00".format(to), toHours.map { "%02d:00".format(it) }, enabled) { i -> onChange(pref.copy(from = from, to = toHours[i])) }
                 }
+                RuleSection(pref.rule, busy) { rule -> onChange(pref.copy(rule = rule)) }
             }
         }
     }
@@ -255,5 +266,89 @@ private fun Menu(selected: String, options: List<String>, enabled: Boolean, onSe
                 DropdownMenuItem(text = { Text(label, style = Type.body(14.sp), color = c.ink) }, onClick = { expanded = false; onSelect(i) })
             }
         }
+    }
+}
+
+/**
+ * Regla personalizada de un spot (`ruleFields` de la web). Los cambios se envían con una pequeña espera
+ * para no mandar una petición por cada movimiento de un control.
+ */
+@Composable
+private fun RuleSection(rule: AlertRule?, busy: Boolean, onChange: (AlertRule?) -> Unit) {
+    val c = LocalColors.current
+    var draft by remember { mutableStateOf(rule ?: AlertRule()) }
+    val none = tr(R.string.alerts_rule_any)
+
+    // Envía la regla ya normalizada cuando deja de cambiar; si no hay condiciones, la quita.
+    LaunchedEffect(draft, busy, rule) {
+        if (busy) return@LaunchedEffect
+        delay(600)
+        val next = draft.normalized
+        if (next != rule?.normalized) onChange(next)
+    }
+
+    Column(Modifier.fillMaxWidth().padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        HorizontalDivider(color = c.line)
+        Text(tr(R.string.alerts_rule_title), style = Type.bodySemibold(15.sp), color = c.ink, modifier = Modifier.padding(top = 8.dp).semantics { heading() })
+        Text(tr(R.string.alerts_rule_hint), style = Type.body(13.sp), color = c.muted)
+        RuleSlider(tr(R.string.alerts_rule_hMin), draft.hMin ?: 0.0, 0f..10f, 99, draft.hMin?.takeIf { it != 0.0 }?.let { Surf.fmt(it) + " m" } ?: none) {
+            draft = draft.copy(hMin = Math.round(it * 10) / 10.0)
+        }
+        RuleSlider(tr(R.string.alerts_rule_hMax), draft.hMax ?: 10.0, 0f..10f, 99, draft.hMax?.takeIf { it != 10.0 }?.let { Surf.fmt(it) + " m" } ?: none) {
+            draft = draft.copy(hMax = Math.round(it * 10) / 10.0)
+        }
+        RuleSlider(tr(R.string.alerts_rule_windMax), (draft.windMax ?: 60).toDouble(), 0f..60f, 59, draft.windMax?.takeIf { it < 60 }?.let { "$it kn" } ?: none) {
+            draft = draft.copy(windMax = Math.round(it).toInt())
+        }
+        val offshore = draft.wind == "off"
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(offshore, role = Role.Switch) { draft = draft.copy(wind = if (it) "off" else null) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(tr(R.string.alerts_rule_offshore), style = Type.body(14.sp), color = c.ink, modifier = Modifier.weight(1f))
+            Switch(
+                checked = offshore, onCheckedChange = null,
+                colors = SwitchDefaults.colors(checkedTrackColor = c.green, checkedThumbColor = c.surface, uncheckedTrackColor = c.line, uncheckedThumbColor = c.surface, uncheckedBorderColor = c.line),
+            )
+        }
+        Text(tr(R.string.alerts_rule_tide), style = Type.body(14.sp), color = c.ink, modifier = Modifier.padding(top = 4.dp))
+        val tides = AlertRule.TIDES
+        val labels = listOf(R.string.alerts_rule_tide_any, R.string.alerts_rule_tide_low, R.string.alerts_rule_tide_mid, R.string.alerts_rule_tide_high).map { tr(it) }
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            tides.forEachIndexed { i, t ->
+                SegmentedButton(
+                    selected = (draft.tide ?: "any") == t,
+                    onClick = { draft = draft.copy(tide = if (t == "any") null else t) },
+                    shape = SegmentedButtonDefaults.itemShape(i, tides.size), icon = {},
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = c.surface, activeContentColor = c.ink, inactiveContainerColor = c.surface2,
+                        inactiveContentColor = c.muted, activeBorderColor = c.line, inactiveBorderColor = c.line,
+                    ),
+                ) { Text(labels[i], style = Type.bodySemibold(12.sp), maxLines = 1) }
+            }
+        }
+        val ahead = draft.ahead ?: AlertRule.DEFAULT_AHEAD
+        RuleSlider(tr(R.string.alerts_rule_ahead), ahead.toDouble(), AlertRule.MIN_AHEAD.toFloat()..AlertRule.MAX_AHEAD.toFloat(), AlertRule.MAX_AHEAD - AlertRule.MIN_AHEAD - 1, "$ahead h") {
+            draft = draft.copy(ahead = Math.round(it).toInt())
+        }
+        GhostButton(tr(R.string.alerts_rule_clear), enabled = draft.normalized != null || rule != null) { draft = AlertRule() }
+    }
+}
+
+/** Control deslizante con su etiqueta y valor; el valor se anuncia como estado para los lectores de pantalla. */
+@Composable
+private fun RuleSlider(label: String, value: Double, range: ClosedFloatingPointRange<Float>, steps: Int, shown: String, onChange: (Double) -> Unit) {
+    val c = LocalColors.current
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = Type.body(14.sp), color = c.ink)
+            Text(shown, style = Type.body(14.sp), color = c.muted)
+        }
+        Slider(
+            value = value.toFloat(), onValueChange = { onChange(it.toDouble()) }, valueRange = range, steps = steps,
+            modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = label; stateDescription = shown },
+            colors = SliderDefaults.colors(thumbColor = c.accent, activeTrackColor = c.accent, inactiveTrackColor = c.line, activeTickColor = c.accent, inactiveTickColor = c.line),
+        )
     }
 }

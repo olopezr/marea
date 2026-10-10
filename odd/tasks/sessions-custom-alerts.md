@@ -28,7 +28,7 @@ Two features, open to everyone for now (the owner will decide later whether they
 - [x] T1 Server: rule model, validation, persistence, evaluator, tests (`server/push.js`, `test/push-rules.test.js`). Route: delegated writer (mapping + writer triggers). Commit 39ea874; push-rules tests 10/10, lint clean.
 - [x] T2 Web: rule UI in `renderAlerts` prefs block, diary view and route `#/diario`, i18n, tests. Route: delegated writer. Tests 18 new (rules, diary); DOM not exercised in a browser yet.
 - [x] T3 iOS (39 unit tests green; UI not seen on screen): `AlertPref.rule`, rule UI, diary store and screen, i18n, unit tests, xcodegen. Route: delegated writer.
-- [ ] T4 Android: same as T3 in Compose, unit tests. Route: delegated writer.
+- [x] T4 Android (Gradle build, unit tests and lint green; diary list seen on the marea AVD, rule section and spot panel not seen): same as T3 in Compose, unit tests. Route: delegated writer.
 - [ ] T5 Docs and close: README section, final checks on all platforms.
 
 ## Acceptance criteria
