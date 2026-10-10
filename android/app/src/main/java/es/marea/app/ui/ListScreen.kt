@@ -272,6 +272,7 @@ private fun SpotCard(app: AppState, s: SpotSummary, dist: Double?, onOpen: () ->
             }
             Box(Modifier.offset(x = 12.dp, y = (-12).dp)) { FavButton(s.id in app.favs) { app.toggleFav(s.id) } }
         }
+        s.warning?.let { WarningBadge(it) }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { RatingChip(Rating.of(s.score)); ScoreBar(s.score) }
         Row {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {

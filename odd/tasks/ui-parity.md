@@ -29,8 +29,8 @@ Native maps, native rule controls (inputs / steppers / sliders), permission copy
 ## Tasks
 
 - [x] T1 Web (149 tests; collapsed state seen in headless screenshot, expanded/chevron not seen): collapsible history panel closed by default (state survives the 10-minute refresh), diary panel after location. Route: delegated writer (2+ non-trivial files).
-- [ ] T2 Android: AEMET warning banner on the detail and badge on list cards, history panel right after buoy. Route: delegated writer.
-- [ ] T3 Final check: web order and default states re-read against iOS; npm check, Android build/tests/lint, iOS untouched.
+- [x] T2 Android (build, 6 new unit tests and lint green; banner and badge seen on the marea AVD with a real yellow AEMET warning; multi-warning, red/orange, dark mode not seen): AEMET warning banner on the detail and badge on list cards, history panel right after buoy. Route: delegated writer.
+- [x] T3 Final check (web order read against iOS; npm test 149, lint, prettier, Android build/tests/lint green): web order and default states re-read against iOS; npm check, Android build/tests/lint, iOS untouched.
 
 ## Acceptance criteria
 
