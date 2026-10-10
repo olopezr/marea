@@ -69,6 +69,7 @@ data class SpotSummary(
     val score: Double,
     val now: Now,
     val tide: TideNow,
+    val warning: SpotWarning? = null,
 )
 
 @Serializable
@@ -237,6 +238,36 @@ data class SpotDetail(
     val tideDay: TideDay,
     val hours: List<Hour>,
     val days: List<Day>,
+    val warning: SpotWarning? = null,
+    val warnings: List<SpotWarning>? = null,
+)
+
+/** Texto oficial de un aviso en un idioma (solo en el detalle del spot). */
+@Serializable
+data class WarningDetailsText(
+    val headline: String? = null,
+    val description: String? = null,
+    val instruction: String? = null,
+    val onset: String? = null,
+    val expires: String? = null,
+)
+
+@Serializable
+data class WarningDetails(val es: WarningDetailsText? = null, val en: WarningDetailsText? = null)
+
+/** Aviso Meteoalerta de la AEMET (server/sources/aemet.js). `level`: amarillo, naranja o rojo. */
+@Serializable
+data class SpotWarning(
+    val id: String? = null,
+    val level: String? = null,
+    val phenomenon: String? = null,
+    val zone: String? = null,
+    val desc: String? = null,
+    val start: Double? = null,
+    val end: Double? = null,
+    val link: String? = null,
+    val active: Boolean? = null,
+    val details: WarningDetails? = null,
 )
 
 /**

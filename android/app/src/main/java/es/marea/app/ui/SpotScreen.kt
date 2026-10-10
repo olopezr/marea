@@ -145,6 +145,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
     val s = res.data; val tz = s.tz; val n = s.now; val t = s.tide
     val water = s.buoy?.water ?: n.water
     item { DataBanners(res.ts, res.stale, res.offline, s.forecastSource) }
+    // Avisos oficiales de la AEMET: el detalle trae la lista; si no, el aviso resumido del spot.
+    val warnings = s.warnings?.takeIf { it.isNotEmpty() } ?: listOfNotNull(s.warning)
+    if (warnings.isNotEmpty()) item { WarningBanner(warnings, tz) }
     item { Hero(s) }
     item {
         val meta = app.api.spotById[id]
@@ -175,6 +178,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
         }
     }
     item { BuoyPanel(s) }
+    s.buoy?.let { b -> if (b.historySeries.size >= 6 || b.modelSeries.isNotEmpty()) item { HistoryPanel(b) } }
     item {
         val meta = app.api.spotById[id]
         val p = Surf.power(n.h, n.period)
@@ -218,7 +222,6 @@ private fun androidx.compose.foundation.lazy.LazyListScope.detail(app: AppState,
             Text(tideNote(s), style = Type.body(13.sp), color = LocalColors.current.muted)
         }
     }
-    s.buoy?.let { b -> if (b.historySeries.size >= 6 || b.modelSeries.isNotEmpty()) item { HistoryPanel(b) } }
     item {
         Panel {
             PanelTitle(tr(R.string.hours_title))
