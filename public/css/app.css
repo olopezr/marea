@@ -1578,6 +1578,7 @@ dialog.help form {
 
 /* ---------- Boya frente a previsión ---------- */
 details.history summary {
+  min-height: 44px;
   cursor: pointer;
   display: flex;
   align-items: center;

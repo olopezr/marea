@@ -7,6 +7,7 @@ import { tideChartHTML, bindTideChart } from "./tidechart.js";
 import { cardModel, renderCard } from "./sharecard.js";
 import { ruleFromForm } from "./rules.js";
 import * as diary from "./diary.js";
+import { createHistoryState } from "./history-state.js";
 
 const app = document.getElementById("app");
 
@@ -785,7 +786,10 @@ function fitText(fit) {
   if (fit.bias <= -0.15) return t("hist.fitHigh", fmt(-fit.bias));
   return t(fit.mae < 0.25 ? "hist.fitGood" : "hist.fitMixed", fmt(fit.mae));
 }
-function historyPanel(b) {
+// Panel plegado por defecto; el estado vive fuera del HTML para sobrevivir al refresco de 10 min.
+const historyState = createHistoryState();
+const CHEVRON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function historyPanel(b, id) {
   const hist = b?.history ?? [],
     model = b?.model ?? [];
   if (hist.length < 6 && !model.length) return "";
@@ -815,8 +819,9 @@ function historyPanel(b) {
     [now, t("hist.now")],
     [to, "+24 h"],
   ];
-  return `<section class="panel history">
-    <h3>${t("hist.title")}</h3>
+  return `<details class="panel history" data-hist="${id}" ${historyState.isOpen(id) ? "open" : ""}>
+    <summary><h3>${t("hist.title")}</h3><span class="chevron">${CHEVRON}</span></summary>
+    <div class="history-body">
     <svg class="hist-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${t("hist.aria")}">
       ${grid.map((v) => `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L - 4}" y="${y(v) + 3}" text-anchor="end">${fmt(v, step < 1 ? 1 : 0)}</text>`).join("")}
       <line class="now" x1="${x(now)}" x2="${x(now)}" y1="${TOP}" y2="${H - BOTTOM}"/>
@@ -830,7 +835,8 @@ function historyPanel(b) {
     </div>
     ${b.fit ? `<p class="small"><b>${fitText(b.fit)}</b></p>` : ""}
     <p class="muted small">${esc(t("hist.place", b.buoy.name))}</p>
-  </section>`;
+    </div>
+  </details>`;
 }
 
 function alertButton(id) {
@@ -896,6 +902,7 @@ async function renderSpot(id, force = false) {
     return;
   }
   document.title = `${meta.name} · Marea`;
+  if (!force) historyState.reset(); // el refresco automático (force) conserva el panel; navegar lo cierra
   app.innerHTML = `
   <header class="topbar detail-bar">
     <a class="icon-btn" href="#/" aria-label="${t("back")}">${icon.back}</a>
@@ -946,7 +953,7 @@ async function renderSpot(id, force = false) {
       ${webcamButton(meta)}
     </div>
     ${buoyPanel(s.buoy, s)}
-    ${historyPanel(s.buoy)}
+    ${historyPanel(s.buoy, id)}
 
     <section class="tiles">
       ${tile(t("tile.swell"), `${fmt(n.sh)} m · ${fmt(n.sT, 0)} s`, `${arrow(n.sDir)} ${cardinal(n.sDir)}`, "swell")}
@@ -996,10 +1003,10 @@ async function renderSpot(id, force = false) {
       <div class="legend small">${RATINGS.map((x) => `<span><i class="q q-${x.key}"></i>${ratingLabel(x.key)}</span>`).join("")}</div>
     </section>
 
-    ${diaryPanel(id)}
-
     ${glossary()}
     ${locationPanel(s)}
+
+    ${diaryPanel(id)}
 
     <p class="muted small updated-line">${t("updated", ago(s.updatedAt))}</p>
     ${footer()}`;
@@ -1008,6 +1015,8 @@ async function renderSpot(id, force = false) {
   if (tidePanel && s.tideDay.points.length >= 4) bindTideChart(tidePanel, s.tideDay, tz, now);
   bindLocationMap(s);
   bindDiary(id, s);
+  const hist = app.querySelector("details[data-hist]");
+  hist?.addEventListener("toggle", () => historyState.set(id, hist.open));
 }
 
 // Botones ◀ ▶ y degradado de la tira horaria según la posición del scroll.
