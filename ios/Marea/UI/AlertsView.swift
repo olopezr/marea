@@ -5,6 +5,8 @@ import UIKit
 struct AlertsView: View {
     @Environment(AppState.self) private var app
     @State private var busy = false
+    // Sube cuando falla un guardado: los borradores de regla vuelven a lo último guardado.
+    @State private var saveFailures = 0
 
     var body: some View {
         let st = app.alerts.state
@@ -47,7 +49,7 @@ struct AlertsView: View {
                             }
                             .tint(Theme.green).padding(.vertical, 8)
                             if st.prefsSupported, st.spots.contains(sp.id) {
-                                SpotPrefs(pref: st.prefs[sp.id] ?? AlertPref()) { new in
+                                SpotPrefs(pref: st.prefs[sp.id] ?? AlertPref(), failures: saveFailures) { new in
                                     if let f = new.from, let t = new.to, f >= t {
                                         app.show(L("alerts.hoursOrder"))
                                         return
@@ -93,6 +95,7 @@ struct AlertsView: View {
                 try await work()
                 if let ok { app.show(ok) }
             } catch {
+                saveFailures += 1
                 app.show(error.localizedDescription)
             }
             busy = false
@@ -104,6 +107,7 @@ struct AlertsView: View {
 // solo con terral, franja horaria y regla personalizada.
 private struct SpotPrefs: View {
     let pref: AlertPref
+    let failures: Int
     let onChange: (AlertPref) -> Void
     @State private var open = false
 
@@ -143,7 +147,7 @@ private struct SpotPrefs: View {
                         onChange(p)
                     }
                 }
-                RuleSection(rule: pref.rule) { rule in
+                RuleSection(rule: pref.rule, failures: failures) { rule in
                     var p = pref
                     p.rule = rule
                     onChange(p)
@@ -176,11 +180,15 @@ private struct SpotPrefs: View {
 // para no mandar una petición por cada pulsación de un paso.
 private struct RuleSection: View {
     let rule: AlertRule?
+    let failures: Int
     let onChange: (AlertRule?) -> Void
     @State private var draft: AlertRule
+    @State private var seen: AlertRule?
 
-    init(rule: AlertRule?, onChange: @escaping (AlertRule?) -> Void) {
+    init(rule: AlertRule?, failures: Int, onChange: @escaping (AlertRule?) -> Void) {
         self.rule = rule
+        self.failures = failures
+        _seen = State(initialValue: rule)
         self.onChange = onChange
         _draft = State(initialValue: rule ?? AlertRule())
     }
@@ -210,6 +218,13 @@ private struct RuleSection: View {
                 .disabled(draft.normalized == nil && rule == nil)
         }
         .padding(.top, 4)
+        // La regla guardada cambió fuera del editor (p. ej. al recargar el estado): se adopta si no hay cambios sin enviar.
+        .onChange(of: rule) { _, new in
+            draft = AlertRule.reconcile(draft: draft, previous: seen, saved: new)
+            seen = new
+        }
+        // Si el guardado falla, la regla guardada no cambia: se descarta el borrador (el aviso de error ya se mostró).
+        .onChange(of: failures) { draft = rule ?? AlertRule() }
         // Envía la regla ya normalizada cuando deja de cambiar; si no hay condiciones, la quita.
         .task(id: draft) {
             try? await Task.sleep(for: .milliseconds(600))

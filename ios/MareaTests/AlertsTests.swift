@@ -54,6 +54,13 @@ final class AlertsTests: XCTestCase {
         XCTAssertEqual(AlertRule(hMin: 1.5, ahead: 24).normalized, AlertRule(hMin: 1.5))
     }
 
+    func testReconcileAdoptsSavedOnlyWithoutPendingEdits() {
+        let old = AlertRule(hMin: 1.0), saved = AlertRule(hMin: 2.0), edited = AlertRule(hMin: 3.0)
+        XCTAssertEqual(AlertRule.reconcile(draft: old, previous: old, saved: saved), saved, "sin cambios pendientes se adopta lo guardado")
+        XCTAssertEqual(AlertRule.reconcile(draft: old, previous: old, saved: nil), AlertRule(), "una regla quitada fuera vacía el borrador")
+        XCTAssertEqual(AlertRule.reconcile(draft: edited, previous: old, saved: saved), edited, "con cambios pendientes se conserva el borrador")
+    }
+
     func testAheadAloneIsNotARule() {
         XCTAssertNil(AlertRule(ahead: 12).normalized, "la antelación sola no es una condición")
         XCTAssertNil(AlertRule(ahead: 48).normalized)

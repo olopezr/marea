@@ -51,6 +51,15 @@ class AlertsTest {
         assertEquals(AlertRule(hMin = 1.5), AlertRule(hMin = 1.5, ahead = 24).normalized)
     }
 
+    @Test fun `el borrador adopta lo guardado solo si no tiene cambios sin enviar`() {
+        val old = AlertRule(hMin = 1.0)
+        val saved = AlertRule(hMin = 2.0)
+        assertEquals("sin cambios pendientes se adopta lo guardado", saved, AlertRule.reconcile(old, old, saved))
+        assertEquals("una regla quitada fuera vacia el borrador", AlertRule(), AlertRule.reconcile(old, old, null))
+        val edited = AlertRule(hMin = 3.0)
+        assertEquals("con cambios pendientes se conserva el borrador", edited, AlertRule.reconcile(edited, old, saved))
+    }
+
     @Test fun `la antelacion sola no es una regla`() {
         assertNull(AlertRule(ahead = 12).normalized)
         assertNull(AlertRule(ahead = 48).normalized)

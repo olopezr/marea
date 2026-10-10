@@ -54,3 +54,5 @@ Strategy `ask-on-risk`; forecast over 400 lines, so the branch will be sliced pe
 - 2026-10-10: T2 done (cc79c41). Native review of T1+T2 (medium, 1304 lines, base main): approved and acknowledged. Follow-ups for T5 (non-blocking): (1) strengthen the `ahead` window test in test/push-rules.test.js:129-132 (a1 assertion is only `<= 1`); (2) `normalizeRule` in public/js/rules.js keeps an ahead-only rule that the server drops; align it.
 
 - 2026-10-10: T3 (62794bc) and T4 (919d215) done. Visual checks pending: iOS diary and rule UI not seen on screen; Android rule section and spot diary panel not seen (diary list seen on the marea AVD).
+
+- 2026-10-10: second slice (iOS+Android+docs, 1542 lines) reviewed: approved and acknowledged. Review warning fixed: a failed rule save now reverts the draft (`AlertRule.reconcile`, 40 iOS tests). Visual checks: web diary/spot panel seen; Android spot diary panel, log form and rule section seen, failed-save revert seen; iOS diary/rule UI and web rule fieldset NOT seen on screen. Minor: "Session diary" link shows twice on the spot page (panel and footer).

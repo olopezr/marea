@@ -92,6 +92,8 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val st = app.alerts.state
     var busy by remember { mutableStateOf(false) }
+    // Sube cuando falla un guardado: los borradores de regla vuelven a lo último guardado.
+    var saveFailures by remember { mutableStateOf(0) }
     var allowed by remember { mutableStateOf(app.alerts.notificationsAllowed()) }
     // Spots con los ajustes desplegados: se recuerdan porque el estado se recompone al guardar.
     var openPrefs by remember { mutableStateOf(setOf<String>()) }
@@ -104,7 +106,7 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
         busy = true
         val go = {
             scope.launch {
-                try { work(); ok?.let(app::show) } catch (e: Exception) { app.show(e.message ?: tr(R.string.error_connect)) }
+                try { work(); ok?.let(app::show) } catch (e: Exception) { saveFailures++; app.show(e.message ?: tr(R.string.error_connect)) }
                 allowed = app.alerts.notificationsAllowed()
                 busy = false
             }
@@ -181,7 +183,7 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
                             if (on && st.prefs != null) {
                                 val pref = st.prefs[sp.id] ?: AlertPref()
                                 SpotPrefs(
-                                    pref = pref, open = sp.id in openPrefs, enabled = !busy, busy = busy,
+                                    pref = pref, open = sp.id in openPrefs, enabled = !busy, busy = busy, failures = saveFailures,
                                     onToggle = { openPrefs = if (sp.id in openPrefs) openPrefs - sp.id else openPrefs + sp.id },
                                     onChange = { new ->
                                         if (new.from != null && new.to != null && new.from >= new.to) app.show(tr(R.string.alerts_hoursOrder))
@@ -211,7 +213,7 @@ fun AlertsScreen(app: AppState, onBack: () -> Unit) {
 // Ajustes de un spot con avisos activados (el bloque `prefsBlock` de la web): calidad mínima propia,
 // solo con terral y franja horaria.
 @Composable
-private fun SpotPrefs(pref: AlertPref, open: Boolean, enabled: Boolean, busy: Boolean, onToggle: () -> Unit, onChange: (AlertPref) -> Unit) {
+private fun SpotPrefs(pref: AlertPref, open: Boolean, enabled: Boolean, busy: Boolean, failures: Int, onToggle: () -> Unit, onChange: (AlertPref) -> Unit) {
     val c = LocalColors.current
     Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
         Row(Modifier.clickable(onClick = onToggle).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -245,7 +247,7 @@ private fun SpotPrefs(pref: AlertPref, open: Boolean, enabled: Boolean, busy: Bo
                     val toHours = (AlertPref.DEFAULT_FROM + 1..AlertPref.DEFAULT_TO).toList()
                     Menu("%02d:00".format(to), toHours.map { "%02d:00".format(it) }, enabled) { i -> onChange(pref.copy(from = from, to = toHours[i])) }
                 }
-                RuleSection(pref.rule, busy) { rule -> onChange(pref.copy(rule = rule)) }
+                RuleSection(pref.rule, busy, failures) { rule -> onChange(pref.copy(rule = rule)) }
             }
         }
     }
@@ -274,10 +276,16 @@ private fun Menu(selected: String, options: List<String>, enabled: Boolean, onSe
  * para no mandar una petición por cada movimiento de un control.
  */
 @Composable
-private fun RuleSection(rule: AlertRule?, busy: Boolean, onChange: (AlertRule?) -> Unit) {
+private fun RuleSection(rule: AlertRule?, busy: Boolean, failures: Int, onChange: (AlertRule?) -> Unit) {
     val c = LocalColors.current
     var draft by remember { mutableStateOf(rule ?: AlertRule()) }
     val none = tr(R.string.alerts_rule_any)
+    var seen by remember { mutableStateOf(rule) }
+
+    // La regla guardada cambió fuera del editor (p. ej. al recargar el estado): se adopta si no hay cambios sin enviar.
+    LaunchedEffect(rule) { draft = AlertRule.reconcile(draft, seen, rule); seen = rule }
+    // Si el guardado falla, la regla guardada no cambia: se descarta el borrador (el aviso de error ya se mostró).
+    LaunchedEffect(failures) { if (failures > 0) draft = rule ?: AlertRule() }
 
     // Envía la regla ya normalizada cuando deja de cambiar; si no hay condiciones, la quita.
     LaunchedEffect(draft, busy, rule) {

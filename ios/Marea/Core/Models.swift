@@ -402,6 +402,12 @@ struct AlertRule: Codable, Sendable, Equatable {
         if let a = ahead, min(48, max(6, a)) != Self.defaultAhead { r.ahead = min(48, max(6, a)) }
         return r
     }
+
+    /// Borrador que debe mostrar el editor cuando la regla guardada pasa de `previous` a `saved`: si no había
+    /// cambios sin enviar se adopta lo guardado; si los hay, se conserva el borrador.
+    static func reconcile(draft: AlertRule, previous: AlertRule?, saved: AlertRule?) -> AlertRule {
+        draft.normalized == previous?.normalized ? (saved ?? AlertRule()) : draft
+    }
 }
 
 // Ajustes de avisos de un spot (equivale a `prefs` de la API): calidad mínima propia, solo con terral,

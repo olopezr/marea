@@ -280,6 +280,13 @@ data class AlertRule(
         const val MAX_AHEAD = 48
         const val DEFAULT_AHEAD = 24
         val TIDES = listOf("any", "low", "mid", "high")
+
+        /**
+         * Borrador que debe mostrar el editor cuando la regla guardada pasa de [previous] a [saved]:
+         * si no había cambios sin enviar se adopta lo guardado; si los hay, se conserva el borrador.
+         */
+        fun reconcile(draft: AlertRule, previous: AlertRule?, saved: AlertRule?): AlertRule =
+            if (draft.normalized == previous?.normalized) saved ?: AlertRule() else draft
     }
 }
 
