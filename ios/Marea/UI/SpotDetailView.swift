@@ -216,6 +216,7 @@ struct SpotDetailView: View {
 
         Glossary()
         LocationPanel(name: s.name, lat: s.lat, lon: s.lon)
+        DiaryPanel(spotId: s.id, detail: s)
 
         Text(L("updated", Surf.ago(s.updatedAt))).font(Theme.body(13)).foregroundStyle(Theme.muted)
         Footer()

@@ -7,6 +7,7 @@ import UserNotifications
 enum Route: Hashable {
     case spot(String)
     case alerts
+    case diary
     case map
 }
 
@@ -27,6 +28,7 @@ final class AppState {
 
     let location = LocationProvider()
     let alerts = AlertsModel()
+    let diary = DiaryStore()
 
     init() {
         favs = Set(UserDefaults.standard.stringArray(forKey: "marea:favs") ?? [])
