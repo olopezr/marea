@@ -131,21 +131,10 @@ private struct SpotPrefs: View {
                     onChange(p)
                 }))
                 .tint(Theme.green)
-                HStack {
-                    Text(L("alerts.spotFrom"))
-                    hours(selection: pref.from ?? AlertPref.defaultFrom, range: 7...21) { h in
-                        var p = pref
-                        p.from = h
-                        p.to = pref.to ?? AlertPref.defaultTo
-                        onChange(p)
-                    }
-                    Text(L("alerts.spotTo"))
-                    hours(selection: pref.to ?? AlertPref.defaultTo, range: 8...22) { h in
-                        var p = pref
-                        p.from = pref.from ?? AlertPref.defaultFrom
-                        p.to = h
-                        onChange(p)
-                    }
+                // Cada pieza en una sola línea; si la fila no cabe (pantalla estrecha o letra grande), pasa a dos líneas.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { fromPicker; toPicker }
+                    VStack(alignment: .leading, spacing: 4) { fromPicker; toPicker }
                 }
                 RuleSection(rule: pref.rule, failures: failures) { rule in
                     var p = pref
@@ -168,11 +157,35 @@ private struct SpotPrefs: View {
         .tint(Theme.muted).padding(.bottom, 8)
     }
 
+    private var fromPicker: some View {
+        HStack(spacing: 6) {
+            Text(L("alerts.spotFrom")).lineLimit(1).fixedSize()
+            hours(selection: pref.from ?? AlertPref.defaultFrom, range: 7...21) { h in
+                var p = pref
+                p.from = h
+                p.to = pref.to ?? AlertPref.defaultTo
+                onChange(p)
+            }
+        }
+    }
+
+    private var toPicker: some View {
+        HStack(spacing: 6) {
+            Text(L("alerts.spotTo")).lineLimit(1).fixedSize()
+            hours(selection: pref.to ?? AlertPref.defaultTo, range: 8...22) { h in
+                var p = pref
+                p.from = pref.from ?? AlertPref.defaultFrom
+                p.to = h
+                onChange(p)
+            }
+        }
+    }
+
     private func hours(selection: Int, range: ClosedRange<Int>, set: @escaping (Int) -> Void) -> some View {
         Picker("", selection: Binding(get: { selection }, set: set)) {
             ForEach(Array(range), id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
         }
-        .pickerStyle(.menu).tint(Theme.accent).labelsHidden()
+        .pickerStyle(.menu).tint(Theme.accent).labelsHidden().fixedSize()
     }
 }
 
