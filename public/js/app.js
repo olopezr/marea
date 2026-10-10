@@ -5,6 +5,8 @@ import * as alerts from "./alerts.js";
 import { rating, RATINGS, cardinal, windType, hhmm, hourOf, km, fmt, dayLabel, moonPhase, sunTimes } from "./surf.js";
 import { tideChartHTML, bindTideChart } from "./tidechart.js";
 import { cardModel, renderCard } from "./sharecard.js";
+import { ruleFromForm } from "./rules.js";
+import * as diary from "./diary.js";
 
 const app = document.getElementById("app");
 
@@ -150,7 +152,7 @@ const glossary = () => `<section class="panel glossary">
 const footer = () => `
   <footer class="foot muted">
     <p>${t("footer.sources")}</p>
-    <nav class="legal"><a href="/legal/fuentes.html">${t("footer.dataSources")}</a><a href="/legal/privacidad.html">${t("footer.privacy")}</a><a href="/legal/aviso-legal.html">${t("footer.legal")}</a></nav>
+    <nav class="legal"><a href="#/diario">${t("diary.link")}</a><a href="/legal/fuentes.html">${t("footer.dataSources")}</a><a href="/legal/privacidad.html">${t("footer.privacy")}</a><a href="/legal/aviso-legal.html">${t("footer.legal")}</a></nav>
   </footer>`;
 
 // Avisos sobre el estado de los datos: guardados (sin conexión o servidor sin datos) y fuente de respaldo.
@@ -994,6 +996,8 @@ async function renderSpot(id, force = false) {
       <div class="legend small">${RATINGS.map((x) => `<span><i class="q q-${x.key}"></i>${ratingLabel(x.key)}</span>`).join("")}</div>
     </section>
 
+    ${diaryPanel(id)}
+
     ${glossary()}
     ${locationPanel(s)}
 
@@ -1003,6 +1007,7 @@ async function renderSpot(id, force = false) {
   const tidePanel = app.querySelector(".tide-panel");
   if (tidePanel && s.tideDay.points.length >= 4) bindTideChart(tidePanel, s.tideDay, tz, now);
   bindLocationMap(s);
+  bindDiary(id, s);
 }
 
 // Botones ◀ ▶ y degradado de la tira horaria según la posición del scroll.
@@ -1026,11 +1031,180 @@ function bindHourStrip() {
 }
 let onStripResize = () => {};
 
+// ---------- Diario de sesiones ----------
+const dayText = (iso, opts = { weekday: "short", day: "numeric", month: "long", year: "numeric" }) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(lang, opts);
+};
+const ratingText = (n) => t("diary.ratingN", n);
+
+function snapText(snap) {
+  if (!snap) return t("diary.noSnap");
+  const line = t(
+    "diary.snap",
+    fmt(snap.h),
+    fmt(snap.Tp, 0),
+    fmt(snap.wind, 0),
+    cardinal(snap.windDir),
+    fmt(snap.water),
+  );
+  return snap.tide ? `${line} · ${t("diary.snapTide", fmt(snap.tide.h), snap.tide.rising ? "↗" : "↘")}` : line;
+}
+
+function insightsBlock(id) {
+  const ins = diary.insights(diary.load(), id);
+  if (!ins) return "";
+  const row = (label, st, unit, d = 1) =>
+    st
+      ? `<div><span class="eyebrow">${label}</span><strong>${fmt(st.avg, d)} ${unit}</strong><span class="muted small">${fmt(st.min, d)}–${fmt(st.max, d)} ${unit}</span></div>`
+      : "";
+  return `<div class="diary-insights">
+      <h4>${t("diary.insights.title")}</h4>
+      <p class="muted small">${t("diary.insights.sub", ins.count)}</p>
+      <div class="buoy-grid">
+        ${row(t("diary.insights.h"), ins.h, "m")}
+        ${row(t("diary.insights.Tp"), ins.Tp, "s", 0)}
+        ${row(t("diary.insights.wind"), ins.wind, "kn", 0)}
+        ${ins.windDir ? `<div><span class="eyebrow">${t("diary.insights.windDir")}</span><strong>${ins.windDir}</strong></div>` : ""}
+      </div>
+    </div>`;
+}
+
+function diaryPanel(id) {
+  const today = diary.todayISO();
+  return `<section class="panel diary-panel" id="diary-panel">
+    <div class="panel-head"><h3>${t("diary.title")}</h3><a class="small" href="#/diario">${t("diary.link")}</a></div>
+    ${insightsBlock(id)}
+    <button type="button" class="btn ghost" id="diary-open" aria-expanded="false" aria-controls="diary-form">${t("diary.log")}</button>
+    <form class="diary-form" id="diary-form" hidden>
+      <label>${t("diary.date")}<input type="date" name="date" value="${today}" max="${today}" required></label>
+      <div class="diary-rate" role="radiogroup" aria-label="${t("diary.rating")}">
+        <span class="eyebrow" aria-hidden="true">${t("diary.rating")}</span>
+        <div class="seg seg-inline">
+          ${[1, 2, 3, 4, 5].map((n) => `<button type="button" role="radio" aria-checked="${n === 3}" aria-label="${ratingText(n)}" data-rate="${n}">${n}</button>`).join("")}
+        </div>
+      </div>
+      <label>${t("diary.notes")}<textarea name="notes" rows="3" maxlength="500"></textarea></label>
+      <p class="muted small" id="diary-snap-note" role="status">${t("diary.snapNote")}</p>
+      <div class="actions">
+        <button class="btn" type="submit">${t("diary.save")}</button>
+        <button class="btn ghost" type="button" id="diary-cancel">${t("diary.cancel")}</button>
+      </div>
+    </form>
+  </section>`;
+}
+
+function bindDiary(id, s) {
+  const panel = app.querySelector("#diary-panel");
+  if (!panel) return;
+  const form = panel.querySelector("#diary-form");
+  const open = panel.querySelector("#diary-open");
+  const toggle = (show) => {
+    form.hidden = !show;
+    open.setAttribute("aria-expanded", show);
+    if (show) form.elements.date.focus();
+  };
+  open.onclick = () => toggle(form.hidden);
+  panel.querySelector("#diary-cancel").onclick = () => toggle(false);
+  let rate = 3;
+  panel.querySelectorAll("[data-rate]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        rate = +b.dataset.rate;
+        panel.querySelectorAll("[data-rate]").forEach((x) => x.setAttribute("aria-checked", x === b));
+      }),
+  );
+  form.elements.date.onchange = () => {
+    const today = form.elements.date.value === diary.todayISO();
+    panel.querySelector("#diary-snap-note").textContent = t(today ? "diary.snapNote" : "diary.noSnapNote");
+  };
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const date = form.elements.date.value;
+    if (!date || date > diary.todayISO()) return toast(t("diary.futureDate"));
+    diary.add({ spotId: id, date, rating: rate, notes: form.elements.notes.value, snap: diary.snapFor(s, date) });
+    toast(t("diary.saved"));
+    panel.outerHTML = diaryPanel(id);
+    bindDiary(id, s);
+  };
+}
+
+function renderDiary() {
+  document.title = t("diary.docTitle");
+  const list = diary.listNewestFirst();
+  const days = [...new Set(list.map((e) => e.date))];
+  const entry = (e) => {
+    const name = spotById[e.spotId]?.name ?? e.spotId;
+    return `<li class="diary-entry">
+      <div class="diary-row">
+        <a href="#/spot/${esc(e.spotId)}"><strong>${esc(name)}</strong></a>
+        <span class="diary-rating" aria-label="${t("diary.rating")}: ${ratingText(e.rating)}">${ratingText(e.rating)}</span>
+      </div>
+      ${e.notes ? `<p class="small">${esc(e.notes)}</p>` : ""}
+      <p class="muted small">${esc(snapText(e.snap))}</p>
+      <button type="button" class="btn ghost small-btn" data-diary-del="${esc(e.id)}" aria-label="${esc(t("diary.delete", `${name}, ${dayText(e.date, { day: "numeric", month: "long", year: "numeric" })}`))}">${t("delete")}</button>
+    </li>`;
+  };
+  app.innerHTML = `
+  <header class="topbar detail-bar">
+    <a class="icon-btn" href="#/" aria-label="${t("back")}">${icon.back}</a>
+    <div class="title"><h1>${t("diary.title")}</h1><p class="sub">${t("diary.subtitle")}</p></div>
+  </header>
+  <main id="diary">
+    ${
+      list.length
+        ? days
+            .map(
+              (d) =>
+                `<section class="panel"><h3>${dayText(d)}</h3><ul class="diary-list">${list
+                  .filter((e) => e.date === d)
+                  .map(entry)
+                  .join("")}</ul></section>`,
+            )
+            .join("")
+        : `<div class="panel"><p>${t("diary.empty")}</p></div>`
+    }
+    ${footer()}
+  </main>`;
+  app.querySelectorAll("[data-diary-del]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        diary.remove(b.dataset.diaryDel);
+        toast(t("diary.deleted"));
+        renderDiary();
+      }),
+  );
+}
+
 // ---------- Avisos ----------
 // Spots cuyos ajustes están desplegados: se recuerdan porque la pantalla se redibuja al guardar.
 const openPrefs = new Set();
 
 // Ajustes propios de un spot con avisos activados: calidad mínima, solo con terral y franja horaria.
+function ruleFields(sp, rule = {}) {
+  const num = (key, label, min, max, step, value) =>
+    `<label>${label}<input type="number" inputmode="decimal" data-rule="${key}" data-spot-id="${sp.id}" min="${min}" max="${max}" step="${step}" value="${value ?? ""}" placeholder="${t("alerts.rule.any")}"></label>`;
+  const tides = ["any", "low", "mid", "high"]
+    .map(
+      (k) =>
+        `<option value="${k}" ${(rule.tide ?? "any") === k ? "selected" : ""}>${t(`alerts.rule.tide.${k}`)}</option>`,
+    )
+    .join("");
+  return `<fieldset class="al-rule">
+      <legend>${t("alerts.rule.title")}</legend>
+      <p class="muted small">${t("alerts.rule.hint")}</p>
+      <div class="al-grid">
+        ${num("hMin", t("alerts.rule.hMin"), 0, 10, 0.1, rule.hMin)}
+        ${num("hMax", t("alerts.rule.hMax"), 0, 10, 0.1, rule.hMax)}
+        ${num("windMax", t("alerts.rule.windMax"), 0, 60, 1, rule.windMax)}
+        <label>${t("alerts.rule.ahead")}<input type="number" inputmode="numeric" data-rule="ahead" data-spot-id="${sp.id}" min="6" max="48" step="1" value="${rule.ahead ?? 24}"></label>
+        <label class="al-check"><input type="checkbox" data-rule="wind" data-spot-id="${sp.id}" ${rule.wind === "off" ? "checked" : ""}> ${t("alerts.rule.offshore")}</label>
+        <label>${t("alerts.rule.tide")}<select data-rule="tide" data-spot-id="${sp.id}">${tides}</select></label>
+      </div>
+      <button type="button" class="btn ghost small-btn" data-rule-clear="${sp.id}" ${rule && Object.keys(rule).length ? "" : "disabled"}>${t("alerts.rule.clear")}</button>
+    </fieldset>`;
+}
+
 function prefsBlock(sp, pr) {
   const hours = (kind, selected, lo, hi) =>
     `<select data-pref="${kind}" data-spot-id="${sp.id}">${Array.from({ length: hi - lo + 1 }, (_, i) => lo + i)
@@ -1051,6 +1225,7 @@ function prefsBlock(sp, pr) {
       <label>${t("alerts.spotFrom")}${hours("from", pr.from ?? 7, 7, 21)}</label>
       <label>${t("alerts.spotTo")}${hours("to", pr.to ?? 22, 8, 22)}</label>
     </div>
+    ${ruleFields(sp, pr.rule)}
   </details>`;
 }
 
@@ -1161,6 +1336,27 @@ async function renderAlerts() {
         run(() => alerts.setPref(el.dataset.spotId, patch), t("toast.prefSaved"));
       }),
   );
+  root.querySelectorAll("[data-rule]").forEach(
+    (el) =>
+      (el.onchange = () => {
+        const box = el.closest(".al-opts");
+        const val = (k) => box.querySelector(`[data-rule="${k}"]`);
+        const rule = ruleFromForm({
+          hMin: val("hMin").value,
+          hMax: val("hMax").value,
+          windMax: val("windMax").value,
+          wind: val("wind").checked,
+          tide: val("tide").value,
+          ahead: val("ahead").value,
+        });
+        run(() => alerts.setPref(el.dataset.spotId, { rule }), t(rule ? "toast.prefSaved" : "toast.ruleCleared"));
+      }),
+  );
+  root
+    .querySelectorAll("[data-rule-clear]")
+    .forEach(
+      (b) => (b.onclick = () => run(() => alerts.setPref(b.dataset.ruleClear, { rule: null }), t("toast.ruleCleared"))),
+    );
   root.querySelector("#test").onclick = () => run(() => alerts.sendTest(), t("toast.testSent"));
   root.querySelector("#off").onclick = () => run(() => alerts.disableAll(), t("toast.allOff"));
 }
@@ -1250,6 +1446,7 @@ function route(force = false) {
   window.scrollTo(0, 0);
   if (m) return renderSpot(m[1], force);
   if (location.hash === "#/avisos") return renderAlerts();
+  if (location.hash === "#/diario") return renderDiary();
   if (location.hash === "#/mapa") return renderMap();
   return renderHome(force);
 }
@@ -1265,7 +1462,9 @@ addEventListener("keydown", (e) => {
 });
 // Refresco cada 10 min (no en avisos ni en el mapa, para no perder lo que se está mirando).
 setInterval(() => {
-  if (document.visibilityState === "visible" && !["#/avisos", "#/mapa"].includes(location.hash)) route(true);
+  const writing = app.querySelector("#diary-form:not([hidden])"); // no perder una nota a medias
+  if (document.visibilityState === "visible" && !writing && !["#/avisos", "#/mapa", "#/diario"].includes(location.hash))
+    route(true);
 }, 10 * 60e3);
 
 if ("serviceWorker" in navigator) {

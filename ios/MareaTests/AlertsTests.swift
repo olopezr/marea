@@ -34,4 +34,59 @@ final class AlertsTests: XCTestCase {
         let json = try XCTUnwrap(String(data: data, encoding: .utf8))
         XCTAssertEqual(json, #"{"somo":{"min":4}}"#)
     }
+
+    // ---------- Regla personalizada ----------
+
+    private func json<T: Encodable>(_ v: T) throws -> String {
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.sortedKeys]
+        return try XCTUnwrap(String(data: enc.encode(v), encoding: .utf8))
+    }
+
+    func testRuleNormalizationClampsRoundsAndSwaps() {
+        let r = AlertRule(hMin: 2.04, hMax: 1.2, windMax: 99, wind: "off", tide: "mid", ahead: 100).normalized
+        XCTAssertEqual(r, AlertRule(hMin: 1.2, hMax: 2.0, windMax: nil, wind: "off", tide: "mid", ahead: 48), "se ordena, redondea a 0,1 y acota")
+    }
+
+    func testRuleNormalizationDropsDefaults() {
+        let r = AlertRule(hMin: 0, hMax: 10, windMax: 60, wind: "any", tide: "any", ahead: 24)
+        XCTAssertNil(r.normalized, "una regla con todo por defecto no existe")
+        XCTAssertEqual(AlertRule(hMin: 1.5, ahead: 24).normalized, AlertRule(hMin: 1.5))
+    }
+
+    func testReconcileAdoptsSavedOnlyWithoutPendingEdits() {
+        let old = AlertRule(hMin: 1.0), saved = AlertRule(hMin: 2.0), edited = AlertRule(hMin: 3.0)
+        XCTAssertEqual(AlertRule.reconcile(draft: old, previous: old, saved: saved), saved, "sin cambios pendientes se adopta lo guardado")
+        XCTAssertEqual(AlertRule.reconcile(draft: old, previous: old, saved: nil), AlertRule(), "una regla quitada fuera vacía el borrador")
+        XCTAssertEqual(AlertRule.reconcile(draft: edited, previous: old, saved: saved), edited, "con cambios pendientes se conserva el borrador")
+    }
+
+    func testAheadAloneIsNotARule() {
+        XCTAssertNil(AlertRule(ahead: 12).normalized, "la antelación sola no es una condición")
+        XCTAssertNil(AlertRule(ahead: 48).normalized)
+    }
+
+    func testRuleIgnoresInvalidValues() {
+        XCTAssertNil(AlertRule(hMin: .nan, wind: "x", tide: "huge").normalized)
+        XCTAssertEqual(AlertRule(windMax: -4).normalized, AlertRule(windMax: 0))
+    }
+
+    func testRuleEncodingOmitsUnsetKeys() throws {
+        XCTAssertEqual(try json(AlertRule(hMin: 1.5, tide: "low")), #"{"hMin":1.5,"tide":"low"}"#)
+        let pref = AlertPref(min: 4, rule: AlertRule(windMax: 12))
+        XCTAssertEqual(try json(["somo": pref.normalized]), #"{"somo":{"min":4,"rule":{"windMax":12}}}"#)
+        XCTAssertEqual(try json(AlertPref(min: 4)), #"{"min":4}"#, "sin regla no se envía la clave")
+    }
+
+    func testPrefWithRuleIsNotDefaultAndKeepsRuleNormalized() {
+        XCTAssertFalse(AlertPref(rule: AlertRule(hMin: 1)).isDefault)
+        XCTAssertTrue(AlertPref(rule: AlertRule(ahead: 12)).isDefault)
+        XCTAssertNil(AlertPref(rule: AlertRule(ahead: 12)).normalized.rule)
+        XCTAssertEqual(AlertPref(rule: AlertRule(hMin: 3, hMax: 1)).normalized.rule, AlertRule(hMin: 1, hMax: 3))
+    }
+
+    func testStatusDecodesRuleFromServer() throws {
+        let st = try decode(#"{"subscribed":true,"spots":["somo"],"minScore":3,"prefs":{"somo":{"rule":{"hMin":1.2,"windMax":15,"wind":"off","tide":"high","ahead":36}}}}"#)
+        XCTAssertEqual(st.prefs["somo"]?.rule, AlertRule(hMin: 1.2, windMax: 15, wind: "off", tide: "high", ahead: 36))
+    }
 }

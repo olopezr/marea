@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import webpush from "web-push";
 import { SPOTS, spotById } from "../public/js/spots.js";
-import { RATINGS, rating, fmt, hhmm, hourOf, cardinal } from "../public/js/surf.js";
+import { RATINGS, rating, fmt, hhmm, hourOf, dayKey, cardinal, windType, tideAt, tideNorm } from "../public/js/surf.js";
 import { forecastAll } from "./forecast.js";
 import { forecastFor } from "./conditions.js";
 import * as nativePush from "./native-push.js";
@@ -88,6 +88,7 @@ for (const [col, ddl] of [
   ["offshore", "INTEGER NOT NULL DEFAULT 0"],
   ["from_h", "INTEGER NOT NULL DEFAULT 7"],
   ["to_h", "INTEGER NOT NULL DEFAULT 22"],
+  ["rule", "TEXT"], // regla propia (JSON, ver cleanRule); NULL = sin regla
 ]) {
   if (
     !db
@@ -104,16 +105,16 @@ const q = {
     ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, min_score = excluded.min_score, kind = excluded.kind, lang = excluded.lang`),
   clearAlerts: db.prepare(`DELETE FROM alerts WHERE endpoint = ?`),
   addAlert: db.prepare(
-    `INSERT OR IGNORE INTO alerts (endpoint, spot_id, min_score, offshore, from_h, to_h) VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO alerts (endpoint, spot_id, min_score, offshore, from_h, to_h, rule) VALUES (?, ?, ?, ?, ?, ?, ?)`,
   ),
-  prefsOf: db.prepare(`SELECT spot_id, min_score, offshore, from_h, to_h FROM alerts WHERE endpoint = ?`),
+  prefsOf: db.prepare(`SELECT spot_id, min_score, offshore, from_h, to_h, rule FROM alerts WHERE endpoint = ?`),
   deleteSub: db.prepare(`DELETE FROM subscriptions WHERE endpoint = ?`),
   deleteAlerts: db.prepare(`DELETE FROM alerts WHERE endpoint = ?`),
   getSub: db.prepare(`SELECT * FROM subscriptions WHERE endpoint = ?`),
   spotsOf: db.prepare(`SELECT spot_id FROM alerts WHERE endpoint = ?`),
   activeSpots: db.prepare(`SELECT DISTINCT spot_id FROM alerts`),
   watchers: db.prepare(
-    `SELECT s.*, a.min_score AS spot_min, a.offshore, a.from_h, a.to_h
+    `SELECT s.*, a.min_score AS spot_min, a.offshore, a.from_h, a.to_h, a.rule
      FROM subscriptions s JOIN alerts a ON a.endpoint = s.endpoint WHERE a.spot_id = ?`,
   ),
   failed: db.prepare(`UPDATE subscriptions SET fails = fails + 1 WHERE endpoint = ?`),
@@ -184,7 +185,44 @@ function cleanPref(p) {
   if (ok(p.from, DEFAULT_FROM, DEFAULT_TO - 1) && ok(p.to, DEFAULT_FROM + 1, DEFAULT_TO) && p.from < p.to) {
     if (p.from !== DEFAULT_FROM || p.to !== DEFAULT_TO) Object.assign(out, { from: p.from, to: p.to });
   }
+  const rule = cleanRule(p.rule);
+  if (rule) out.rule = rule;
   return out;
+}
+
+// Regla propia de un spot: rangos de altura y viento, tipo de viento, marea y horas de antelación.
+// Lo desconocido, de tipo erróneo o fuera de rango se ignora (igual que en cleanPref); los valores por defecto
+// se omiten y una regla sin ninguna restricción activa se descarta (devuelve null).
+const RULE_DEFAULT = { hMin: 0, hMax: 10, windMax: 60, ahead: 24 };
+function cleanRule(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const num = (v, max, step) => {
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > max) return null;
+    const k = Math.round(v / step);
+    return Math.abs(v / step - k) < 1e-9 ? +(k * step).toFixed(1) : null;
+  };
+  let hMin = num(raw.hMin, 10, 0.1),
+    hMax = num(raw.hMax, 10, 0.1);
+  if (hMin != null && hMax != null && hMin > hMax) hMin = hMax = null; // rango incoherente: se ignoran las dos alturas
+  const windMax = Number.isInteger(raw.windMax) ? num(raw.windMax, 60, 1) : null;
+  const out = {};
+  if (hMin != null && hMin !== RULE_DEFAULT.hMin) out.hMin = hMin;
+  if (hMax != null && hMax !== RULE_DEFAULT.hMax) out.hMax = hMax;
+  if (windMax != null && windMax !== RULE_DEFAULT.windMax) out.windMax = windMax;
+  if (raw.wind === "off") out.wind = "off";
+  if (["low", "mid", "high"].includes(raw.tide)) out.tide = raw.tide;
+  if (!Object.keys(out).length) return null;
+  const ahead = raw.ahead;
+  if (Number.isInteger(ahead) && ahead >= 6 && ahead <= 48 && ahead !== RULE_DEFAULT.ahead) out.ahead = ahead;
+  return out;
+}
+
+function parseRule(json) {
+  try {
+    return json ? JSON.parse(json) : null;
+  } catch {
+    return null;
+  }
 }
 
 // Ajustes guardados de una suscripción, solo los que se apartan de los valores por defecto.
@@ -196,6 +234,7 @@ function prefsMap(endpoint) {
       offshore: r.offshore === 1,
       from: r.from_h,
       to: r.to_h,
+      rule: parseRule(r.rule),
     });
     if (Object.keys(p).length) out[r.spot_id] = p;
   }
@@ -209,13 +248,22 @@ export function subscribe({ subscription, device, spots, minScore, lang, prefs }
   const ep = t.endpoint;
   db.exec("BEGIN");
   try {
-    // Sin `prefs` (apps antiguas) se conservan los ajustes que ya tenía cada spot.
+    // Sin `prefs` (apps antiguas) se conservan los ajustes que ya tenía cada spot. Con `prefs` se reemplazan todos:
+    // un cliente que envía los ajustes de un spot sin `rule` borra la regla que tuviera.
     const source = prefs && typeof prefs === "object" && !Array.isArray(prefs) ? prefs : prefsMap(ep);
     q.upsertSub.run(ep, t.p256dh, t.auth, min, Date.now(), t.kind, lang === "en" ? "en" : "es");
     q.clearAlerts.run(ep);
     for (const id of ids) {
       const p = cleanPref(source[id]);
-      q.addAlert.run(ep, id, p.min ?? null, p.offshore ? 1 : 0, p.from ?? DEFAULT_FROM, p.to ?? DEFAULT_TO);
+      q.addAlert.run(
+        ep,
+        id,
+        p.min ?? null,
+        p.offshore ? 1 : 0,
+        p.from ?? DEFAULT_FROM,
+        p.to ?? DEFAULT_TO,
+        p.rule ? JSON.stringify(p.rule) : null,
+      );
     }
     db.exec("COMMIT");
   } catch (err) {
@@ -328,6 +376,62 @@ function message(spot, day, isToday, lang = "es", improved = false) {
   };
 }
 
+// Aviso de una regla propia: la primera hora prevista que cumple todo lo que el usuario configuró.
+function ruleMessage(spot, hour, now, lang = "es") {
+  const en = lang === "en";
+  const sameDay = dayKey(hour.t, spot.tz) === dayKey(now, spot.tz);
+  const nextDay = dayKey(hour.t, spot.tz) === dayKey(now + 24 * 3600e3, spot.tz);
+  const wt = windType(hour.wind, hour.windDir, spot.facing).key;
+  const at = hhmm(hour.t, spot.tz);
+  const base = { url: `/#/spot/${spot.id}`, tag: `${spot.id}-rule` };
+  if (en) {
+    const n = (x, d = 1) => fmt(x, d).replace(",", ".");
+    const when = sameDay ? "today" : nextDay ? "tomorrow" : "soon";
+    const wind = wt === "calm" ? "no wind" : `${EN_WIND[wt] ?? ""} wind ${n(hour.wind, 0)} kn`.trim();
+    return {
+      ...base,
+      title: `${spot.name}: the conditions you set are coming`,
+      body: `Around ${at} ${when}: ${n(hour.h)} m · ${n(hour.T, 0)} s from ${enCardinal(hour.dir)} · ${wind}`,
+    };
+  }
+  const when = sameDay ? "hoy" : nextDay ? "mañana" : "pronto";
+  const wind =
+    wt === "calm"
+      ? "sin viento"
+      : `viento ${{ off: "terral", cross: "cruzado", on: "de mar" }[wt] ?? ""} de ${fmt(hour.wind, 0)} kn`.replace(
+          "  ",
+          " ",
+        );
+  return {
+    ...base,
+    title: `${spot.name}: llegan las condiciones que configuraste`,
+    body: `Hacia las ${at} de ${when}: ${fmt(hour.h)} m · ${fmt(hour.T, 0)} s del ${cardinal(hour.dir)} · ${wind}`,
+  };
+}
+
+// Estado de la marea (low/mid/high) en un instante; null si no hay datos de marea para esa hora.
+function tideState(tide, t) {
+  if (!tide?.times?.length || !tideAt(tide.times, tide.levels, t)) return null;
+  const n = tideNorm(tide.times, tide.levels, t);
+  return n < 0.33 ? "low" : n > 0.66 ? "high" : "mid";
+}
+
+// Primera hora entre ahora y ahora + `ahead` h, dentro de la franja del usuario, que cumple TODAS las restricciones.
+function ruleHour(spot, rule, sub, fc, now) {
+  const end = now + (rule.ahead ?? 24) * 3600e3;
+  return fc.hours.find((h) => {
+    if (h.t + 3600e3 <= now || h.t > end) return false;
+    const lh = hourOf(h.t, spot.tz);
+    if (lh < sub.from_h || lh >= sub.to_h) return false;
+    if (rule.hMin != null && !(h.h >= rule.hMin)) return false;
+    if (rule.hMax != null && !(h.h <= rule.hMax)) return false;
+    if (rule.windMax != null && !(h.wind <= rule.windMax)) return false;
+    if (rule.wind === "off" && !["off", "calm"].includes(windType(h.wind, h.windDir, spot.facing).key)) return false;
+    if (rule.tide && tideState(fc.tide, h.t) !== rule.tide) return false;
+    return true;
+  });
+}
+
 // ---------- Avisos meteorológicos de AEMET ----------
 const WARN_ES = { costeros: "fenómenos costeros" };
 const WARN_EN = {
@@ -424,7 +528,7 @@ export async function checkAlerts(now = Date.now()) {
     const local = hourOf(now, spot.tz);
     if (local < 7 || local >= 22) continue; // nada de avisos de madrugada
     if (!fc[id]) continue;
-    const { days } = await forecastFor(spot, fc[id], now);
+    const { days, hours, tide } = await forecastFor(spot, fc[id], now);
     // Hoy (si la mejor hora aún no ha pasado) y mañana.
     const candidates = days
       .slice(0, 2)
@@ -432,6 +536,18 @@ export async function checkAlerts(now = Date.now()) {
       .filter(({ d }) => d.best.t > now);
     for (const sub of q.watchers.all(id)) {
       if (local < sub.from_h || local >= sub.to_h) continue; // fuera de la franja elegida por el usuario
+      const rule = parseRule(sub.rule);
+      if (rule) {
+        // Con regla propia se ignoran el umbral de calidad y «solo con terral»: manda lo que el usuario configuró.
+        const hit = ruleHour(spot, rule, sub, { hours, tide }, now);
+        if (!hit) continue;
+        const [dd, mm, yyyy] = dayKey(now, spot.tz).split("/");
+        const key = `rule:${id}:${yyyy}-${mm}-${dd}`; // un aviso de regla por spot y día local
+        if (!q.markSent.run(sub.endpoint, id, key, now).changes) continue;
+        if (await send(sub, ruleMessage(spot, hit, now, sub.lang))) sentCount++;
+        else q.unmarkSent.run(sub.endpoint, id, key);
+        continue;
+      }
       for (const { d, isToday } of candidates) {
         if (d.best.score < (sub.spot_min ?? sub.min_score)) continue;
         if (sub.offshore && !["off", "calm"].includes(d.best.windType)) continue; // «solo con terral»

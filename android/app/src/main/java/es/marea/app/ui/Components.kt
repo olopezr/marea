@@ -226,8 +226,13 @@ fun DataBanners(ts: Double, stale: Boolean, offline: Boolean, forecastSource: St
     }
 }
 
+/** Abre el diario de sesiones; lo provee la raíz de navegación para que el pie lo ofrezca en todas las pantallas. */
+val LocalOpenDiary = androidx.compose.runtime.staticCompositionLocalOf<(() -> Unit)?> { null }
+
+/** `showDiary` es falso en la propia pantalla del diario. */
 @Composable
-fun Footer(legalUrl: (String) -> String) {
+fun Footer(legalUrl: (String) -> String, showDiary: Boolean = true) {
+    val openDiary = if (showDiary) LocalOpenDiary.current else null
     val c = LocalColors.current
     val context = LocalContext.current
     val open = { path: String -> CustomTabsIntent.Builder().build().launchUrl(context, legalUrl(path).toUri()) }
@@ -237,6 +242,12 @@ fun Footer(legalUrl: (String) -> String) {
             style = Type.body(12.sp), color = c.muted,
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            if (openDiary != null) {
+                val label = stringResource(R.string.diary_link)
+                Box(Modifier.heightIn(min = 48.dp).clickable(onClick = openDiary), contentAlignment = Alignment.CenterStart) {
+                    Text(label, style = Type.body(12.sp).copy(textDecoration = TextDecoration.Underline), color = c.muted)
+                }
+            }
             listOf(R.string.footer_dataSources to "/legal/fuentes.html", R.string.footer_privacy to "/legal/privacidad.html", R.string.footer_legal to "/legal/aviso-legal.html").forEach { (labelRes, path) ->
                 val label = stringResource(labelRes)
                 // Zona táctil de 48 dp aunque el texto sea pequeño.

@@ -15,6 +15,7 @@
 		1F8D995CCA317C2450DC32C8 /* es in Resources */ = {isa = PBXBuildFile; fileRef = 153EA0412852F6C283591D2B /* es */; };
 		219E818A2F3442D9E76A4B7D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B78BAF8A7FE946E45414D942 /* Assets.xcassets */; };
 		2C0630C39E7A187C4280F93B /* MareaWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7D3894CA8F9FCC224BEC7FB6 /* MareaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		328121608E36031CF2B05261 /* Diary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D400E7A4C436FC609622D0D5 /* Diary.swift */; };
 		392830F8DC492AB0F514AF3E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 657577562EA9D1C3F8BF1BEA /* InfoPlist.strings */; };
 		3B5E3C9A865924FF2B5B9A2A /* spots.json in Resources */ = {isa = PBXBuildFile; fileRef = F73C12D79D905492551DC8E3 /* spots.json */; };
 		40448F3737A3EEB4EEB86F6A /* SpotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF59A4923543D78F702D82D0 /* SpotListView.swift */; };
@@ -28,9 +29,11 @@
 		725C36673CF909D3F62C4954 /* MareaWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F029246F979C39397829415 /* MareaWidget.swift */; };
 		777AE5248951454B0A865FA7 /* archivo_bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D8F79160A0F78706E0CD3E52 /* archivo_bold.ttf */; };
 		7D6567A1EE1FE0A171F6CBE8 /* spots.json in Resources */ = {isa = PBXBuildFile; fileRef = F73C12D79D905492551DC8E3 /* spots.json */; };
+		80B4D075DA765F4C11C6B3D9 /* DiaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2777E8247E68663D22103D7 /* DiaryView.swift */; };
 		888939EE4670C2F9277CB090 /* ShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4DB88D09C693A85A5ED0BF /* ShareCard.swift */; };
 		8D423EC13A83A8C838341621 /* BuoyPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D4A362900418CD714ED8AB /* BuoyPanel.swift */; };
 		9CC88C467F89B2C415EE7266 /* Help.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6B2E0EBDD33613AA65E06E /* Help.swift */; };
+		A1DFABE812F5EC5AD8E2D1CD /* DiaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C005BB02A3B66AC6F14FA55 /* DiaryTests.swift */; };
 		AA8D7F13A20C879CF65263D1 /* figtree_semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DEFF00B7B65C01CDE68D244D /* figtree_semibold.ttf */; };
 		ABCF4C2B8FAA41E6149F6765 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = E17FD9B7C6EDC5339105165A /* Localizable.strings */; };
 		B2182EC4244AA22F67DC15E8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C91FDAE87C1AD70020FBDA /* AppState.swift */; };
@@ -85,6 +88,7 @@
 		153EA0412852F6C283591D2B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		2539C9026DB0A20145EF3B6F /* SurfTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfTests.swift; sourceTree = "<group>"; };
 		393DA0F8B1C255A8FAEC0428 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		3C005BB02A3B66AC6F14FA55 /* DiaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryTests.swift; sourceTree = "<group>"; };
 		499CDFC330C3114BFCB9F4CC /* Marea.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Marea.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		51C91FDAE87C1AD70020FBDA /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		535ADBCE901EA37395C1917C /* somo.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = somo.json; sourceTree = "<group>"; };
@@ -112,8 +116,10 @@
 		BA54C16ABE08FDE05FE9D779 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		BD927275C63E5C0D58946202 /* ShareCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardTests.swift; sourceTree = "<group>"; };
 		C228E33BD533C06B23168222 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		C2777E8247E68663D22103D7 /* DiaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryView.swift; sourceTree = "<group>"; };
 		C79270814514148B56281753 /* MareaSinPush.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MareaSinPush.entitlements; sourceTree = "<group>"; };
 		CF59A4923543D78F702D82D0 /* SpotListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotListView.swift; sourceTree = "<group>"; };
+		D400E7A4C436FC609622D0D5 /* Diary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diary.swift; sourceTree = "<group>"; };
 		D8F79160A0F78706E0CD3E52 /* archivo_bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = archivo_bold.ttf; sourceTree = "<group>"; };
 		DCA5435032A453958E51BBD2 /* Surf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Surf.swift; sourceTree = "<group>"; };
 		DEFF00B7B65C01CDE68D244D /* figtree_semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = figtree_semibold.ttf; sourceTree = "<group>"; };
@@ -147,6 +153,7 @@
 			isa = PBXGroup;
 			children = (
 				B146DBEB794ABF4E89911BA2 /* AlertsTests.swift */,
+				3C005BB02A3B66AC6F14FA55 /* DiaryTests.swift */,
 				BD927275C63E5C0D58946202 /* ShareCardTests.swift */,
 				2539C9026DB0A20145EF3B6F /* SurfTests.swift */,
 				E043E36EBD71274E943BC099 /* Fixtures */,
@@ -169,6 +176,7 @@
 			children = (
 				C228E33BD533C06B23168222 /* APIClient.swift */,
 				51C91FDAE87C1AD70020FBDA /* AppState.swift */,
+				D400E7A4C436FC609622D0D5 /* Diary.swift */,
 				BA54C16ABE08FDE05FE9D779 /* L10n.swift */,
 				0A71B05F4DD95F4CE9D66602 /* Models.swift */,
 				DCA5435032A453958E51BBD2 /* Surf.swift */,
@@ -222,6 +230,7 @@
 			children = (
 				F65420AEC648AE79189DC537 /* AlertsView.swift */,
 				B3D4A362900418CD714ED8AB /* BuoyPanel.swift */,
+				C2777E8247E68663D22103D7 /* DiaryView.swift */,
 				6B6B2E0EBDD33613AA65E06E /* Help.swift */,
 				6C1EC014CFFCA58A578F314C /* HistoryPanel.swift */,
 				69FB97C27F03F9158E2C8A40 /* LocationPanel.swift */,
@@ -427,6 +436,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D4EC7A7282081198B051C3AD /* AlertsTests.swift in Sources */,
+				A1DFABE812F5EC5AD8E2D1CD /* DiaryTests.swift in Sources */,
 				1CD2A25F0D243040A66C09F6 /* ShareCardTests.swift in Sources */,
 				18694193E6DC3F16296A51E8 /* SurfTests.swift in Sources */,
 			);
@@ -440,6 +450,8 @@
 				02B2911BECDD5FC9E3E254FF /* AlertsView.swift in Sources */,
 				B2182EC4244AA22F67DC15E8 /* AppState.swift in Sources */,
 				8D423EC13A83A8C838341621 /* BuoyPanel.swift in Sources */,
+				328121608E36031CF2B05261 /* Diary.swift in Sources */,
+				80B4D075DA765F4C11C6B3D9 /* DiaryView.swift in Sources */,
 				9CC88C467F89B2C415EE7266 /* Help.swift in Sources */,
 				B464D574488C7F386CC1D1DB /* HistoryPanel.swift in Sources */,
 				E16C81FBC211D70D2E2A9C30 /* L10n.swift in Sources */,

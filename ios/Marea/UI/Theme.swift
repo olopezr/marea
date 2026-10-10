@@ -319,10 +319,19 @@ struct DataBanners: View {
 }
 
 struct Footer: View {
+    @Environment(AppState.self) private var app
+    /// El enlace al diario se oculta en el propio diario.
+    var showsDiary = true
     @State private var legal: URL?
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(L("footer.sources"))
+            if showsDiary {
+                Button { app.path.append(.diary) } label: {
+                    Text(L("diary.link")).underline().frame(minHeight: 44).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
             HStack(spacing: 16) {
                 link(L("footer.dataSources"), "/legal/fuentes.html")
                 link(L("footer.privacy"), "/legal/privacidad.html")

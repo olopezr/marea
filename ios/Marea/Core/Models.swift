@@ -368,7 +368,50 @@ struct SpotWarning: Codable, Sendable, Hashable, Identifiable {
     }
 }
 
-// Ajustes de avisos de un spot (equivale a `prefs` de la API): calidad mínima propia, solo con terral y franja horaria.
+// Regla personalizada de un spot (`rule` de la API): rango de altura, viento máximo, solo con terral,
+// estado de la marea y antelación. Misma normalización que public/js/rules.js y el servidor (cleanRule).
+struct AlertRule: Codable, Sendable, Equatable {
+    static let defaultAhead = 24
+    static let tides = ["any", "low", "mid", "high"]
+
+    var hMin: Double?
+    var hMax: Double?
+    var windMax: Int?
+    /// "off" (solo con terral); "any" equivale a no poner la clave.
+    var wind: String?
+    /// "low", "mid" o "high"; "any" equivale a no poner la clave.
+    var tide: String?
+    var ahead: Int?
+
+    /// Valores acotados y sin los de por defecto. `nil` si no queda ninguna condición: la antelación sola
+    /// no lo es, y el servidor descartaría esa regla.
+    var normalized: AlertRule? {
+        func tenth(_ v: Double?) -> Double? {
+            guard let v, v.isFinite else { return nil }
+            return (min(10, max(0, v)) * 10).rounded() / 10
+        }
+        var lo = tenth(hMin), hi = tenth(hMax)
+        if let a = lo, let b = hi, a > b { (lo, hi) = (b, a) }
+        var r = AlertRule()
+        if let lo, lo != 0 { r.hMin = lo }
+        if let hi, hi != 10 { r.hMax = hi }
+        if let w = windMax, min(60, max(0, w)) != 60 { r.windMax = min(60, max(0, w)) }
+        if wind == "off" { r.wind = "off" }
+        if let t = tide, t != "any", Self.tides.contains(t) { r.tide = t }
+        guard r != AlertRule() else { return nil }
+        if let a = ahead, min(48, max(6, a)) != Self.defaultAhead { r.ahead = min(48, max(6, a)) }
+        return r
+    }
+
+    /// Borrador que debe mostrar el editor cuando la regla guardada pasa de `previous` a `saved`: si no había
+    /// cambios sin enviar se adopta lo guardado; si los hay, se conserva el borrador.
+    static func reconcile(draft: AlertRule, previous: AlertRule?, saved: AlertRule?) -> AlertRule {
+        draft.normalized == previous?.normalized ? (saved ?? AlertRule()) : draft
+    }
+}
+
+// Ajustes de avisos de un spot (equivale a `prefs` de la API): calidad mínima propia, solo con terral,
+// franja horaria y regla personalizada.
 struct AlertPref: Codable, Sendable, Equatable {
     static let defaultFrom = 7, defaultTo = 22
 
@@ -376,13 +419,15 @@ struct AlertPref: Codable, Sendable, Equatable {
     var offshore: Bool?
     var from: Int?
     var to: Int?
+    var rule: AlertRule?
 
     // Sin ajustes propios: se usan los valores generales.
-    var isDefault: Bool { min == nil && offshore != true && from == nil && to == nil }
+    var isDefault: Bool { min == nil && offshore != true && from == nil && to == nil && rule?.normalized == nil }
 
     // Lo que se envía al servidor: sin valores por defecto, y la franja solo si es válida y distinta de 7-22.
+    // Una pref sin regla se envía sin `rule`: el servidor sustituye todo el conjunto y así la quita.
     var normalized: AlertPref {
-        var p = AlertPref(min: [2, 3, 4].contains(min ?? 0) ? min : nil, offshore: offshore == true ? true : nil)
+        var p = AlertPref(min: [2, 3, 4].contains(min ?? 0) ? min : nil, offshore: offshore == true ? true : nil, rule: rule?.normalized)
         if let f = from, let t = to, f >= Self.defaultFrom, t <= Self.defaultTo, f < t, !(f == Self.defaultFrom && t == Self.defaultTo) {
             p.from = f
             p.to = t

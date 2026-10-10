@@ -5,6 +5,8 @@ import UIKit
 struct AlertsView: View {
     @Environment(AppState.self) private var app
     @State private var busy = false
+    // Sube cuando falla un guardado: los borradores de regla vuelven a lo último guardado.
+    @State private var saveFailures = 0
 
     var body: some View {
         let st = app.alerts.state
@@ -47,12 +49,13 @@ struct AlertsView: View {
                             }
                             .tint(Theme.green).padding(.vertical, 8)
                             if st.prefsSupported, st.spots.contains(sp.id) {
-                                SpotPrefs(pref: st.prefs[sp.id] ?? AlertPref()) { new in
+                                SpotPrefs(pref: st.prefs[sp.id] ?? AlertPref(), failures: saveFailures) { new in
                                     if let f = new.from, let t = new.to, f >= t {
                                         app.show(L("alerts.hoursOrder"))
                                         return
                                     }
-                                    run(L("toast.prefSaved")) { try await app.alerts.setPref(sp.id, new) }
+                                    let cleared = new.rule == nil && st.prefs[sp.id]?.rule != nil
+                                    run(L(cleared ? "toast.ruleCleared" : "toast.prefSaved")) { try await app.alerts.setPref(sp.id, new) }
                                 }
                             }
                         }
@@ -92,6 +95,7 @@ struct AlertsView: View {
                 try await work()
                 if let ok { app.show(ok) }
             } catch {
+                saveFailures += 1
                 app.show(error.localizedDescription)
             }
             busy = false
@@ -100,9 +104,10 @@ struct AlertsView: View {
 }
 
 // Ajustes de un spot con avisos activados (el bloque `prefsBlock` de la web): calidad mínima propia,
-// solo con terral y franja horaria.
+// solo con terral, franja horaria y regla personalizada.
 private struct SpotPrefs: View {
     let pref: AlertPref
+    let failures: Int
     let onChange: (AlertPref) -> Void
     @State private var open = false
 
@@ -126,21 +131,15 @@ private struct SpotPrefs: View {
                     onChange(p)
                 }))
                 .tint(Theme.green)
-                HStack {
-                    Text(L("alerts.spotFrom"))
-                    hours(selection: pref.from ?? AlertPref.defaultFrom, range: 7...21) { h in
-                        var p = pref
-                        p.from = h
-                        p.to = pref.to ?? AlertPref.defaultTo
-                        onChange(p)
-                    }
-                    Text(L("alerts.spotTo"))
-                    hours(selection: pref.to ?? AlertPref.defaultTo, range: 8...22) { h in
-                        var p = pref
-                        p.from = pref.from ?? AlertPref.defaultFrom
-                        p.to = h
-                        onChange(p)
-                    }
+                // Cada pieza en una sola línea; si la fila no cabe (pantalla estrecha o letra grande), pasa a dos líneas.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { fromPicker; toPicker }
+                    VStack(alignment: .leading, spacing: 4) { fromPicker; toPicker }
+                }
+                RuleSection(rule: pref.rule, failures: failures) { rule in
+                    var p = pref
+                    p.rule = rule
+                    onChange(p)
                 }
             }
             .font(Theme.body(14)).foregroundStyle(Theme.ink)
@@ -158,10 +157,124 @@ private struct SpotPrefs: View {
         .tint(Theme.muted).padding(.bottom, 8)
     }
 
+    private var fromPicker: some View {
+        HStack(spacing: 6) {
+            Text(L("alerts.spotFrom")).lineLimit(1).fixedSize()
+            hours(selection: pref.from ?? AlertPref.defaultFrom, range: 7...21) { h in
+                var p = pref
+                p.from = h
+                p.to = pref.to ?? AlertPref.defaultTo
+                onChange(p)
+            }
+        }
+    }
+
+    private var toPicker: some View {
+        HStack(spacing: 6) {
+            Text(L("alerts.spotTo")).lineLimit(1).fixedSize()
+            hours(selection: pref.to ?? AlertPref.defaultTo, range: 8...22) { h in
+                var p = pref
+                p.from = pref.from ?? AlertPref.defaultFrom
+                p.to = h
+                onChange(p)
+            }
+        }
+    }
+
     private func hours(selection: Int, range: ClosedRange<Int>, set: @escaping (Int) -> Void) -> some View {
         Picker("", selection: Binding(get: { selection }, set: set)) {
             ForEach(Array(range), id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
         }
-        .pickerStyle(.menu).tint(Theme.accent).labelsHidden()
+        .pickerStyle(.menu).tint(Theme.accent).labelsHidden().fixedSize()
+    }
+}
+
+// Regla personalizada de un spot (`ruleFields` de la web). Los cambios se envían con una pequeña espera
+// para no mandar una petición por cada pulsación de un paso.
+private struct RuleSection: View {
+    let rule: AlertRule?
+    let failures: Int
+    let onChange: (AlertRule?) -> Void
+    @State private var draft: AlertRule
+    @State private var seen: AlertRule?
+
+    init(rule: AlertRule?, failures: Int, onChange: @escaping (AlertRule?) -> Void) {
+        self.rule = rule
+        self.failures = failures
+        _seen = State(initialValue: rule)
+        self.onChange = onChange
+        _draft = State(initialValue: rule ?? AlertRule())
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider().overlay(Theme.line)
+            Text(L("alerts.rule.title")).font(Theme.bodySemibold(15)).foregroundStyle(Theme.ink)
+                .accessibilityAddTraits(.isHeader)
+            Text(L("alerts.rule.hint")).font(Theme.body(13, relativeTo: .footnote)).foregroundStyle(Theme.muted)
+            height(L("alerts.rule.hMin"), draft.hMin, lowest: true)
+            height(L("alerts.rule.hMax"), draft.hMax, lowest: false)
+            Stepper(value: Binding(get: { draft.windMax ?? 60 }, set: { draft.windMax = $0 }), in: 0...60) {
+                labeled(L("alerts.rule.windMax"), draft.windMax.flatMap { $0 >= 60 ? nil : "\($0) kn" })
+            }
+            Toggle(L("alerts.rule.offshore"), isOn: Binding(get: { draft.wind == "off" }, set: { draft.wind = $0 ? "off" : nil }))
+                .tint(Theme.green)
+            Picker(L("alerts.rule.tide"), selection: Binding(get: { draft.tide ?? "any" }, set: { draft.tide = $0 == "any" ? nil : $0 })) {
+                ForEach(AlertRule.tides, id: \.self) { Text(L("alerts.rule.tide.\($0)")).tag($0) }
+            }
+            .pickerStyle(.menu).tint(Theme.accent)
+            Stepper(value: Binding(get: { draft.ahead ?? AlertRule.defaultAhead }, set: { draft.ahead = $0 }), in: 6...48) {
+                labeled(L("alerts.rule.ahead"), "\(draft.ahead ?? AlertRule.defaultAhead) h")
+            }
+            Button(L("alerts.rule.clear")) { draft = AlertRule() }
+                .buttonStyle(GhostButtonStyle())
+                .disabled(draft.normalized == nil && rule == nil)
+        }
+        .padding(.top, 4)
+        // La regla guardada cambió fuera del editor (p. ej. al recargar el estado): se adopta si no hay cambios sin enviar.
+        .onChange(of: rule) { _, new in
+            draft = AlertRule.reconcile(draft: draft, previous: seen, saved: new)
+            seen = new
+        }
+        // Si el guardado falla, la regla guardada no cambia: se descarta el borrador (el aviso de error ya se mostró).
+        .onChange(of: failures) { draft = rule ?? AlertRule() }
+        // Envía la regla ya normalizada cuando deja de cambiar; si no hay condiciones, la quita.
+        .task(id: draft) {
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            let next = draft.normalized
+            if next != rule?.normalized { onChange(next) }
+        }
+    }
+
+    /// Altura en pasos de 0,1 m; sin valor (o en el extremo) significa «sin límite».
+    private func height(_ label: String, _ value: Double?, lowest: Bool) -> some View {
+        let bound = lowest ? 0.0 : 10.0
+        let shown = value.flatMap { $0 == bound ? nil : Surf.fmt($0) + " m" }
+        return Stepper {
+            labeled(label, shown)
+        } onIncrement: {
+            step(lowest, 0.1)
+        } onDecrement: {
+            step(lowest, -0.1)
+        }
+        .accessibilityValue(shown ?? L("alerts.rule.any"))
+    }
+
+    private func step(_ lowest: Bool, _ delta: Double) {
+        let current = (lowest ? draft.hMin : draft.hMax) ?? (lowest ? 0 : 10)
+        let next = (min(10, max(0, current + delta)) * 10).rounded() / 10
+        if lowest { draft.hMin = next } else { draft.hMax = next }
+    }
+
+    private func labeled(_ label: String, _ value: String?) -> some View {
+        HStack {
+            Text(label)
+            Spacer(minLength: 8)
+            Text(value ?? L("alerts.rule.any")).foregroundStyle(Theme.muted)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(value ?? L("alerts.rule.any"))
     }
 }
