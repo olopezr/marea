@@ -11,7 +11,8 @@ test("normalizeRule ajusta rangos y redondea", () => {
   assert.deepEqual(normalizeRule({ hMin: -3, hMax: 99 }), null);
   assert.deepEqual(normalizeRule({ hMin: 1.26, hMax: 2.04 }), { hMin: 1.3, hMax: 2 });
   assert.deepEqual(normalizeRule({ windMax: 12.6, ahead: 100 }), { windMax: 13, ahead: 48 });
-  assert.deepEqual(normalizeRule({ ahead: 2 }), { ahead: 6 });
+  assert.equal(normalizeRule({ ahead: 2 }), null, "la antelación sola no es una regla (el servidor la descarta)");
+  assert.deepEqual(normalizeRule({ windMax: 20, ahead: 2 }), { windMax: 20, ahead: 6 });
   assert.deepEqual(normalizeRule({ windMax: 0 }), { windMax: 0 });
 });
 

@@ -126,10 +126,27 @@ test("la ventana «ahead» limita hasta dónde se mira", async () => {
   await run();
   assert.equal(got("a2").length, 1);
   assert.equal(got("a3").length, 0);
-  // A 6 h vista solo avisa si la marea baja cae en esa ventana: debe coincidir con lo que ve la de 48 h.
-  const lowAt = (body) => body.match(/\d\d:\d\d/)[0];
-  const mine = got("a1").map((s) => lowAt(s.body));
-  assert.ok(mine.length <= 1);
+  // La fase de la marea simulada cambia con el día, así que no se fija una hora: se comprueba el límite.
+  // Minutos desde «ahora» (hora local de Madrid) hasta la hora que dice el aviso.
+  const nowParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Madrid",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(NOW);
+  const nowMin = +nowParts.find((p) => p.type === "hour").value * 60 + +nowParts.find((p) => p.type === "minute").value;
+  const minutesAhead = (body) => {
+    const [, hh, mm, day] = body.match(/(\d\d):(\d\d) de (hoy|mañana)/);
+    return (day === "mañana" ? 24 * 60 : 0) + +hh * 60 + +mm - nowMin;
+  };
+  const far = minutesAhead(got("a2")[0].body);
+  const near = got("a1");
+  if (far <= 6 * 60) {
+    assert.equal(near.length, 1, "la marea baja cae dentro de las 6 h: avisa");
+    assert.equal(near[0].body, got("a2")[0].body, "la misma hora que la de 48 h");
+  } else {
+    assert.equal(near.length, 0, "la marea baja cae fuera de las 6 h: no avisa");
+  }
 });
 
 test("el aviso se reserva de nuevo si el envío falla", async () => {

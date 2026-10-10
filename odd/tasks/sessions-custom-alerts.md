@@ -29,7 +29,7 @@ Two features, open to everyone for now (the owner will decide later whether they
 - [x] T2 Web: rule UI in `renderAlerts` prefs block, diary view and route `#/diario`, i18n, tests. Route: delegated writer. Tests 18 new (rules, diary); DOM not exercised in a browser yet.
 - [x] T3 iOS (39 unit tests green; UI not seen on screen): `AlertPref.rule`, rule UI, diary store and screen, i18n, unit tests, xcodegen. Route: delegated writer.
 - [x] T4 Android (Gradle build, unit tests and lint green; diary list seen on the marea AVD, rule section and spot panel not seen): same as T3 in Compose, unit tests. Route: delegated writer.
-- [ ] T5 Docs and close: README section, final checks on all platforms.
+- [x] T5 Docs and close (review follow-ups fixed: ahead window test now checks the 6 h limit whatever the day, `normalizeRule` drops ahead-only rules; README diary entry; npm test 144/144, lint clean): README section, final checks on all platforms.
 
 ## Acceptance criteria
 
@@ -52,3 +52,5 @@ Strategy `ask-on-risk`; forecast over 400 lines, so the branch will be sliced pe
 
 - 2026-10-10: T1 done. `rule` is dropped silently when invalid (same convention as `cleanPref`), so the "400 on invalid rule" acceptance line became "invalid rule fields are ignored". Known unrelated failure: `test/conditions.test.js` "detail añade coeficientes..." fails around local midnight in Madrid (clock-dependent fixture); passes later in the day.
 - 2026-10-10: T2 done (cc79c41). Native review of T1+T2 (medium, 1304 lines, base main): approved and acknowledged. Follow-ups for T5 (non-blocking): (1) strengthen the `ahead` window test in test/push-rules.test.js:129-132 (a1 assertion is only `<= 1`); (2) `normalizeRule` in public/js/rules.js keeps an ahead-only rule that the server drops; align it.
+
+- 2026-10-10: T3 (62794bc) and T4 (919d215) done. Visual checks pending: iOS diary and rule UI not seen on screen; Android rule section and spot diary panel not seen (diary list seen on the marea AVD).

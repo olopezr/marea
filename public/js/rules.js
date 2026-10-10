@@ -27,12 +27,14 @@ export function normalizeRule(raw) {
   }
   if (raw.wind === "off") out.wind = "off";
   if (TIDES.includes(raw.tide) && raw.tide !== "any") out.tide = raw.tide;
+  // La antelación sola no restringe nada: el servidor descarta esa regla, así que aquí tampoco se conserva.
+  if (!Object.keys(out).length) return null;
   const ahead = num(raw.ahead);
   if (ahead != null) {
     const a = Math.round(clamp(ahead, 6, 48));
     if (a !== DEFAULTS.ahead) out.ahead = a;
   }
-  return Object.keys(out).length ? out : null;
+  return out;
 }
 
 // Campos del formulario (cadenas, y `wind` como casilla) a regla normalizada.
