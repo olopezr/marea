@@ -13,7 +13,7 @@
 
   --ink: #eaf3f5;
   --ink-secondary: #9cb4bb;
-  --ink-muted: #64828b;
+  --ink-muted: #75919b;
 
   --coral-bright: #ff6a3d;
   --coral-glow: rgba(255, 106, 61, 0.35);
@@ -282,7 +282,7 @@ a {
 
 .btn-whatsapp {
   background: #25d366;
-  color: #ffffff;
+  color: #071a20;
   box-shadow: 0 4px 16px rgba(37, 211, 102, 0.3);
 }
 
@@ -294,7 +294,7 @@ a {
 
 .btn-telegram {
   background: #229ed9;
-  color: #ffffff;
+  color: #071a20;
   box-shadow: 0 4px 16px rgba(34, 158, 217, 0.3);
 }
 
@@ -393,10 +393,48 @@ a {
   width: 100%;
 }
 
+.nav-toggle {
+  display: none;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.nav-toggle:hover {
+  border-color: var(--teal-neon);
+  color: var(--teal-neon);
+}
+
+.nav-toggle-icon--close {
+  display: none;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-icon--open {
+  display: none;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-icon--close {
+  display: block;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.header-actions .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* ==========================================================================
@@ -764,6 +802,11 @@ input[type="range"] {
   cursor: pointer;
 }
 
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--teal-neon);
+  outline-offset: 6px;
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -779,6 +822,17 @@ input[type="range"]::-webkit-slider-thumb {
 
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.2);
+}
+
+/* Firefox: mismo thumb que en WebKit (antes caía al control por defecto) */
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--coral-bright);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(255, 106, 61, 0.6);
+  cursor: pointer;
 }
 
 .slider-labels {
@@ -895,7 +949,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .search-input-box {
   flex: 1;
-  min-width: 280px;
+  min-width: min(280px, 100%);
   position: relative;
   display: flex;
   align-items: center;
@@ -910,6 +964,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .search-input-box input {
   width: 100%;
+  min-width: 0;
   background: rgba(13, 37, 45, 0.85);
   border: 1px solid var(--border-glass);
   border-radius: 999px;
@@ -996,7 +1051,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .spots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: 18px;
   margin-bottom: 40px;
 }
@@ -1420,7 +1475,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   flex-shrink: 0;
 }
 
-.highlight-item h4 {
+.highlight-item h3 {
   font-size: 1.1rem;
   margin-bottom: 4px;
 }
@@ -1527,7 +1582,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .algorithm-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 24px;
 }
 
@@ -1628,7 +1683,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .apps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 28px;
   margin-bottom: 32px;
 }
@@ -1943,13 +1998,53 @@ input[type="range"]::-webkit-slider-thumb:hover {
    RESPONSIVE QUERIES
    ========================================================================== */
 
-@media (max-width: 992px) {
-  .desktop-nav {
-    display: none;
+/* La barra completa (marca + 6 enlaces + GitHub + CTA) pide 1100 px de contenido:
+   por debajo de 1200 px se parte en dos líneas y la marca se apila, así que en esa
+   franja se usa el menú plegable. */
+@media (max-width: 1199px) {
+  .nav-toggle {
+    display: inline-flex;
   }
 
+  .desktop-nav {
+    display: none;
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 6px 20px 16px;
+    background: rgba(7, 26, 32, 0.97);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .desktop-nav.is-open {
+    display: flex;
+  }
+
+  .desktop-nav .nav-item {
+    padding: 15px 0;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .desktop-nav .nav-item:last-child {
+    border-bottom: 0;
+  }
+
+  .desktop-nav .nav-item::after {
+    display: none;
+  }
+}
+
+@media (max-width: 992px) {
   .tide-feature-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .comparison-grid {
@@ -1967,6 +2062,31 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 @media (max-width: 640px) {
+  .brand-sub {
+    display: none;
+  }
+
+  .brand-title {
+    font-size: 1.2rem;
+  }
+
+  .header-inner {
+    gap: 8px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+
+  .header-actions .btn-text {
+    display: none;
+  }
+
   .hero-section {
     padding: 40px 0 70px;
   }
@@ -1995,5 +2115,67 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
   .btn-lg {
     width: 100%;
+  }
+}
+
+/* En pantallas muy estrechas el botón de GitHub del header sobra: la marca, el CTA
+   principal y el menú deben caber sin partir el texto. GitHub sigue en el pie. */
+@media (max-width: 480px) {
+  .header-actions .btn-ghost {
+    display: none;
+  }
+
+  .brand-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* Por debajo de 360 px no caben logo + CTA + menú sin partir el texto: el header
+   se queda con la marca gráfica, que sigue identificando el sitio. */
+@media (max-width: 360px) {
+  .brand-text-wrap {
+    display: none;
+  }
+
+  /* El simulador de marea tiene contenido que no se puede comprimir más: dejamos
+     que la escala horaria y la fila de telemetría salten de línea. */
+  .range-scale {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px 10px;
+    font-size: 0.6rem;
+  }
+
+  .control-telemetry-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+/* ==========================================================================
+   MOTION PREFERENCES
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .live-dot,
+  .floating-badge {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -10,6 +10,10 @@ let currentRegion = "all";
 let currentQuery = "";
 let selectedSpot = allSpots.find(s => s.id === "somo") || allSpots[0] || {};
 
+// Respeta la preferencia de movimiento reducido del sistema operativo
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const scrollBehavior = () => (prefersReducedMotion() ? "auto" : "smooth");
+
 // ==========================================================================
 // 1. DOM INITIALIZATION
 // ==========================================================================
@@ -24,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initClock();
   initOceanCanvas();
+  initNavToggle();
   renderSpotCards();
   if (selectedSpot) {
     updateSpotDetail(selectedSpot);
@@ -107,7 +112,6 @@ function renderSpotCards() {
     card.dataset.id = spot.id;
     card.setAttribute("role", "button");
     card.setAttribute("tabindex", "0");
-    card.setAttribute("aria-label", `Ver telemetría de ${spot.name}`);
 
     // Etiqueta de puntuación
     let scoreClass = "tag-fair";
@@ -119,18 +123,18 @@ function renderSpotCards() {
       <div class="card-top">
         <div>
           <span class="card-region">${spot.region} · ${spot.facingCardinal}</span>
-          <h4 class="card-name">${spot.name}</h4>
+          <h3 class="card-name">${spot.name}</h3>
         </div>
         <div class="card-score-badge ${scoreClass}">
-          <span>★</span> ${spot.score.toFixed(1)}
+          <span aria-hidden="true">★</span> ${spot.score.toFixed(1)}
         </div>
       </div>
       <div class="card-telemetry-row">
-        <span class="card-wave">🌊 ${spot.waveHeight || '–'} · ${spot.wavePeriod || '–'}</span>
-        <span class="card-wind ${spot.windTag || ''}">💨 ${spot.windSpeed || '–'}</span>
+        <span class="card-wave"><span aria-hidden="true">🌊</span> ${spot.waveHeight || '–'} · ${spot.wavePeriod || '–'}</span>
+        <span class="card-wind ${spot.windTag || ''}"><span aria-hidden="true">💨</span> ${spot.windSpeed || '–'}</span>
       </div>
       <div class="card-action-row">
-        <span class="card-tide-info">⏱️ ${spot.tidePref}</span>
+        <span class="card-tide-info"><span aria-hidden="true">⏱️</span> ${spot.tidePref}</span>
         <a href="${spot.url}" target="_blank" rel="noopener noreferrer" class="card-direct-link" title="Abrir ${spot.name} directamente en Marea App">
           <span>Abrir</span>
           <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -154,7 +158,7 @@ function renderSpotCards() {
       // Desplazamiento suave al detalle si estamos en móvil
       if (window.innerWidth < 768) {
         const detailEl = document.getElementById("spot-detail-container");
-        if (detailEl) detailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        if (detailEl) detailEl.scrollIntoView({ behavior: scrollBehavior(), block: "nearest" });
       }
     };
 
@@ -198,8 +202,12 @@ function initRegionTabs() {
   const tabs = document.querySelectorAll(".region-tabs .tab-btn");
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
+      tabs.forEach(t => {
+        t.classList.remove("active");
+        t.setAttribute("aria-pressed", "false");
+      });
       tab.classList.add("active");
+      tab.setAttribute("aria-pressed", "true");
       currentRegion = tab.dataset.region || "all";
       renderSpotCards();
     });
@@ -463,7 +471,7 @@ function initPwaGuideModal() {
     btnShow.addEventListener("click", () => {
       guideBox.style.display = guideBox.style.display === "none" ? "block" : "none";
       if (guideBox.style.display === "block") {
-        guideBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        guideBox.scrollIntoView({ behavior: scrollBehavior(), block: "nearest" });
       }
     });
   }
@@ -533,7 +541,7 @@ function initSharingButtons() {
         }).catch(() => {});
       } else {
         const shareSection = document.getElementById("compartir");
-        if (shareSection) shareSection.scrollIntoView({ behavior: "smooth" });
+        if (shareSection) shareSection.scrollIntoView({ behavior: scrollBehavior() });
       }
     });
   }
@@ -595,8 +603,56 @@ function initOceanCanvas() {
     requestAnimationFrame(render);
   }
 
-  const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const prefersReduced = prefersReducedMotion();
   if (!prefersReduced) {
     render();
   }
+}
+
+// ==========================================================================
+// 9. MENÚ DE NAVEGACIÓN MÓVIL
+// ==========================================================================
+
+function initNavToggle() {
+  const toggle = document.getElementById("nav-toggle");
+  const nav = document.getElementById("primary-nav");
+  if (!toggle || !nav) return;
+
+  const mobileQuery = window.matchMedia("(max-width: 1199px)");
+
+  const setOpen = (open) => {
+    nav.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    toggle.setAttribute(
+      "aria-label",
+      open ? "Cerrar el menú de navegación" : "Abrir el menú de navegación"
+    );
+  };
+
+  toggle.addEventListener("click", () => {
+    setOpen(!nav.classList.contains("is-open"));
+  });
+
+  // Cualquier enlace del panel cierra el menú tras navegar
+  nav.addEventListener("click", (e) => {
+    if (e.target.closest(".nav-item")) setOpen(false);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && nav.classList.contains("is-open")) {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!nav.classList.contains("is-open")) return;
+    if (e.target.closest("#primary-nav") || e.target.closest("#nav-toggle")) return;
+    setOpen(false);
+  });
+
+  // En escritorio el panel deja de existir: limpiamos el estado al cambiar de tamaño
+  mobileQuery.addEventListener("change", (e) => {
+    if (!e.matches) setOpen(false);
+  });
 }
