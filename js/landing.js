@@ -8,6 +8,11 @@
 let allSpots = Array.isArray(window.MAREA_SPOTS) ? window.MAREA_SPOTS : [];
 let currentRegion = "all";
 let currentQuery = "";
+
+// La rejilla va paginada: cada tarjeta pesa 19 nodos, así que las 83 juntas se
+// llevaban el 71% del DOM de la página y 5.587 px de alto.
+const SPOTS_PER_PAGE = 12;
+let currentPage = 1;
 let selectedSpot = allSpots.find(s => s.id === "somo") || allSpots[0] || {};
 
 // Respeta la preferencia de movimiento reducido del sistema operativo
@@ -37,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTideSliders();
   initRegionTabs();
   initSearchInput();
+  initPagination();
   initPwaGuideModal();
   initSharingButtons();
 
@@ -86,15 +92,18 @@ function renderSpotCards() {
   grid.innerHTML = "";
   const filtered = filterSpots();
 
+  const totalPaginas = Math.max(1, Math.ceil(filtered.length / SPOTS_PER_PAGE));
+  if (currentPage > totalPaginas) currentPage = totalPaginas;
+  if (currentPage < 1) currentPage = 1;
+
+  const desde = (currentPage - 1) * SPOTS_PER_PAGE;
+  const visibles = filtered.slice(desde, desde + SPOTS_PER_PAGE);
+
   if (counterEl) {
-    if (currentQuery) {
-      counterEl.textContent = `${filtered.length} spot${filtered.length === 1 ? '' : 's'} para "${currentQuery}"`;
-    } else if (currentRegion !== "all") {
-      counterEl.textContent = `${filtered.length} spots en esta zona`;
-    } else {
-      counterEl.textContent = `Mostrando los ${filtered.length} spots`;
-    }
+    counterEl.textContent = textoContador(filtered.length, desde, visibles.length);
   }
+
+  renderPagination(totalPaginas);
 
   if (filtered.length === 0) {
     grid.innerHTML = `
@@ -106,7 +115,7 @@ function renderSpotCards() {
     return;
   }
 
-  filtered.forEach(spot => {
+  visibles.forEach(spot => {
     const card = document.createElement("div");
     card.className = `spot-card ${selectedSpot && spot.id === selectedSpot.id ? "selected" : ""}`;
     card.dataset.id = spot.id;
@@ -174,6 +183,102 @@ function renderSpotCards() {
   });
 }
 
+// Texto del contador: rango visible cuando hay más de una página
+function textoContador(total, desde, visibles) {
+  if (total === 0) {
+    return currentQuery ? `Ningún spot para "${currentQuery}"` : "Ningún spot en esta zona";
+  }
+
+  const contexto = currentQuery
+    ? ` para "${currentQuery}"`
+    : currentRegion !== "all"
+      ? " en esta zona"
+      : "";
+
+  if (total <= SPOTS_PER_PAGE) {
+    return `Mostrando ${total} spot${total === 1 ? "" : "s"}${contexto}`;
+  }
+
+  return `Mostrando ${desde + 1}-${desde + visibles} de ${total} spots${contexto}`;
+}
+
+// Paginación: anterior, números de página y siguiente
+function renderPagination(totalPaginas) {
+  const pager = document.getElementById("spots-pagination");
+  if (!pager) return;
+
+  if (totalPaginas <= 1) {
+    pager.hidden = true;
+    pager.innerHTML = "";
+    return;
+  }
+
+  pager.hidden = false;
+
+  const flecha = (d) =>
+    `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+
+  let html = `<button type="button" class="page-btn page-nav" data-nav="prev" aria-label="Página anterior"${currentPage === 1 ? " disabled" : ""}>${flecha("M10 3L5 8l5 5")}</button>`;
+
+  // En pantallas estrechas los números no caben con objetivos táctiles decentes,
+  // así que el CSS oculta los números y deja visible este indicador.
+  html += `<span class="page-status">Página ${currentPage} de ${totalPaginas}</span>`;
+
+  for (let i = 1; i <= totalPaginas; i++) {
+    const actual = i === currentPage;
+    html += `<button type="button" class="page-btn${actual ? " is-current" : ""}" data-page="${i}" aria-label="Página ${i}"${actual ? ' aria-current="page"' : ""}>${i}</button>`;
+  }
+
+  html += `<button type="button" class="page-btn page-nav" data-nav="next" aria-label="Página siguiente"${currentPage === totalPaginas ? " disabled" : ""}>${flecha("M6 3l5 5-5 5")}</button>`;
+
+  pager.innerHTML = html;
+}
+
+// Cambiar de página vuelve a pintar la rejilla, así que recolocamos el foco en el
+// control equivalente para que el teclado no se pierda al reconstruir la paginación
+function goToPage(pagina, tipo) {
+  currentPage = pagina;
+  renderSpotCards();
+
+  const pager = document.getElementById("spots-pagination");
+  if (pager) {
+    const selector =
+      tipo === "prev" ? '[data-nav="prev"]' : tipo === "next" ? '[data-nav="next"]' : `[data-page="${pagina}"]`;
+    let destino = pager.querySelector(selector);
+    if (!destino || destino.disabled) {
+      destino = pager.querySelector('[aria-current="page"]') || pager.querySelector('[data-page="1"]');
+    }
+    // preventScroll: el foco no debe arrastrar la página; de dónde queda la vista
+    // lo decide el bloque de más abajo.
+    if (destino) destino.focus({ preventScroll: true });
+  }
+
+  // Solo desplazamos si el arranque de la rejilla ha quedado por detrás de la
+  // cabecera fija: si ya se ve entera, saltar sería un movimiento gratuito.
+  const grid = document.getElementById("spots-cards-grid");
+  if (!grid) return;
+
+  const cabecera = document.querySelector(".site-header");
+  const limite = cabecera ? cabecera.getBoundingClientRect().height : 0;
+  if (grid.getBoundingClientRect().top < limite) {
+    grid.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+  }
+}
+
+function initPagination() {
+  const pager = document.getElementById("spots-pagination");
+  if (!pager) return;
+
+  pager.addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn || btn.disabled) return;
+
+    if (btn.dataset.nav === "prev") goToPage(currentPage - 1, "prev");
+    else if (btn.dataset.nav === "next") goToPage(currentPage + 1, "next");
+    else if (btn.dataset.page) goToPage(Number(btn.dataset.page), "page");
+  });
+}
+
 function initSearchInput() {
   const searchInput = document.getElementById("spots-search-input");
   const clearBtn = document.getElementById("spots-search-clear");
@@ -184,6 +289,8 @@ function initSearchInput() {
     if (clearBtn) {
       clearBtn.style.display = currentQuery ? "block" : "none";
     }
+    // Cambiar el filtro siempre devuelve a la primera página
+    currentPage = 1;
     renderSpotCards();
   });
 
@@ -193,6 +300,7 @@ function initSearchInput() {
       currentQuery = "";
       clearBtn.style.display = "none";
       searchInput.focus();
+      currentPage = 1;
       renderSpotCards();
     });
   }
@@ -209,6 +317,7 @@ function initRegionTabs() {
       tab.classList.add("active");
       tab.setAttribute("aria-pressed", "true");
       currentRegion = tab.dataset.region || "all";
+      currentPage = 1;
       renderSpotCards();
     });
   });

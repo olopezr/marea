@@ -531,7 +531,7 @@
             </div>
             <div class="spots-live-indicator">
               <span class="live-dot" aria-hidden="true"></span>
-              <span id="spots-count-indicator">Mostrando 83 spots</span>
+              <span id="spots-count-indicator" aria-live="polite" aria-atomic="true">Mostrando 1-12 de 83 spots</span>
             </div>
           </div>
 
@@ -551,6 +551,9 @@
           <div class="spots-grid" id="spots-cards-grid">
             <!-- Populated dynamically via JS -->
           </div>
+
+          <!-- Paginación de la rejilla -->
+          <nav class="spots-pagination" id="spots-pagination" aria-label="Paginación de spots" hidden></nav>
 
           <!-- Selected Spot Interactive Detail Card -->
           <div class="spot-detail-interactive-card" id="spot-detail-container">
