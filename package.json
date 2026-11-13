@@ -21,7 +21,7 @@
     "vapid": "web-push generate-vapid-keys"
   },
   "dependencies": {
-    "web-push": "^3.6.7"
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
